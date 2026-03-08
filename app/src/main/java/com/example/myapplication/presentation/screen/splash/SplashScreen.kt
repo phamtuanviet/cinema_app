@@ -6,14 +6,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import com.example.myapplication.R
 import com.example.myapplication.presentation.app.AppState
-import kotlinx.coroutines.delay
-
+import android.util.Log
+import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun SplashScreen(
     appState : AppState,
@@ -23,6 +22,10 @@ fun SplashScreen(
 ) {
 
     LaunchedEffect(appState.isLoggedIn, appState.hasOnboarded) {
+        Log.d(
+            "APP_STATE",
+            "isLoggedIn=${appState.isLoggedIn}, hasOnboarded=${appState.hasOnboarded}"
+        )
 
         if (!appState.hasOnboarded) {
             onNavigateToOnboarding()

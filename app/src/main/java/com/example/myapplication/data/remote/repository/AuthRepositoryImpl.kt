@@ -1,5 +1,6 @@
 package com.example.myapplication.data.remote.repository
 
+import android.util.Log
 import com.example.myapplication.core.datastore.SessionManager
 import com.example.myapplication.data.remote.api.AuthApi
 import com.example.myapplication.data.remote.dto.ForgotPasswordRequest
@@ -21,26 +22,34 @@ class AuthRepositoryImpl @Inject constructor(
         password: String
     ): Boolean {
 
-        val response = authApi.login(
-            LoginRequest(
-                email = email,
-                password = password
+
+        return try {
+            val response = authApi.login(
+                LoginRequest(
+                    email = email,
+                    password = password
+                )
             )
-        )
-        if (response.isSuccessful) {
-            val body = response.body()
-                ?: throw Exception("Empty response")
+            if (response.isSuccessful) {
+                val body = response.body()
+                    ?: throw Exception("Empty response")
 
-            val user = response.body()!!.user;
-            sessionManager.saveAccessToken(response.body()!!.accessToken)
-            sessionManager.saveRefreshToken(response.body()!!.refreshToken)
-            sessionManager.saveUserId(user.id)
-            sessionManager.saveUserEmail(user.email)
-            sessionManager.saveRole(user.role)
+                val user = response.body()!!.user;
+                sessionManager.saveAccessToken(response.body()!!.accessToken)
+                sessionManager.saveRefreshToken(response.body()!!.refreshToken)
+                sessionManager.saveUserId(user.id)
+                sessionManager.saveUserEmail(user.email)
+                sessionManager.saveRole(user.role)
 
-            return true;
-        } else {
-            throw Exception("Login failed")
+                return true;
+            } else {
+
+                throw Exception("Login failed")
+            }
+        } catch (e: Exception) {
+
+            Log.e("LOGIN_ERROR", e.toString())
+            false
         }
     }
 
