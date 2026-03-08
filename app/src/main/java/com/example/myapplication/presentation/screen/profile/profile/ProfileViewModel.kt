@@ -1,0 +1,13 @@
+package com.example.myapplication.presentation.screen.profile.profile
+
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+@HiltViewModel
+class ProfileViewModel(): ViewModel() {
+
+    private val _state = MutableStateFlow(ProfileState())
+    val state = _state.asStateFlow()
+}

@@ -1,0 +1,27 @@
+package com.example.myapplication.presentation.navigation.route
+
+
+sealed class MovieRoute(val route: String) {
+    object MovieList : MovieRoute("movie_list")
+    object MovieDetail : MovieRoute("movie_detail/{movieId}") {
+        fun createRoute(movieId: Int): String {
+            return "movie_detail/$movieId"
+        }
+    }
+    object Showtime : MovieRoute("movie_showtime/{movieId}") {
+        fun createRoute(movieId: Int): String {
+            return "movie_showtime/$movieId"
+        }
+    }
+    object SeatSelection : MovieRoute("seat_selection/{showtimeId}") {
+        fun createRoute(showtimeId: Int): String {
+            return "seat_selection/$showtimeId"
+        }
+    }
+    object Checkout : MovieRoute("checkout/{bookingId}") {
+        fun createRoute(bookingId: String): String {
+            return "checkout/$bookingId"
+        }
+    }
+
+}

@@ -1,5 +1,6 @@
 package com.example.myapplication.presentation.app
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.core.datastore.AppDataStore
@@ -31,15 +32,17 @@ class AppViewModel @Inject constructor(
                 appDataStore.darkThemeFlow
 
             ) { token, onboarded, theme ->
-
+                Log.d("AppViewModel", "token = $token")
+                Log.d("AppViewModel", "onboarded = $onboarded")
+                Log.d("AppViewModel", "darkTheme = $theme")
                 AppState(
-                    isLoggedIn = token != null,
+                    isLoggedIn = !token.isNullOrEmpty(),
                     hasOnboarded = onboarded,
                     darkTheme = theme
                 )
 
             }.collect { state ->
-                _appState.value = state
+                _appState.value = state.copy(isLoading = false)
             }
 
         }

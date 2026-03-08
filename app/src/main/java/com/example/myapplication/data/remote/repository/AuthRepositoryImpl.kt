@@ -59,14 +59,20 @@ class AuthRepositoryImpl @Inject constructor(
         fullName: String,
         phone: String
     ): Boolean {
-        val response = authApi.register(RegisterRequest(email, password, fullName, phone))
-        if (response.isSuccessful) {
-            val body = response.body()
-                ?: throw Exception("Empty response")
-            return true
-        } else {
-            throw Exception("Register failed")
+        return try {
+            val response = authApi.register(RegisterRequest(email, password, fullName, phone))
+            if (response.isSuccessful) {
+                val body = response.body()
+                    ?: throw Exception("Empty response")
+                return true
+            } else {
+                throw Exception("Register failed")
+            }
+        } catch (E: Exception) {
+            Log.e("REGISTER_ERROR", E.toString())
+            false
         }
+
     }
 
     override suspend fun verifyEmail(

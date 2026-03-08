@@ -42,11 +42,11 @@ class ForgotPasswordViewModel @Inject constructor(
 
             try {
 
-                repository.forgotPassword(email)
+                val response = repository.forgotPassword(email)
 
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    isSuccess = true
+                    isSuccess = response
                 )
 
             } catch (e: Exception) {

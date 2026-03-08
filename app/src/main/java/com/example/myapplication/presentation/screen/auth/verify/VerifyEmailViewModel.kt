@@ -43,14 +43,14 @@ class VerifyEmailViewModel @Inject constructor(
 
             try {
 
-                repository.verifyEmail(
+                val result = repository.verifyEmail(
                     email = current.email,
                     otp = current.otp
                 )
 
                 _state.value = current.copy(
                     isLoading = false,
-                    isSuccess = true
+                    isSuccess = result
                 )
 
             } catch (e: Exception) {

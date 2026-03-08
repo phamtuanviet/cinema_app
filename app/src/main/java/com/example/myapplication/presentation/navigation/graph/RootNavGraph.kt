@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import com.example.myapplication.presentation.app.AppState
 import com.example.myapplication.presentation.navigation.route.AuthRoute
+import com.example.myapplication.presentation.navigation.route.MainRoute
 import com.example.myapplication.presentation.navigation.route.OnboardingRoute
 import com.example.myapplication.presentation.navigation.route.RootRoute
 import com.example.myapplication.presentation.screen.splash.SplashScreen
@@ -63,7 +64,7 @@ fun RootNavGraph(
         // Main
         navigation(
             route = RootRoute.MainGraph.route,
-            startDestination = "bottom_graph"
+            startDestination = MainRoute.BottomGraph.route
         ) {
             mainNavGraph(navController)
         }

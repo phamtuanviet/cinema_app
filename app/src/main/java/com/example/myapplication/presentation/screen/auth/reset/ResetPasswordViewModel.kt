@@ -57,14 +57,14 @@ class ResetPasswordViewModel @Inject constructor(
 
             try {
 
-                repository.resetPassword(
+                val response = repository.resetPassword(
                     resetToken,
                     password
                 )
 
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    isSuccess = true
+                    isSuccess = response
                 )
 
             } catch (e: Exception) {

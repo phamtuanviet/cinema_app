@@ -1,0 +1,13 @@
+package com.example.myapplication.presentation.screen.cinema.checkout
+
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+@HiltViewModel
+class CinemaCheckoutViewModel(): ViewModel() {
+
+    private val _state = MutableStateFlow(CinemaCheckoutState())
+    val state = _state.asStateFlow()
+}

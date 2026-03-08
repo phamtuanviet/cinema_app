@@ -43,7 +43,7 @@ class RegisterViewModel @Inject constructor(
 
             try {
 
-                repository.register(
+                val response = repository.register(
                     email = _state.value.email,
                     password = _state.value.password,
                     fullName = _state.value.fullName,
@@ -52,7 +52,7 @@ class RegisterViewModel @Inject constructor(
 
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    isSuccess = true
+                    isSuccess = response
                 )
 
             } catch (e: Exception) {
