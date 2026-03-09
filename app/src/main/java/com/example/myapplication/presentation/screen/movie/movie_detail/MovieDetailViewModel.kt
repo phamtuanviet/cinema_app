@@ -5,9 +5,10 @@ import com.example.myapplication.presentation.screen.cinema.checkout.CinemaCheck
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
 @HiltViewModel
-class MovieDetailViewModel(): ViewModel() {
+class MovieDetailViewModel @Inject constructor(): ViewModel() {
 
     private val _state = MutableStateFlow(MovieDetailState())
     val state = _state.asStateFlow()

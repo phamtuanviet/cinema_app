@@ -2,21 +2,15 @@ package com.example.myapplication.presentation.navigation.graph
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.navigation
+import androidx.navigation.compose.composable
 import com.example.myapplication.presentation.navigation.route.MainRoute
+import com.example.myapplication.presentation.screen.main.MainScreen
 
 fun NavGraphBuilder.mainNavGraph(
     navController: NavHostController
 ) {
 
-    navigation(
-        route = MainRoute.BottomGraph.route,
-        startDestination = MainRoute.MovieGraph.route
-    ) {
-        movieNavGraph(navController)
-        cinemaNavGraph(navController)
-        voucherNavGraph(navController)
-        promotionNavGraph(navController)
-        profileNavGraph(navController)
+    composable(MainRoute.BottomGraph.route) {
+        MainScreen()
     }
 }

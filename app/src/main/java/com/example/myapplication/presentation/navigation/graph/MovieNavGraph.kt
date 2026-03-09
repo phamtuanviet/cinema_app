@@ -2,10 +2,13 @@ package com.example.myapplication.presentation.navigation.graph
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.myapplication.presentation.navigation.route.MainRoute
 import com.example.myapplication.presentation.navigation.route.MovieRoute
+import com.example.myapplication.presentation.screen.movie.booking.MovieBookingScreen
 import com.example.myapplication.presentation.screen.movie.checkout.MovieCheckoutScreen
 import com.example.myapplication.presentation.screen.movie.movie_detail.MovieDetailScreen
 import com.example.myapplication.presentation.screen.movie.movie_list.MovieListScreen
@@ -22,7 +25,27 @@ fun NavGraphBuilder.movieNavGraph(
     ) {
 
         composable(MovieRoute.MovieList.route) {
-            MovieListScreen()
+            MovieListScreen(
+                onNavigateBooking = { movieId ->
+                    navController.navigate("movie_booking/$movieId")
+                }
+            )
+        }
+
+        composable(
+            route = MovieRoute.MovieBooking.route,
+            arguments = listOf(
+                navArgument("movieId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+
+            val movieId = backStackEntry.arguments?.getString("movieId") ?: ""
+
+            MovieBookingScreen(
+                movieId = movieId
+            )
         }
 
         composable(MovieRoute.MovieDetail.route) {

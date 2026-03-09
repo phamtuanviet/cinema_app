@@ -1,102 +1,136 @@
 package com.example.myapplication.presentation.theme
 
-import androidx.compose.material3.*
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 
-// ================= LIGHT =================
+private val LightColors = lightColorScheme(
+    primary = primaryLight,
+    onPrimary = onPrimaryLight,
+    primaryContainer = primaryContainerLight,
+    onPrimaryContainer = onPrimaryContainerLight,
 
-private val LightColorScheme = lightColorScheme(
+    secondary = secondaryLight,
+    onSecondary = onSecondaryLight,
+    secondaryContainer = secondaryContainerLight,
+    onSecondaryContainer = onSecondaryContainerLight,
 
-    primary = BrandPrimary,
-    onPrimary = NeutralWhite,
-    primaryContainer = Color(0xFFDDE9FF),
-    onPrimaryContainer = Color(0xFF001C3A),
+    tertiary = tertiaryLight,
+    onTertiary = onTertiaryLight,
+    tertiaryContainer = tertiaryContainerLight,
+    onTertiaryContainer = onTertiaryContainerLight,
 
-    secondary = BrandSecondary,
-    onSecondary = NeutralBlack,
-    secondaryContainer = Color(0xFFFFE0B2),
-    onSecondaryContainer = Color(0xFF3E2723),
+    error = errorLight,
+    onError = onErrorLight,
+    errorContainer = errorContainerLight,
+    onErrorContainer = onErrorContainerLight,
 
-    tertiary = BrandTertiary,
-    onTertiary = NeutralWhite,
-    tertiaryContainer = Color(0xFFC8FACC),
-    onTertiaryContainer = Color(0xFF003300),
+    background = backgroundLight,
+    onBackground = onBackgroundLight,
 
-    background = NeutralWhite,
-    onBackground = NeutralBlack,
+    surface = surfaceLight,
+    onSurface = onSurfaceLight,
 
-    surface = NeutralGray100,
-    onSurface = NeutralBlack,
-    surfaceVariant = NeutralGray200,
-    onSurfaceVariant = NeutralGray800,
+    surfaceVariant = surfaceVariantLight,
+    onSurfaceVariant = onSurfaceVariantLight,
 
-    surfaceTint = BrandPrimary,
+    outline = outlineLight,
+    outlineVariant = outlineVariantLight,
 
-    inverseSurface = NeutralGray800,
-    inverseOnSurface = NeutralWhite,
+    scrim = scrimLight,
 
-    error = ErrorRed,
-    onError = NeutralWhite,
-    errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF410002),
+    inverseSurface = inverseSurfaceLight,
+    inverseOnSurface = inverseOnSurfaceLight,
+    inversePrimary = inversePrimaryLight,
 
-    outline = NeutralGray400,
-    outlineVariant = NeutralGray200,
+    surfaceDim = surfaceDimLight,
+    surfaceBright = surfaceBrightLight,
 
-    scrim = Color(0x99000000)
+    surfaceContainerLowest = surfaceContainerLowestLight,
+    surfaceContainerLow = surfaceContainerLowLight,
+    surfaceContainer = surfaceContainerLight,
+    surfaceContainerHigh = surfaceContainerHighLight,
+    surfaceContainerHighest = surfaceContainerHighestLight
 )
 
-// ================= DARK =================
+private val DarkColors = darkColorScheme(
+    primary = primaryDark,
+    onPrimary = onPrimaryDark,
+    primaryContainer = primaryContainerDark,
+    onPrimaryContainer = onPrimaryContainerDark,
 
-private val DarkColorScheme = darkColorScheme(
+    secondary = secondaryDark,
+    onSecondary = onSecondaryDark,
+    secondaryContainer = secondaryContainerDark,
+    onSecondaryContainer = onSecondaryContainerDark,
 
-    primary = Color(0xFF4D9FFF),
-    onPrimary = NeutralBlack,
-    primaryContainer = Color(0xFF003366),
-    onPrimaryContainer = Color(0xFFDDE9FF),
+    tertiary = tertiaryDark,
+    onTertiary = onTertiaryDark,
+    tertiaryContainer = tertiaryContainerDark,
+    onTertiaryContainer = onTertiaryContainerDark,
 
-    secondary = Color(0xFFFFB74D),
-    onSecondary = NeutralBlack,
-    secondaryContainer = Color(0xFF5D4037),
-    onSecondaryContainer = Color(0xFFFFE0B2),
+    error = errorDark,
+    onError = onErrorDark,
+    errorContainer = errorContainerDark,
+    onErrorContainer = onErrorContainerDark,
 
-    tertiary = Color(0xFF69F0AE),
-    onTertiary = NeutralBlack,
-    tertiaryContainer = Color(0xFF004D40),
-    onTertiaryContainer = Color(0xFFC8FACC),
+    background = backgroundDark,
+    onBackground = onBackgroundDark,
 
-    background = Color(0xFF121212),
-    onBackground = NeutralWhite,
+    surface = surfaceDark,
+    onSurface = onSurfaceDark,
 
-    surface = Color(0xFF1E1E1E),
-    onSurface = NeutralWhite,
-    surfaceVariant = Color(0xFF2A2A2A),
-    onSurfaceVariant = NeutralGray400,
+    surfaceVariant = surfaceVariantDark,
+    onSurfaceVariant = onSurfaceVariantDark,
 
-    surfaceTint = Color(0xFF4D9FFF),
+    outline = outlineDark,
+    outlineVariant = outlineVariantDark,
 
-    inverseSurface = NeutralWhite,
-    inverseOnSurface = NeutralBlack,
+    scrim = scrimDark,
 
-    error = ErrorDark,
-    onError = NeutralBlack,
-    errorContainer = Color(0xFF8C1D18),
-    onErrorContainer = Color(0xFFFFDAD6),
+    inverseSurface = inverseSurfaceDark,
+    inverseOnSurface = inverseOnSurfaceDark,
+    inversePrimary = inversePrimaryDark,
 
-    outline = NeutralGray600,
-    outlineVariant = Color(0xFF3A3A3A),
+    surfaceDim = surfaceDimDark,
+    surfaceBright = surfaceBrightDark,
 
-    scrim = Color(0x99000000)
+    surfaceContainerLowest = surfaceContainerLowestDark,
+    surfaceContainerLow = surfaceContainerLowDark,
+    surfaceContainer = surfaceContainerDark,
+    surfaceContainerHigh = surfaceContainerHighDark,
+    surfaceContainerHighest = surfaceContainerHighestDark
 )
 
 @Composable
 fun MovieAppTheme(
-    darkTheme: Boolean,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+
+    val colorScheme = when {
+
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme)
+                dynamicDarkColorScheme(context)
+            else
+                dynamicLightColorScheme(context)
+        }
+
+        darkTheme -> DarkColors
+        else -> LightColors
+    }
+
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+        colorScheme = colorScheme,
         typography = AppTypography,
         content = content
     )

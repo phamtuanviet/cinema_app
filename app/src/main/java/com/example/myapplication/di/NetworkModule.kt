@@ -3,6 +3,7 @@ package com.example.myapplication.di
 
 import com.example.myapplication.core.datastore.SessionManager
 import com.example.myapplication.data.remote.api.AuthApi
+import com.example.myapplication.data.remote.api.MovieApi
 import com.example.myapplication.data.remote.retrofit.RetrofitClient
 import dagger.Module
 import dagger.Provides
@@ -30,5 +31,15 @@ object NetworkModule {
         retrofit: Retrofit
     ): AuthApi {
         return retrofit.create(AuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMovieApi(
+        retrofit: Retrofit
+    ): MovieApi {
+
+        return retrofit.create(MovieApi::class.java)
+
     }
 }
