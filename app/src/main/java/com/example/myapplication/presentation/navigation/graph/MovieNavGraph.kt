@@ -27,7 +27,7 @@ fun NavGraphBuilder.movieNavGraph(
         composable(MovieRoute.MovieList.route) {
             MovieListScreen(
                 onNavigateBooking = { movieId ->
-                    navController.navigate("movie_booking/$movieId")
+                    navController.navigate(MovieRoute.MovieBooking.createRoute(movieId))
                 }
             )
         }
@@ -44,20 +44,51 @@ fun NavGraphBuilder.movieNavGraph(
             val movieId = backStackEntry.arguments?.getString("movieId") ?: ""
 
             MovieBookingScreen(
-                movieId = movieId
+                movieId = movieId,
+                onMovieDetailClick = { movieId ->
+                    navController.navigate(MovieRoute.MovieDetail.createRoute(movieId))
+                },
+                onShowtimeClick = { showtimeId ->
+                    navController.navigate(
+                        MovieRoute.SeatSelection.createRoute(showtimeId)
+                    )
+                }
             )
         }
 
-        composable(MovieRoute.MovieDetail.route) {
-            MovieDetailScreen()
+        composable(
+            MovieRoute.MovieDetail.route,
+            arguments = listOf(
+                navArgument("movieId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val movieId = backStackEntry.arguments?.getString("movieId") ?: ""
+            MovieDetailScreen(
+                movieId = movieId
+            )
         }
 
         composable(MovieRoute.Showtime.route) {
             MovieShowtimeScreen()
         }
 
-        composable(MovieRoute.SeatSelection.route) {
-            MovieSeatSelectionScreen()
+        composable(
+            route = MovieRoute.SeatSelection.route,
+            arguments = listOf(
+                navArgument("showtimeId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+
+            val showtimeId =
+                backStackEntry.arguments?.getString("showtimeId")!!
+
+            MovieSeatSelectionScreen(
+                showtimeId = showtimeId,
+            )
         }
 
         composable(MovieRoute.Checkout.route) {

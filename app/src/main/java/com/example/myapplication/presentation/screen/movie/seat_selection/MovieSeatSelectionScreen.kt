@@ -8,6 +8,7 @@ import com.example.myapplication.presentation.screen.movie.movie_list.MovieListV
 
 @Composable
 fun MovieSeatSelectionScreen (
+    showtimeId: String,
     viewModel: MovieSeatSelectionViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()

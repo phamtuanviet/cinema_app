@@ -1,15 +1,49 @@
 package com.example.myapplication.presentation.screen.movie.movie_detail
 
+
 import androidx.lifecycle.ViewModel
-import com.example.myapplication.presentation.screen.cinema.checkout.CinemaCheckoutState
+import androidx.lifecycle.viewModelScope
+import com.example.myapplication.domain.repository.MovieRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MovieDetailViewModel @Inject constructor(): ViewModel() {
+class MovieDetailViewModel @Inject constructor(
+    private val repository: MovieRepository
+) : ViewModel() {
 
     private val _state = MutableStateFlow(MovieDetailState())
-    val state = _state.asStateFlow()
+    val state: StateFlow<MovieDetailState> = _state.asStateFlow()
+
+    fun loadMovie(movieId: String) {
+
+        viewModelScope.launch {
+
+            _state.value = _state.value.copy(
+                isLoading = true,
+                error = null
+            )
+
+            try {
+
+                val movie = repository.getMovieDetail(movieId)
+
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    movie = movie
+                )
+
+            } catch (e: Exception) {
+
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
+        }
+    }
 }

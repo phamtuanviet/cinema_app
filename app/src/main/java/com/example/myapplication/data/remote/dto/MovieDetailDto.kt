@@ -6,6 +6,7 @@ data class MovieDetailDto(
     val title: String,
     val durationMinutes: Int,
     val trailerUrl: String,
+    val posterUrl: String,
     val ageRating: String,
     val language: String,
     val genres: List<String>,

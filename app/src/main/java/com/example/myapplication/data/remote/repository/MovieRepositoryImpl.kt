@@ -2,6 +2,7 @@ package com.example.myapplication.data.remote.repository
 
 import com.example.myapplication.data.remote.api.MovieApi
 import com.example.myapplication.data.remote.dto.CinemaShowtimeDto
+import com.example.myapplication.data.remote.dto.MovieDetailDto
 import com.example.myapplication.data.remote.dto.MovieDto
 import com.example.myapplication.data.remote.dto.ShowtimeDto
 import com.example.myapplication.domain.model.Movie
@@ -85,18 +86,17 @@ class MovieRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun getMovieDetail(movieId: String): MovieDetail {
-        return MovieDetail(
+    override suspend fun getMovieDetail(movieId: String): MovieDetailDto {
+        return MovieDetailDto(
             id = movieId,
             title = "Avengers: Endgame",
             description = "After the devastating events of Infinity War, the Avengers assemble once more to undo Thanos' actions.",
             posterUrl = "https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w780/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
-            duration = 181,
-            director = "Anthony Russo, Joe Russo",
-            cast = listOf("Robert Downey Jr.", "Chris Evans", "Scarlett Johansson"),
+            durationMinutes = 181,
+            trailerUrl = "https://www.youtube.com/watch?v=eOrNdBpGMv8",
+            ageRating = "PG-13",
+            language = "English",
             genres = listOf("Action", "Sci-Fi"),
-            trailerUrl = "https://www.youtube.com/watch?v=TcMBFSGVi1c",
             releaseDate = "2019-04-26"
         )
     }

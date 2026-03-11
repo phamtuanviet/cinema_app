@@ -1,6 +1,7 @@
 package com.example.myapplication.domain.repository
 
 import com.example.myapplication.data.remote.dto.CinemaShowtimeDto
+import com.example.myapplication.data.remote.dto.MovieDetailDto
 import com.example.myapplication.data.remote.dto.MovieDto
 import com.example.myapplication.domain.model.Movie
 import com.example.myapplication.domain.model.MovieDetail
@@ -15,7 +16,7 @@ interface MovieRepository {
 
     suspend fun getMovieDetail(
         movieId: String
-    ): MovieDetail
+    ): MovieDetailDto
 
     suspend fun getMovie(
         movieId: String

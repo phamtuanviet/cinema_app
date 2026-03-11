@@ -38,14 +38,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.setValue
 import com.example.myapplication.utils.getCurrentLocation
-import com.google.accompanist.permissions.*
 import android.provider.Settings
+import com.google.accompanist.permissions.*
+
 
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MovieBookingScreen(
     movieId: String,
+    onMovieDetailClick: (String) -> Unit,
+    onShowtimeClick: (showtimeId: String) -> Unit,
+
     viewModel: MovieBookingViewModel = hiltViewModel()
 ) {
 
@@ -176,12 +180,12 @@ fun MovieBookingScreen(
 
                 state.movie != null -> {
 
-                    val movie = state.movie
+                    val movie = state.movie!!
 
-                    Column {
+                    Box {
 
                         AsyncImage(
-                            model = movie!!.posterUrl,
+                            model = movie.posterUrl,
                             contentDescription = movie.title,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -189,11 +193,35 @@ fun MovieBookingScreen(
                             contentScale = ContentScale.Crop
                         )
 
-                        Text(
-                            text = movie.title,
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                        ) {
+
+                            Text(
+                                text = movie.title,
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleLarge
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(Color.White)
+                                    .clickable {
+                                        onMovieDetailClick(movieId)
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+
+                                Text(
+                                    text = "Chi tiết phim",
+                                    color = Color.Black
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -306,6 +334,13 @@ fun MovieBookingScreen(
                                             Color.Red,
                                             RoundedCornerShape(6.dp)
                                         )
+                                        .clickable {
+
+                                            onShowtimeClick(
+                                                showtime.id,
+                                            )
+
+                                        }
                                         .padding(
                                             horizontal = 12.dp,
                                             vertical = 6.dp

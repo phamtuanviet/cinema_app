@@ -21,7 +21,7 @@ fun SplashScreen(
     onNavigateToMain: () -> Unit,
 ) {
 
-    LaunchedEffect(appState.isLoggedIn, appState.hasOnboarded) {
+    LaunchedEffect(appState.isLoggedIn, appState.hasOnboarded,appState.isLoading) {
         Log.d(
             "APP_STATE",
             "isLoggedIn=${appState.isLoggedIn}, hasOnboarded=${appState.hasOnboarded}"
@@ -32,6 +32,7 @@ fun SplashScreen(
         }
 
         if (!appState.hasOnboarded) {
+            Log.d("APP_STATE", "hasOnboarded=${appState.hasOnboarded}")
             onNavigateToOnboarding()
         }
         else if (!appState.isLoggedIn) {
