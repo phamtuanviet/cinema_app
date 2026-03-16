@@ -1,17 +1,37 @@
 package com.example.myapplication.data.remote.repository
 
 import com.example.myapplication.data.remote.api.MovieApi
+import com.example.myapplication.data.remote.api.SeatApi
+import com.example.myapplication.data.remote.dto.BookingDto
 import com.example.myapplication.data.remote.dto.CinemaShowtimeDto
+import com.example.myapplication.data.remote.dto.ComboDto
+import com.example.myapplication.data.remote.dto.CreateBookingRequest
+import com.example.myapplication.data.remote.dto.HoldSeatResponse
 import com.example.myapplication.data.remote.dto.MovieDetailDto
 import com.example.myapplication.data.remote.dto.MovieDto
+import com.example.myapplication.data.remote.dto.PaymentDto
+import com.example.myapplication.data.remote.dto.SeatDto
+import com.example.myapplication.data.remote.dto.SeatHoldDto
+import com.example.myapplication.data.remote.dto.SeatHoldSessionDto
+import com.example.myapplication.data.remote.dto.SeatMapDto
+import com.example.myapplication.data.remote.dto.SeatRowDto
 import com.example.myapplication.data.remote.dto.ShowtimeDto
+import com.example.myapplication.data.remote.dto.VoucherDto
+import com.example.myapplication.data.remote.enums.PaymentMethod
+import com.example.myapplication.data.remote.enums.SeatStatus
+import com.example.myapplication.data.remote.enums.SeatType
+import com.example.myapplication.data.remote.enums.VoucherDiscountType
 import com.example.myapplication.domain.model.Movie
-import com.example.myapplication.domain.model.MovieDetail
 import com.example.myapplication.domain.repository.MovieRepository
+import kotlinx.coroutines.delay
+import java.math.BigDecimal
 import javax.inject.Inject
+import java.time.Instant
+import java.time.LocalDateTime
 
 class MovieRepositoryImpl @Inject constructor(
-    private val movieApi: MovieApi
+    private val movieApi: MovieApi,
+    private val seatApi: SeatApi
 ) : MovieRepository {
 
     override suspend fun getBanners(): List<String> {
@@ -173,4 +193,165 @@ class MovieRepositoryImpl @Inject constructor(
             )
         )
     }
+
+    override suspend fun getSeatMap(showtimeId: String): SeatMapDto {
+
+        val rows = ('A'..'F').map { rowChar ->
+
+            val seats = (1..9).map { seatNumber ->
+
+                val seatId = "$rowChar$seatNumber"
+
+                SeatDto(
+                    id = seatId,
+                    seatRow = rowChar.toString(),
+                    seatNumber = seatNumber,
+                    seatType = if (rowChar >= 'D') SeatType.VIP else SeatType.NORMAL,
+                    status = if (seatId == "A1") SeatStatus.HELD_BY_ME else SeatStatus.AVAILABLE,
+                    price = if (rowChar >= 'D') 120000.0 else 90000.0
+                )
+            }
+
+            SeatRowDto(
+                row = rowChar.toString(),
+                seats = seats
+            )
+        }
+
+        return SeatMapDto(
+            showtimeId = showtimeId,
+            sessionId = "S1",
+            expiresAt = java.time.Instant.now()
+                .plusSeconds(600)
+                .toString(),
+            rows = rows
+        )
+    }
+
+
+
+
+    override suspend fun holdSeat(
+        showtimeId: String,
+        seatId: String
+    ): HoldSeatResponse {
+
+        delay(300)
+
+        return HoldSeatResponse(
+            id = seatId,
+            seatRow = seatId[0].toString(),
+            seatNumber = seatId.substring(1).toInt(),
+            seatType = SeatType.NORMAL,
+            price = 90000.0,
+            expiresAt = java.time.Instant.now()
+                .plusSeconds(600)
+                .toString(),
+
+            sessionId = "OK"
+        )
+    }
+
+    override suspend fun cancelSeat(
+        seatId: String
+    ) {
+
+        delay(200)
+
+    }
+
+    override suspend fun getCombos(): List<ComboDto> {
+
+        return listOf(
+            ComboDto(
+                id = "abc",
+                name = "Combo See Mê - Ice Cream",
+                description = "1 Ly Ice Cream + 1 Nước + 1 Bắp",
+                price = BigDecimal(69000),
+                imageUrl = null,
+                isAvailable = true
+            ),
+            ComboDto(
+                id = "abc1",
+                name = "Combo See Mê - Mùi Phô",
+                description = "1 Ly Mùi Phô + 1 Nước + 1 Bắp",
+                price = BigDecimal(89000),
+                imageUrl = null,
+                isAvailable = true
+            ),
+            ComboDto(
+                id = "abc2",
+                name = "Beta Combo 69oz",
+                description = "1 Bắp + 1 Nước",
+                price = BigDecimal(69000),
+                imageUrl = null,
+                isAvailable = true
+            ),
+            ComboDto(
+                id = "abc3",
+                name = "Family Combo",
+                description = "2 Bắp + 4 Nước + Snack",
+                price = BigDecimal(149000),
+                imageUrl = null,
+                isAvailable = true
+            )
+        )
+    }
+
+    override suspend fun getAvailableVouchers(): List<VoucherDto> {
+
+        return listOf(
+            VoucherDto(
+                id = "ab",
+                code = "BETA50",
+                title = "Giảm 50K",
+                description = "Đơn từ 150K",
+                discountType = VoucherDiscountType.FIXED_AMOUNT,
+                discountValue = BigDecimal(50000),
+                maxDiscount = null,
+                minOrderAmount = BigDecimal(150000),
+                expiryDate = LocalDateTime.now().plusDays(30),
+                isUsable = true
+            ),
+            VoucherDto(
+                id = "ab1",
+                code = "BETA10",
+                title = "Giảm 10%",
+                description = "Tối đa 40K",
+                discountType = VoucherDiscountType.PERCENTAGE,
+                discountValue = BigDecimal(10),
+                maxDiscount = BigDecimal(40000),
+                minOrderAmount = BigDecimal(100000),
+                expiryDate = LocalDateTime.now().plusDays(15),
+                isUsable = true
+            )
+        )
+    }
+
+    override suspend fun getAvailablePoints(): Int {
+
+        return 12000
+    }
+
+    override suspend fun createBooking(request: CreateBookingRequest): BookingDto {
+        return BookingDto(
+            id = "1",
+            ticketCode = "abc",
+            qrUrl = "abc",
+            status = "abc"
+        )
+    }
+
+    override suspend fun createPayment(
+        bookingId: String,
+        paymentMethod: PaymentMethod
+    ): PaymentDto {
+            TODO("Not yet implemented")
+    }
+
+
+
+
+
+
 }

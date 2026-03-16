@@ -1,5 +1,6 @@
 package com.example.myapplication.presentation.screen.auth.register
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.repository.AuthRepository
@@ -42,13 +43,14 @@ class RegisterViewModel @Inject constructor(
             )
 
             try {
-
+                Log.d("RegisterViewModel", "pass")
                 val response = repository.register(
                     email = _state.value.email,
                     password = _state.value.password,
                     fullName = _state.value.fullName,
                     phone = _state.value.phone
                 )
+                Log.d("RegisterViewModel", "register: $response")
 
                 _state.value = _state.value.copy(
                     isLoading = false,

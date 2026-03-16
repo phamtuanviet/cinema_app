@@ -48,7 +48,7 @@ import com.google.accompanist.permissions.*
 fun MovieBookingScreen(
     movieId: String,
     onMovieDetailClick: (String) -> Unit,
-    onShowtimeClick: (showtimeId: String) -> Unit,
+    onShowtimeClick: (showtimeId: String,movieId: String) -> Unit,
 
     viewModel: MovieBookingViewModel = hiltViewModel()
 ) {
@@ -337,7 +337,8 @@ fun MovieBookingScreen(
                                         .clickable {
 
                                             onShowtimeClick(
-                                                showtime.id,
+                                                showtime.id
+                                                ,movieId
                                             )
 
                                         }

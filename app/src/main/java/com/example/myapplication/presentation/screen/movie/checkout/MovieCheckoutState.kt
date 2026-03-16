@@ -1,6 +1,10 @@
 package com.example.myapplication.presentation.screen.movie.checkout
 
-data class MovieCheckoutState (
-    val isLoading: Boolean = true,
-    val error: String? = ""
+import com.example.myapplication.data.remote.enums.PaymentMethod
+
+data class MovieCheckoutState(
+    val bookingId: String = "",
+    val selectedPaymentMethod: PaymentMethod? = null,
+    val isLoading: Boolean = false,
+    val error: String? = null
 )

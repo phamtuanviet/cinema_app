@@ -19,15 +19,25 @@ sealed class MovieRoute(val route: String) {
             return "movie_showtime/$movieId"
         }
     }
-    object SeatSelection : MovieRoute("seat_selection/{showtimeId}") {
-        fun createRoute(showtimeId: String): String {
-            return "seat_selection/$showtimeId"
+    object SeatSelection : MovieRoute("seat_selection/{showtimeId}/{movieId}") {
+        fun createRoute(showtimeId: String,movieId: String): String {
+            return "seat_selection/$showtimeId/$movieId"
         }
     }
     object Checkout : MovieRoute("checkout/{bookingId}") {
-        fun createRoute(bookingId: String): String {
+        fun createRoute(
+            bookingId: String,
+        ): String {
+
             return "checkout/$bookingId"
         }
+    }
+
+    object OtherOptions : MovieRoute(
+        "movie_other_options/{seatHoldSessionId}"
+    ) {
+        fun createRoute(seatHoldSessionId: String) =
+            "movie_other_options/$seatHoldSessionId"
     }
 
 }

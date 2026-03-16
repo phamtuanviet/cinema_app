@@ -44,4 +44,7 @@ interface MovieApi {
         @Query("lng") lng: Double
     ): List<CinemaShowtimeDto>
 
+
+
+
 }
