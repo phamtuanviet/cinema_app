@@ -11,6 +11,6 @@ fun NavGraphBuilder.mainNavGraph(
 ) {
 
     composable(MainRoute.BottomGraph.route) {
-        MainScreen()
+        MainScreen(navController)
     }
 }

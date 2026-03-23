@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -22,7 +23,7 @@ import com.example.myapplication.presentation.navigation.route.PromotionRoute
 import com.example.myapplication.presentation.navigation.route.VoucherRoute
 
 @Composable
-fun MainScreen() {
+fun MainScreen(rootNavController: NavHostController) {
 
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState()
@@ -59,11 +60,11 @@ fun MainScreen() {
             modifier = Modifier.padding(padding)
         ) {
 
-            movieNavGraph(navController)
-            cinemaNavGraph(navController)
-            voucherNavGraph(navController)
-            promotionNavGraph(navController)
-            profileNavGraph(navController)
+            movieNavGraph(navController,rootNavController)
+            cinemaNavGraph(navController,rootNavController)
+            voucherNavGraph(navController,rootNavController)
+            promotionNavGraph(navController,rootNavController)
+            profileNavGraph(navController,rootNavController)
 
         }
 

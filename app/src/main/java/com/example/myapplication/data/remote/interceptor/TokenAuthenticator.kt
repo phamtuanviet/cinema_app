@@ -1,5 +1,6 @@
 package com.example.myapplication.data.remote.interceptor
 
+import android.util.Log
 import com.example.myapplication.core.datastore.SessionManager
 import com.example.myapplication.data.remote.api.AuthApi
 import com.example.myapplication.data.remote.dto.RefreshRequest
@@ -33,8 +34,10 @@ class TokenAuthenticator @Inject constructor(
             }
 
             runBlocking {
-                sessionManager.saveAccessToken(newToken.accessToken)
-                sessionManager.saveRefreshToken(newToken.refreshToken)
+                sessionManager.saveTokens(
+                    newToken.accessToken,
+                    newToken.refreshToken
+                )
             }
 
             response.request.newBuilder()
@@ -45,7 +48,9 @@ class TokenAuthenticator @Inject constructor(
                 .build()
 
         } catch (e: Exception) {
-            runBlocking { sessionManager.clearToken() }
+            Log.d("TokenAuthenticator", e.toString())
+
+            runBlocking { sessionManager.clearTokens() }
             null
         }
     }

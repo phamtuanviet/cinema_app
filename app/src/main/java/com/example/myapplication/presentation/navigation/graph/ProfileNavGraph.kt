@@ -6,13 +6,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.example.myapplication.presentation.navigation.route.MainRoute
 import com.example.myapplication.presentation.navigation.route.ProfileRoute
+import com.example.myapplication.presentation.navigation.route.RootRoute
 import com.example.myapplication.presentation.screen.profile.my_tickets.ProfileMyTicketsScreen
 import com.example.myapplication.presentation.screen.profile.notification.ProfileNotificationScreen
 import com.example.myapplication.presentation.screen.profile.profile.ProfileScreen
 import com.example.myapplication.presentation.screen.profile.settings.ProfileSettingsScreen
 
 fun NavGraphBuilder.profileNavGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    rootNavController: NavHostController
 ) {
 
     navigation(
@@ -21,7 +23,13 @@ fun NavGraphBuilder.profileNavGraph(
     ) {
 
         composable(ProfileRoute.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(
+                onLogoutSuccess =  {
+                    rootNavController.navigate(RootRoute.AuthGraph.route) {
+                        popUpTo(0)
+                    }
+                }
+            )
         }
 
         composable(ProfileRoute.Settings.route) {

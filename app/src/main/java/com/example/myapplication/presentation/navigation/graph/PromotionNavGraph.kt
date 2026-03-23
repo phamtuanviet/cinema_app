@@ -10,7 +10,8 @@ import com.example.myapplication.presentation.screen.promotion.promotion_detail.
 import com.example.myapplication.presentation.screen.promotion.promotion_list.PromotionListScreen
 
 fun NavGraphBuilder.promotionNavGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    rootNavController: NavHostController
 ) {
 
     navigation(

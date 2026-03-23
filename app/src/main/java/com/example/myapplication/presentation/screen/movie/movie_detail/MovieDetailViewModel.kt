@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.orEmpty
 
 @HiltViewModel
 class MovieDetailViewModel @Inject constructor(
@@ -20,7 +21,6 @@ class MovieDetailViewModel @Inject constructor(
     val state: StateFlow<MovieDetailState> = _state.asStateFlow()
 
     fun loadMovie(movieId: String) {
-
         viewModelScope.launch {
 
             _state.value = _state.value.copy(
@@ -30,11 +30,11 @@ class MovieDetailViewModel @Inject constructor(
 
             try {
 
-                val movie = repository.getMovieDetail(movieId)
+                val movie = repository.getMovie(movieId)
 
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    movie = movie
+                    movie = movie.getOrNull()
                 )
 
             } catch (e: Exception) {

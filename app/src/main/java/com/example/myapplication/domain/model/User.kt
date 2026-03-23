@@ -6,5 +6,6 @@ data class User(
     val fullName: String,
     val phone : String,
     val isVerified : Boolean,
-    val role : String
+    val role : String,
+    val avatarUrl : String? = null,
 )

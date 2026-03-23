@@ -17,11 +17,14 @@ import com.example.myapplication.presentation.screen.movie.movie_list.MovieListS
 import com.example.myapplication.presentation.screen.movie.other_options.MovieOtherOptionsScreen
 import com.example.myapplication.presentation.screen.movie.seat_selection.MovieSeatSelectionScreen
 import com.example.myapplication.presentation.screen.movie.showtime.MovieShowtimeScreen
+import com.example.myapplication.presentation.screen.payment.failed.PaymentFailedScreen
+import com.example.myapplication.presentation.screen.payment.sucess.PaymentSuccessScreen
 import com.example.myapplication.utils.openPayment
 import java.util.UUID
 
 fun NavGraphBuilder.movieNavGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    rootNavController: NavHostController
 ) {
 
     navigation(
@@ -98,7 +101,6 @@ fun NavGraphBuilder.movieNavGraph(
                 backStackEntry.arguments?.getString("showtimeId")!!
 
             MovieSeatSelectionScreen(
-                movieId = movieId,
                 showtimeId = showtimeId,
                 onContinueClick = { sessionId ->
 
@@ -136,6 +138,7 @@ fun NavGraphBuilder.movieNavGraph(
                 }
             )
         }
+
         composable(
             route = MovieRoute.Checkout.route,
             arguments = listOf(
@@ -143,13 +146,40 @@ fun NavGraphBuilder.movieNavGraph(
                     type = NavType.StringType
                 }
             )
-        ){
-            val context = LocalContext.current
-            val bookingId = it.arguments?.getString("bookingId")!!
+        ) { backStackEntry ->
+
+            val bookingId = backStackEntry.arguments
+                ?.getString("bookingId")
+                .orEmpty()
+
             MovieCheckoutScreen(
                 bookingId = bookingId,
-                onPaymentCreated = { paymentUrl ->
-                    openPayment(context, paymentUrl)
+
+                onPaymentSuccess = {
+                    navController.navigate("payment_success") {
+                        popUpTo(MovieRoute.MovieList.route)
+                    }
+                },
+                onPaymentFailed = {
+                    navController.navigate("payment_failed")
+                }
+            )
+        }
+
+        composable("payment_success") {
+            PaymentSuccessScreen(
+                onBackHome = {
+                    navController.navigate(MovieRoute.MovieList.route) {
+                        popUpTo(MainRoute.MovieGraph.route)
+                    }
+                }
+            )
+        }
+
+        composable("payment_failed") {
+            PaymentFailedScreen(
+                onRetry = {
+                    navController.popBackStack()
                 }
             )
         }

@@ -10,19 +10,17 @@ import retrofit2.http.Query
 
 interface MovieApi {
 
-    @GET("movies/banners")
-    suspend fun getBanners(): Response<List<String>>
 
-    @GET("movies/now-showing")
-    suspend fun getNowShowingMovies(): Response<List<MovieDto>>
+    @GET("movie/now-showing")
+    suspend fun getNowShowingMovies(): List<MovieDto>
 
-    @GET("movies/coming-soon")
-    suspend fun getComingSoonMovies(): Response<List<MovieDto>>
+    @GET("movie/coming-soon")
+    suspend fun getComingSoonMovies(): List<MovieDto>
 
-    @GET("movies/{id}")
+    @GET("movie/{id}")
     suspend fun getMovieDetail(
-        @Path("id") movieId: Int
-    ): Response<MovieDto>
+        @Path("id") movieId: String
+    ): MovieDto
 
     @GET("movies/{movieId}")
     suspend fun getMovie(

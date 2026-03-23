@@ -1,12 +1,13 @@
 package com.example.myapplication.data.remote.interceptor
 
+import android.util.Log
 import com.example.myapplication.core.datastore.SessionManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
 class AuthInterceptor(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -15,9 +16,13 @@ class AuthInterceptor(
             sessionManager.getAccessToken()
         }
 
+        Log.d("AuthInterceptor", "Bearer $token")
+
+
         val request = chain.request().newBuilder()
 
         token?.let {
+
             request.addHeader(
                 "Authorization",
                 "Bearer $it"

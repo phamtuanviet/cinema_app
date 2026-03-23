@@ -13,7 +13,8 @@ import com.example.myapplication.presentation.screen.cinema.seat_selection.Cinem
 import com.example.myapplication.presentation.screen.cinema.showtime.CinemaShowtimeScreen
 
 fun NavGraphBuilder.cinemaNavGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    rootNavController: NavHostController
 ) {
 
     navigation(

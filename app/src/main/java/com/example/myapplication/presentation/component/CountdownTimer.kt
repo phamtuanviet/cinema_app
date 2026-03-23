@@ -1,66 +1,66 @@
 package com.example.myapplication.presentation.component
-
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import java.time.Instant
+
 @Composable
 fun CountdownTimer(
-    expiresAt: Long?,
+    expiresAt: String?, // Nhận trực tiếp String thay vì Long
     onExpire: () -> Unit
 ) {
-
     var timeLeft by remember { mutableStateOf(0L) }
 
     LaunchedEffect(expiresAt) {
+        if (expiresAt.isNullOrBlank()) return@LaunchedEffect
 
-        val expireTime = expiresAt ?: return@LaunchedEffect
+        // Parse chuỗi ISO 8601 (UTC) thành mili-giây
+        val expireTimeMillis = try {
+            Instant.parse(expiresAt).toEpochMilli()
+        } catch (e: Exception) {
+            0L // Nếu lỗi parse (chuỗi sai định dạng), gán bằng 0
+        }
+
+        if (expireTimeMillis <= 0L) return@LaunchedEffect
 
         while (true) {
-
             val now = System.currentTimeMillis()
+            val remaining = expireTimeMillis - now
 
-            timeLeft = expireTime - now
-
-            if (timeLeft <= 0) {
+            if (remaining <= 0) {
+                timeLeft = 0
                 onExpire()
                 break
+            } else {
+                timeLeft = remaining
             }
-
-            kotlinx.coroutines.delay(1000)
+            delay(1000)
         }
     }
 
-    val seconds = (timeLeft / 1000) % 60
-    val minutes = (timeLeft / 1000) / 60
+    // Tính toán phút và giây từ timeLeft
+    val totalSeconds = timeLeft / 1000
+    val seconds = totalSeconds % 60
+    val minutes = totalSeconds / 60
 
     Row(
         horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically, // Căn giữa Icon và Text cho đẹp
         modifier = Modifier.fillMaxWidth()
     ) {
-
         Icon(
             imageVector = Icons.Default.AccessTime,
-            contentDescription = null
+            contentDescription = "Time remaining"
         )
-
         Spacer(Modifier.width(8.dp))
-
         Text(
             text = String.format("%02d:%02d", minutes, seconds),
             fontWeight = FontWeight.Bold

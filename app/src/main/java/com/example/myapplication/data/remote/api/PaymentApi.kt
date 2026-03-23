@@ -18,6 +18,6 @@ interface PaymentApi {
     @POST("payment")
     suspend fun createPayment(
         @Body request: CreatePaymentRequest
-    ): Response<PaymentDto>
+    ): PaymentDto
 
 }

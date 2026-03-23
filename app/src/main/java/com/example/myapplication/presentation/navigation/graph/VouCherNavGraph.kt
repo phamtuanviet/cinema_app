@@ -11,7 +11,8 @@ import com.example.myapplication.presentation.screen.voucher.voucher_history.Vou
 import com.example.myapplication.presentation.screen.voucher.voucher_list.VoucherListScreen
 
 fun NavGraphBuilder.voucherNavGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    rootNavController: NavHostController
 ) {
 
     navigation(

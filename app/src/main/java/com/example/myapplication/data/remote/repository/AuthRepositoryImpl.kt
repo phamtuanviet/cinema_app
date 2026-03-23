@@ -8,6 +8,7 @@ import com.example.myapplication.data.remote.dto.LoginRequest
 import com.example.myapplication.data.remote.dto.LogoutRequest
 import com.example.myapplication.data.remote.dto.RegisterRequest
 import com.example.myapplication.data.remote.dto.ResetPasswordRequest
+import com.example.myapplication.data.remote.dto.UserDto
 import com.example.myapplication.data.remote.dto.VerifyEmailRequest
 import com.example.myapplication.data.remote.dto.VerifyForgotPasswordRequest
 import com.example.myapplication.domain.repository.AuthRepository
@@ -15,7 +16,7 @@ import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
 ) : AuthRepository {
     override suspend fun login(
         email: String,
@@ -35,11 +36,14 @@ class AuthRepositoryImpl @Inject constructor(
                     ?: throw Exception("Empty response")
 
                 val user = response.body()!!.user;
-                sessionManager.saveAccessToken(response.body()!!.accessToken)
-                sessionManager.saveRefreshToken(response.body()!!.refreshToken)
-                sessionManager.saveUserId(user.id)
-                sessionManager.saveUserEmail(user.email)
-                sessionManager.saveRole(user.role)
+
+                sessionManager.saveTokens(
+                    response.body()!!.accessToken,
+                    response.body()!!.refreshToken
+                )
+                sessionManager.saveUser(UserDto(user.id, user.email
+                    , user.fullName, user.phone, user.isVerified
+                    , user.role,user.avatarUrl))
 
                 return true;
             } else {
@@ -137,15 +141,32 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun logout(
         refreshToken: String
     ): Boolean {
-        val response = authApi.logout(LogoutRequest(refreshToken))
-        if (response.isSuccessful) {
-            val body = response.body()
-                ?: throw Exception("Empty response")
-
-            sessionManager.clearToken();
-            return true;
-        } else {
-            throw Exception("Logout failed")
-        }
+        sessionManager.clearTokens();
+        sessionManager.clearUser();
+        return true;
+//        return try {
+//        val response = authApi.logout(LogoutRequest(refreshToken))
+//        if (response.isSuccessful) {
+//            val body = response.body()
+//                ?: throw Exception("Empty response")
+//
+//            sessionManager.clearTokens();
+//            sessionManager.clearUser();
+//            return true;
+//        } else {
+//            val body = response.body()
+//                ?: throw Exception("Empty response")
+//
+//            sessionManager.clearTokens();
+//            sessionManager.clearUser();
+//            return true;
+//            throw Exception("Logout failed")
+//
+//        }}
+//        catch (ex: Exception) {
+//
+//            Log.e("LOGOUT_ERROR", ex.toString())
+//            false
+//        }
     }
 }

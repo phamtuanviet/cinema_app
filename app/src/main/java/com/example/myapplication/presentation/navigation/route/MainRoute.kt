@@ -1,51 +1,54 @@
+
+
 package com.example.myapplication.presentation.navigation.route
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.ConfirmationNumber
-import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Theaters
 
 sealed class MainRoute(
     val route: String,
     val title: String = "",
-    val icon: ImageVector? = null
+    val selectedIcon: ImageVector? = null,
+    val unselectedIcon: ImageVector? = null
 ) {
-
     // Graph (dùng cho BottomBar)
     object BottomGraph : MainRoute("bottom_graph")
 
     // Các màn hình chính
     object MovieGraph : MainRoute(
-        "movie_graph",
-        "Movie",
-        Icons.Default.Movie
+        route = "movie_graph",
+        title = "Phim",
+        selectedIcon = Icons.Filled.Movie,
+        unselectedIcon = Icons.Outlined.Movie
     )
 
     object CinemaGraph : MainRoute(
-        "cinema_graph",
-        "Cinema",
-        Icons.Default.Theaters
+        route = "cinema_graph",
+        title = "Rạp",
+        selectedIcon = Icons.Filled.Theaters,
+        unselectedIcon = Icons.Outlined.Theaters
     )
 
     object VoucherGraph : MainRoute(
-        "voucher_graph",
-        "Voucher",
-        Icons.Default.ConfirmationNumber
+        route = "voucher_graph",
+        title = "Voucher",
+        selectedIcon = Icons.Filled.ConfirmationNumber,
+        unselectedIcon = Icons.Outlined.ConfirmationNumber
     )
 
     object PromotionGraph : MainRoute(
-        "promotion_graph",
-        "Promotion",
-        Icons.Default.LocalOffer
+        route = "promotion_graph",
+        title = "Ưu đãi", // Rút gọn chữ để UI thoáng hơn
+        selectedIcon = Icons.Filled.LocalOffer, // Hoặc CardGiftcard
+        unselectedIcon = Icons.Outlined.LocalOffer
     )
 
     object ProfileGraph : MainRoute(
-        "profile_graph",
-        "Profile",
-        Icons.Default.Person
+        route = "profile_graph",
+        title = "Cá nhân",
+        selectedIcon = Icons.Filled.Person,
+        unselectedIcon = Icons.Outlined.Person
     )
 }

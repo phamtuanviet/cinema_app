@@ -1,5 +1,11 @@
 package com.example.myapplication.data.remote.api
 
+import com.example.myapplication.data.remote.dto.CancelSeatCoupleRequest
+import com.example.myapplication.data.remote.dto.CancelSeatCoupleResponse
+import com.example.myapplication.data.remote.dto.CancelSeatRequest
+import com.example.myapplication.data.remote.dto.CancelSeatResponse
+import com.example.myapplication.data.remote.dto.HoldSeatCoupleRequest
+import com.example.myapplication.data.remote.dto.HoldSeatCoupleResponse
 import com.example.myapplication.data.remote.dto.HoldSeatRequest
 import com.example.myapplication.data.remote.dto.HoldSeatResponse
 import com.example.myapplication.data.remote.dto.ReleaseSeatRequestDto
@@ -13,23 +19,33 @@ import retrofit2.http.Path
 interface SeatApi {
 
     // lấy sơ đồ ghế
-    @GET("showtimes/{showtimeId}/seats")
+    @GET("seat/{showtimeId}/seats")
     suspend fun getSeatMap(
         @Path("showtimeId") showtimeId: String
-    ): Response<SeatMapDto>
+    ): SeatMapDto
 
 
     // giữ ghế
-    @POST("seats/hold")
-    suspend fun holdSeats(
+    @POST("seat/hold")
+    suspend fun holdSeat(
         @Body request: HoldSeatRequest
-    ): Response<HoldSeatResponse>
+    ): HoldSeatResponse
 
 
     // bỏ giữ ghế
-    @POST("seats/release")
-    suspend fun releaseSeats(
-        @Body request: ReleaseSeatRequestDto
-    ): Response<Unit>
+    @POST("seat/cancel")
+    suspend fun cancelSeat(
+        @Body request: CancelSeatRequest
+    ): CancelSeatResponse
+
+    @POST("seat/hold-couple")
+    suspend fun holdCoupleSeat(
+        @Body request: HoldSeatCoupleRequest
+    ): HoldSeatCoupleResponse
+
+    @POST("seat/cancel-couple")
+    suspend fun cancelCoupleSeat(
+        @Body request: CancelSeatCoupleRequest
+    ): CancelSeatCoupleResponse
 
 }

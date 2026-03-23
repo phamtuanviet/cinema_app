@@ -5,15 +5,31 @@ import com.example.myapplication.data.remote.enums.SeatType
 data class HoldSeatRequest(
     val showtimeId: String,
     val seatId: String,
-    val sessionId: String?
 )
 
 data class HoldSeatResponse(
     val id: String,
     val seatRow: String,
     val seatNumber: Int,
-    val seatType: SeatType,
-    val price: Double,
+    val seatHoldSessionId :String,
+    val price : Double,
+    val isSuccess : Boolean,
     val expiresAt : String,
-    val sessionId : String,
 )
+
+data class HoldSeatCoupleRequest(
+    val showtimeId: String,
+    val firstSeatId: String,
+    val secondSeatId : String,
+)
+
+data class HoldSeatCoupleResponse(
+    val id: String,
+    val seatHoldSessionId :String,
+    val price : Double,
+    val isSuccess : Boolean,
+    val expiresAt : String,
+)
+
+
+

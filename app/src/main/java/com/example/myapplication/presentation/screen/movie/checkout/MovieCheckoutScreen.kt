@@ -1,85 +1,101 @@
 package com.example.myapplication.presentation.screen.movie.checkout
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.data.remote.enums.PaymentMethod
-import com.example.myapplication.presentation.component.PaymentMethodItem
-import com.example.myapplication.presentation.screen.cinema.showtime.CinemaShowtimeViewModel
+import com.example.myapplication.presentation.app.AppViewModel
+import com.example.myapplication.utils.openPayment
 
 @Composable
 fun MovieCheckoutScreen(
     bookingId: String,
-    onPaymentCreated: (String) -> Unit,
+    onPaymentSuccess: () -> Unit,
+    onPaymentFailed: () -> Unit,
     viewModel: MovieCheckoutViewModel = hiltViewModel()
 ) {
 
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
 
-    LaunchedEffect(bookingId) {
-        viewModel.init(bookingId)
+    val activity = LocalContext.current as ComponentActivity
+    val appViewModel: AppViewModel = hiltViewModel(activity)
+
+    val paymentResult by appViewModel.paymentResult.collectAsState()
+
+    // =========================
+    // 🔥 OPEN VNPAY
+    // =========================
+    LaunchedEffect(state.paymentUrl) {
+        state.paymentUrl?.let { url ->
+            openPayment(context, url)
+            viewModel.clearPaymentUrl()
+        }
     }
 
+    // =========================
+    // 🔥 HANDLE RETURN
+    // =========================
+    LaunchedEffect(paymentResult?.txnRef) {
+        val result = paymentResult ?: return@LaunchedEffect
+
+        // ✅ đúng booking
+        if (result.txnRef != bookingId) return@LaunchedEffect
+
+        if (result.code == "00") {
+            onPaymentSuccess()
+        } else {
+            onPaymentFailed()
+        }
+
+        // 🔥 clear ở đúng chỗ
+        appViewModel.clearPaymentResult()
+    }
+
+    // =========================
+    // UI
+    // =========================
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
 
-        Text(
-            text = "Chọn phương thức thanh toán",
-            style = MaterialTheme.typography.titleLarge
-        )
+        Text("Select Payment Method")
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        PaymentMethodItem(
-            title = "ZaloPay",
-            selected = state.selectedPaymentMethod == PaymentMethod.ZALOPAY,
-            onClick = {
-                viewModel.selectPayment(PaymentMethod.ZALOPAY)
-            }
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        PaymentMethodItem(
-            title = "VNPay",
-            selected = state.selectedPaymentMethod == PaymentMethod.VNPAY,
-            onClick = {
-                viewModel.selectPayment(PaymentMethod.VNPAY)
-            }
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            modifier = Modifier.fillMaxWidth(),
-            enabled = state.selectedPaymentMethod != null && !state.isLoading,
             onClick = {
-
-                viewModel.createPayment(
-                    onPaymentCreated
-                )
+                viewModel.selectPaymentMethod(PaymentMethod.VNPAY)
             }
         ) {
-
-            Text("Thanh toán")
-
+            Text("VNPAY")
         }
 
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = {
+                viewModel.createPayment(bookingId)
+            },
+            enabled = state.selectedPaymentMethod != null
+        ) {
+            Text("Pay Now")
+        }
     }
 }

@@ -3,127 +3,141 @@ package com.example.myapplication.presentation.screen.movie.seat_selection
 import SeatGrid
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EventSeat
-import androidx.compose.material.icons.filled.Chair
-import androidx.compose.material.icons.filled.AirlineSeatReclineExtra
-import androidx.compose.material.icons.filled.AirlineSeatIndividualSuite
-import androidx.compose.material.icons.filled.AccessTime
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.*
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.myapplication.data.remote.enums.SeatStatus
-import com.example.myapplication.presentation.component.BottomBar
 import com.example.myapplication.presentation.component.BottomBarSelection
 import com.example.myapplication.presentation.component.CountdownTimer
 import com.example.myapplication.presentation.component.MovieHeader
 import com.example.myapplication.presentation.component.ScreenIndicator
 import com.example.myapplication.presentation.component.SeatLegend
 import com.example.myapplication.utils.parseExpireTime
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 
 @Composable
 fun MovieSeatSelectionScreen(
     showtimeId: String,
-    movieId: String,
-    onContinueClick: (sessionId : String) -> Unit,
+    onContinueClick: (sessionId: String) -> Unit,
     onSessionExpired: () -> Unit,
     viewModel: MovieSeatSelectionViewModel = hiltViewModel()
 ) {
-
     val state by viewModel.state.collectAsState()
     var showExpireDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadMovie(movieId)
-        viewModel.loadSeatMap(showtimeId)
+    // ==============================
+    // 1. LOAD DATA & EFFECTS
+    // ==============================
+    LaunchedEffect(showtimeId) {
+        viewModel.loadData(showtimeId)
     }
 
-    if (state.isLoadingSeatMap || state.isLoadingMovie) {
-
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
+    state.error?.let { error ->
+        LaunchedEffect(error) {
+            // TODO: Tích hợp Snackbar Host vào Scaffold để show lỗi đẹp hơn
+            println("ERROR: $error")
+            viewModel.clearError()
         }
+    }
 
-    } else {
+    // ==============================
+    // 2. MAIN LAYOUT (Sử dụng Scaffold)
+    // ==============================
+    Scaffold(
+        bottomBar = {
+            // Bao bọc cả Countdown và BottomBar vào khu vực dưới cùng
+            Column(
+                modifier = Modifier.background(Color.White)
+            ) {
+                // COUNTDOWN
+                if (state.expiresAt != null) {
+                    CountdownTimer(
+                        expiresAt = state.expiresAt, // Đảm bảo hàm này parse đúng Long
+                        onExpire = { showExpireDialog = true }
+                    )
+                }
 
-        Column(
+                // BOTTOM BAR TIẾP TỤC
+                if (state.selectedSeats.isNotEmpty()) {
+                    BottomBarSelection(
+                        totalPrice = state.totalPrice,
+                        selectedSeats = state.selectedSeatNames,
+                        onContinueClick = {
+                            state.seatHoldSessionId?.let { sessionId ->
+                                onContinueClick(sessionId)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    ) { paddingValues ->
+
+        // ==============================
+        // 3. CONTENT & LOADING STATE
+        // ==============================
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF4F4F4))
+                .padding(paddingValues) // Padding tự động để không bị lẹm vào BottomBar
         ) {
-
-            MovieHeader(state)
-
-            SeatLegend()
-
-            ScreenIndicator()
-
-            SeatGrid(
-                rows = state.seatMap?.rows ?: emptyList(),
-                selectedSeats = state.selectedSeats,
-                onSeatClick = {
-                    viewModel.toggleSeat(showtimeId, it)
-                }
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if(state.expiresAt != null) {
-                CountdownTimer(parseExpireTime(state.expiresAt), onExpire = {
-                    showExpireDialog = true
-                })
-            }
-
-            if (state.selectedSeats.isNotEmpty()) {
-                BottomBarSelection(
-                    totalPrice = state.totalPrice,
-                    selectedSeats = state.selectedSeats.toList(),
-                    onContinueClick = {
-                        state.sessionId?.let { sessionId ->
-                            onContinueClick(sessionId)
-                        }
-                    }                )
-            }
-        }
-        if (showExpireDialog) {
-
-            AlertDialog(
-                onDismissRequest = { },
-
-                title = {
-                    Text("Session Expired")
-                },
-
-                text = {
-                    Text(
-                        "Your seat hold session has expired. The seats have been released. Please select a new showtime."
-                    )
-                },
-
-                confirmButton = {
-
-                    Button(
-                        onClick = {
-                            showExpireDialog = false
-                            onSessionExpired()
-                        }
-                    ) {
-                        Text("OK")
+            if (state.isLoading) {
+                // LOADING HIỂN THỊ ĐÈ LÊN BOX HOẶC Ở GIỮA
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else {
+                // NỘI DUNG CHÍNH (Chỉ cuộn phần nội dung nếu màn hình nhỏ)
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    state.movie?.let { movie ->
+                        MovieHeader(movie)
                     }
+                    SeatLegend()
+
+                    ScreenIndicator()
+
+                    SeatGrid(
+                        rows = state.seatMap?.rows ?: emptyList(),
+                        selectedSeats = state.selectedSeats,
+                        onSeatClick = { seatIds ->
+                            viewModel.toggleSeats(showtimeId, seatIds)
+                        }
+                    )
                 }
-            )
+            }
         }
+    }
+
+    // ==============================
+    // 4. DIALOGS
+    // ==============================
+    if (showExpireDialog) {
+        AlertDialog(
+            onDismissRequest = { /* Không cho dismiss bằng cách bấm ra ngoài */ },
+            title = {
+                Text("Hết thời gian giữ ghế")
+            },
+            text = {
+                Text("Phiên giữ ghế của bạn đã hết hạn. Các ghế đã được giải phóng. Vui lòng chọn lại.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExpireDialog = false
+                        onSessionExpired()
+                    }
+                ) {
+                    Text("Đồng ý")
+                }
+            }
+        )
     }
 }

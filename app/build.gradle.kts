@@ -82,6 +82,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.security:security-crypto:1.1.0-alpha03")
     // Hilt
     implementation("com.google.dagger:hilt-android:2.51")
     ksp("com.google.dagger:hilt-compiler:2.51")
