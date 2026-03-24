@@ -1,6 +1,5 @@
 package com.example.myapplication.presentation.screen.auth.forgot
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.repository.AuthRepository
@@ -19,6 +18,7 @@ class ForgotPasswordViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     fun onEmailChange(email: String) {
+        // Xóa thông báo lỗi khi người dùng bắt đầu nhập lại
         _state.value = _state.value.copy(
             email = email,
             error = null
@@ -26,36 +26,39 @@ class ForgotPasswordViewModel @Inject constructor(
     }
 
     fun sendOtp() {
+        val email = _state.value.email.trim()
 
-        val email = _state.value.email
-
-        if (email.isBlank()) {
-            _state.value = _state.value.copy(
-                error = "Email cannot be empty"
-            )
+        // 1. Kiểm tra rỗng
+        if (email.isEmpty()) {
+            _state.value = _state.value.copy(error = "Email không được để trống")
             return
         }
 
-        viewModelScope.launch {
+        // 2. Kiểm tra định dạng Email bằng Regex
+        val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$".toRegex()
+        if (!email.matches(emailRegex)) {
+            _state.value = _state.value.copy(error = "Định dạng email không hợp lệ")
+            return
+        }
 
-            _state.value = _state.value.copy(isLoading = true)
+        // 3. Dữ liệu hợp lệ -> Gọi API
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
 
             try {
-
                 val response = repository.forgotPassword(email)
 
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    isSuccess = response
+                    isSuccess = response,
+                    error = null
                 )
 
             } catch (e: Exception) {
-
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to send OTP"
+                    error = e.message ?: "Gửi mã xác thực thất bại. Vui lòng thử lại!"
                 )
-
             }
         }
     }

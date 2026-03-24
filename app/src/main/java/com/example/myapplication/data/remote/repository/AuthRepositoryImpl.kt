@@ -25,6 +25,7 @@ class AuthRepositoryImpl @Inject constructor(
 
 
         return try {
+            Log.d("LOGIN_DEBUG", "Refresh goi lan $password'")
             val response = authApi.login(
                 LoginRequest(
                     email = email,

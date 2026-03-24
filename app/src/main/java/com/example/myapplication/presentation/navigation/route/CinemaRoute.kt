@@ -7,20 +7,20 @@ sealed class CinemaRoute(val route: String) {
 
     // chi tiết rạp
     object CinemaDetail : CinemaRoute("cinema_detail/{cinemaId}") {
-        fun createRoute(cinemaId: Int): String {
+        fun createRoute(cinemaId: String): String {
             return "cinema_detail/$cinemaId"
         }
     }
 
     // lịch chiếu tại rạp
     object CinemaShowtime : CinemaRoute("cinema_showtime/{cinemaId}") {
-        fun createRoute(cinemaId: Int): String {
+        fun createRoute(cinemaId: String): String {
             return "cinema_showtime/$cinemaId"
         }
     }
 
     object SeatSelection : CinemaRoute("seat_selection/{showtimeId}") {
-        fun createRoute(showtimeId: Int): String {
+        fun createRoute(showtimeId: String): String {
             return "seat_selection/$showtimeId"
         }
     }

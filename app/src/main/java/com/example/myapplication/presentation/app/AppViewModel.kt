@@ -66,6 +66,7 @@ class AppViewModel @Inject constructor(
     // 🔥 HANDLE DEEP LINK PAYMENT
     // =========================
     fun onPaymentResult(code: String?, txnRef: String?) {
+        Log.d("AppViewModel", "onPaymentResult: $code, $txnRef")
         _paymentResult.value = PaymentResult(code, txnRef)
     }
 

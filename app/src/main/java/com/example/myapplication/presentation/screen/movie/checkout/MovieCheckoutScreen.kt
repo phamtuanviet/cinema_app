@@ -1,5 +1,6 @@
 package com.example.myapplication.presentation.screen.movie.checkout
 
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.myapplication.MainActivity
 import com.example.myapplication.data.remote.enums.PaymentMethod
 import com.example.myapplication.presentation.app.AppViewModel
 import com.example.myapplication.utils.openPayment
@@ -32,10 +34,13 @@ fun MovieCheckoutScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
-    val activity = LocalContext.current as ComponentActivity
-    val appViewModel: AppViewModel = hiltViewModel(activity)
+    val appViewModel = (LocalContext.current as MainActivity).appViewModel
 
     val paymentResult by appViewModel.paymentResult.collectAsState()
+
+    LaunchedEffect(paymentResult) {
+        Log.d("CHECK_PAYMENT", "paymentResult = $paymentResult")
+    }
 
     // =========================
     // 🔥 OPEN VNPAY
@@ -50,11 +55,10 @@ fun MovieCheckoutScreen(
     // =========================
     // 🔥 HANDLE RETURN
     // =========================
-    LaunchedEffect(paymentResult?.txnRef) {
-        val result = paymentResult ?: return@LaunchedEffect
+    LaunchedEffect(paymentResult) {
+        Log.d("CHECK_PAYMENT", "paymentResult2 = $paymentResult")
 
-        // ✅ đúng booking
-        if (result.txnRef != bookingId) return@LaunchedEffect
+        val result = paymentResult ?: return@LaunchedEffect
 
         if (result.code == "00") {
             onPaymentSuccess()
@@ -62,7 +66,6 @@ fun MovieCheckoutScreen(
             onPaymentFailed()
         }
 
-        // 🔥 clear ở đúng chỗ
         appViewModel.clearPaymentResult()
     }
 

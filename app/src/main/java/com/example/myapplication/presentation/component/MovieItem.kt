@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,7 +45,9 @@ fun MovieItem(
                 model = movie.posterUrl,
                 contentDescription = movie.title,
                 contentScale = ContentScale.Crop, // Cắt ảnh tràn viền, không bị méo
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                placeholder = painterResource(id = com.example.myapplication.R.drawable.empty),
+                error = painterResource(id = com.example.myapplication.R.drawable.empty),
             )
         }
 

@@ -6,6 +6,7 @@ import com.example.myapplication.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -15,34 +16,32 @@ class VerifyEmailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(VerifyEmailState())
-    val state: StateFlow<VerifyEmailState> = _state
+    val state: StateFlow<VerifyEmailState> = _state.asStateFlow()
 
     fun setEmail(email: String) {
         _state.value = _state.value.copy(email = email)
     }
 
     fun onOtpChange(value: String) {
-        _state.value = _state.value.copy(otp = value)
+        // Chỉ cho phép nhập số và tối đa 6 ký tự
+        val filtered = value.filter { it.isDigit() }.take(6)
+        _state.value = _state.value.copy(otp = filtered, error = null)
     }
 
     fun verify() {
-
         val current = _state.value
 
+        // 1. Kiểm tra độ dài OTP
         if (current.otp.length != 6) {
-            _state.value = current.copy(error = "OTP must be 6 digits")
+            _state.value = current.copy(error = "Mã OTP phải bao gồm đúng 6 chữ số")
             return
         }
 
+        // 2. Gọi API
         viewModelScope.launch {
-
-            _state.value = current.copy(
-                isLoading = true,
-                error = null
-            )
+            _state.value = current.copy(isLoading = true, error = null)
 
             try {
-
                 val result = repository.verifyEmail(
                     email = current.email,
                     otp = current.otp
@@ -50,19 +49,16 @@ class VerifyEmailViewModel @Inject constructor(
 
                 _state.value = current.copy(
                     isLoading = false,
-                    isSuccess = result
+                    isSuccess = result,
+                    error = null
                 )
 
             } catch (e: Exception) {
-
                 _state.value = current.copy(
                     isLoading = false,
-                    error = e.message
+                    error = e.message ?: "Xác thực thất bại. Vui lòng kiểm tra lại mã OTP!"
                 )
-
             }
-
         }
-
     }
 }

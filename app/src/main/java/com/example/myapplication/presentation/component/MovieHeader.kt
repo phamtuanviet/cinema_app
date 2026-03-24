@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage // Lưu ý: Cần import Coil
@@ -27,7 +28,9 @@ fun MovieHeader(movie: MovieDto) {
             model = movie.posterUrl,
             contentDescription = "Poster of ${movie.title}",
             contentScale = ContentScale.Crop, // Cắt ảnh để lấp đầy Box
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            placeholder = painterResource(id = com.example.myapplication.R.drawable.empty),
+            error = painterResource(id = com.example.myapplication.R.drawable.empty),
         )
 
         // 2. Lớp giữa: Gradient đổ bóng từ dưới lên

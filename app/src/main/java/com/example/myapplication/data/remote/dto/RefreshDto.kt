@@ -6,5 +6,5 @@ data class RefreshRequest(
 
 data class RefreshResponse(
     val accessToken: String,
-    val refreshToken: String
+    val refreshToken: String,
 )

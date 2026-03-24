@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,7 +36,9 @@ fun MovieBanner(
             model = movie.posterUrl,
             contentDescription = movie.title,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = com.example.myapplication.R.drawable.empty),
+            error = painterResource(id = com.example.myapplication.R.drawable.empty),
         )
 
         // 🌫 2. Lớp phủ Gradient mờ dần từ giữa xuống đáy

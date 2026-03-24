@@ -1,6 +1,5 @@
 package com.example.myapplication.presentation.screen.auth.reset
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.repository.AuthRepository
@@ -25,38 +24,42 @@ class ResetPasswordViewModel @Inject constructor(
     }
 
     fun onPasswordChange(password: String) {
-        _state.value = _state.value.copy(password = password)
+        // Xóa lỗi khi người dùng bắt đầu gõ lại
+        _state.value = _state.value.copy(password = password, error = null)
     }
 
     fun onConfirmPasswordChange(confirm: String) {
-        _state.value = _state.value.copy(confirmPassword = confirm)
+        // Xóa lỗi khi người dùng bắt đầu gõ lại
+        _state.value = _state.value.copy(confirmPassword = confirm, error = null)
     }
 
     fun resetPassword() {
-
         val password = _state.value.password
         val confirm = _state.value.confirmPassword
 
-        if (password != confirm) {
-            _state.value = _state.value.copy(
-                error = "Passwords do not match"
-            )
+        // 1. Kiểm tra rỗng
+        if (password.isEmpty() || confirm.isEmpty()) {
+            _state.value = _state.value.copy(error = "Vui lòng nhập đầy đủ mật khẩu")
             return
         }
 
+        // 2. Kiểm tra độ dài
         if (password.length < 6) {
-            _state.value = _state.value.copy(
-                error = "Password must be at least 6 characters"
-            )
+            _state.value = _state.value.copy(error = "Mật khẩu phải có ít nhất 6 ký tự")
             return
         }
 
-        viewModelScope.launch {
+        // 3. Kiểm tra khớp mật khẩu
+        if (password != confirm) {
+            _state.value = _state.value.copy(error = "Mật khẩu xác nhận không khớp")
+            return
+        }
 
-            _state.value = _state.value.copy(isLoading = true)
+        // 4. Dữ liệu hợp lệ -> Gọi API
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
 
             try {
-
                 val response = repository.resetPassword(
                     resetToken,
                     password
@@ -64,20 +67,16 @@ class ResetPasswordViewModel @Inject constructor(
 
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    isSuccess = response
+                    isSuccess = response,
+                    error = null
                 )
 
             } catch (e: Exception) {
-
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Reset password failed"
+                    error = e.message ?: "Đặt lại mật khẩu thất bại. Vui lòng thử lại!"
                 )
-
             }
-
         }
-
     }
-
 }

@@ -16,7 +16,7 @@ import com.example.myapplication.utils.handleDeepLink
 
 @Composable
 fun MovieApp(
-    appViewModel: AppViewModel = hiltViewModel()
+    appViewModel: AppViewModel
 ) {
 
     val appState by appViewModel.appState.collectAsState()

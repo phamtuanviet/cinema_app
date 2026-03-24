@@ -5,6 +5,7 @@ import com.example.myapplication.core.datastore.SessionManager
 import com.example.myapplication.data.remote.api.AuthApi
 import com.example.myapplication.data.remote.api.BannerApi
 import com.example.myapplication.data.remote.api.BookingApi
+import com.example.myapplication.data.remote.api.CinemaApi
 import com.example.myapplication.data.remote.api.MovieApi
 import com.example.myapplication.data.remote.api.PaymentApi
 import com.example.myapplication.data.remote.api.SeatApi
@@ -119,6 +120,14 @@ object NetworkModule {
         retrofit: Retrofit
     ): PaymentApi {
         return retrofit.create(PaymentApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCinemaApi(
+        retrofit: Retrofit
+    ): CinemaApi {
+        return retrofit.create(CinemaApi::class.java)
     }
 
 

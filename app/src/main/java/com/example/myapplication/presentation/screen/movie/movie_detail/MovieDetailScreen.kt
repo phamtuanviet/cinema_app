@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -103,7 +104,9 @@ fun MovieDetailScreen(
                         model = movie.posterUrl,
                         contentDescription = movie.title,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = com.example.myapplication.R.drawable.empty),
+                        error = painterResource(id = com.example.myapplication.R.drawable.empty),
                     )
 
                     // Lớp phủ Gradient đen tối dần từ dưới lên và trên xuống để chữ/icon nổi bật
@@ -169,7 +172,9 @@ fun MovieDetailScreen(
                         .width(120.dp)
                         .height(180.dp)
                         .shadow(elevation = 8.dp, shape = RoundedCornerShape(12.dp))
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp)),
+                    placeholder = painterResource(id = com.example.myapplication.R.drawable.empty),
+                    error = painterResource(id = com.example.myapplication.R.drawable.empty),
                 )
 
                 Spacer(Modifier.width(16.dp))

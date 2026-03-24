@@ -4,6 +4,7 @@ package com.example.myapplication.di
 import com.example.myapplication.data.remote.repository.AuthRepositoryImpl
 import com.example.myapplication.data.remote.repository.BannerRepositoryImpl
 import com.example.myapplication.data.remote.repository.BookingRepositoryImpl
+import com.example.myapplication.data.remote.repository.CinemaRepositoryImpl
 import com.example.myapplication.data.remote.repository.MovieRepositoryImpl
 import com.example.myapplication.data.remote.repository.PaymentRepositoryImpl
 import com.example.myapplication.data.remote.repository.SeatHoldSessionRepositoryImpl
@@ -13,6 +14,7 @@ import com.example.myapplication.data.remote.repository.VoucherRepositoryImpl
 import com.example.myapplication.domain.repository.AuthRepository
 import com.example.myapplication.domain.repository.BannerRepository
 import com.example.myapplication.domain.repository.BookingRepository
+import com.example.myapplication.domain.repository.CinemaRepository
 import com.example.myapplication.domain.repository.MovieRepository
 import com.example.myapplication.domain.repository.PaymentRepository
 import com.example.myapplication.domain.repository.SeatHoldSessionRepository
@@ -72,4 +74,9 @@ abstract class RepositoryModule {
     abstract fun bindPaymentRepository(
         impl: PaymentRepositoryImpl
     ): PaymentRepository
+
+    @Binds
+    abstract fun bindCinemaRepository(
+        impl: CinemaRepositoryImpl
+    ): CinemaRepository
 }

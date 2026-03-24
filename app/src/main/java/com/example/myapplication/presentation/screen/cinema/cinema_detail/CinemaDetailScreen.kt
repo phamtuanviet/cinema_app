@@ -9,6 +9,7 @@ import com.example.myapplication.presentation.screen.cinema.checkout.CinemaCheck
 
 @Composable
 fun CinemaDetailScreen (
+    cinemaId : String,
     viewModel: CinemaDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()

@@ -27,11 +27,15 @@ class TokenAuthenticator @Inject constructor(
 
         return try {
 
+            Log.d("TokenAuthenticator", "Refresh goi lan 2: '$refreshToken'")
+
             val newToken = runBlocking {
                 authApi.refreshToken(
                     RefreshRequest(refreshToken)
                 )
             }
+
+
 
             runBlocking {
                 sessionManager.saveTokens(
@@ -48,9 +52,11 @@ class TokenAuthenticator @Inject constructor(
                 .build()
 
         } catch (e: Exception) {
+            Log.d("TokenAuthenticator", "Refresh token: '$refreshToken'")
             Log.d("TokenAuthenticator", e.toString())
 
             runBlocking { sessionManager.clearTokens() }
+            Log.d("TokenAuthenticator", "Refresh token: '$refreshToken'")
             null
         }
     }
