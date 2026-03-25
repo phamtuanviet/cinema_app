@@ -6,7 +6,7 @@ package com.example.myapplication.presentation.component
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import com.example.myapplication.presentation.screen.movie.other_options.MovieOtherOptionsState
+import com.example.myapplication.presentation.screen.booking.other_options.BookingOtherOptionsState
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun PriceSummary(
-    state: MovieOtherOptionsState,
+    state: BookingOtherOptionsState,
     modifier: Modifier = Modifier
 ) {
     Card(

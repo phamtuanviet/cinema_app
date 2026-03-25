@@ -4,3 +4,5 @@ data class ShowtimeDto(
     val id: String,
     val startTime: String
 )
+
+typealias ShowtimeDatesResponse = List<String>

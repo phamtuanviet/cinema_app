@@ -2,7 +2,9 @@ package com.example.myapplication.data.remote.repository
 
 import com.example.myapplication.data.remote.api.CinemaApi
 import com.example.myapplication.data.remote.dto.CinemaResponse
+import com.example.myapplication.data.remote.dto.CinemaShowtimeResponse
 import com.example.myapplication.data.remote.dto.RegionResponse
+import com.example.myapplication.data.remote.dto.ShowtimeDatesResponse
 import com.example.myapplication.domain.repository.CinemaRepository
 import com.example.myapplication.utils.safeApiCall
 import javax.inject.Inject
@@ -33,6 +35,22 @@ class CinemaRepositoryImpl @Inject constructor(
     ): Result<List<CinemaResponse>> {
         return safeApiCall {
             cinemaApi.getCinemaByRegion(region,lat,lng);
+        }
+    }
+
+    override suspend fun getShowtimeDates(cinemaId: String) : Result<ShowtimeDatesResponse> {
+        return safeApiCall {
+            cinemaApi.getShowtimeDates(cinemaId);
+        }
+
+    }
+
+    override suspend fun getShowtimes(
+        cinemaId: String,
+        date: String
+    ): Result<CinemaShowtimeResponse> {
+        return safeApiCall {
+            cinemaApi.getShowtimes(cinemaId,date);
         }
     }
 }

@@ -16,48 +16,27 @@ class TokenAuthenticator @Inject constructor(
     private val authApi: AuthApi
 ) : Authenticator {
 
-    override fun authenticate(
-        route: Route?,
-        response: Response
-    ): Request? {
+    private val lock = Any()
+    override fun authenticate(route: Route?, response: Response): Request? {
+        synchronized(lock) {
+            val refreshToken = runBlocking { sessionManager.getRefreshToken() } ?: return null
 
-        val refreshToken = runBlocking {
-            sessionManager.getRefreshToken()
-        } ?: return null
+            return try {
+                val newToken = runBlocking {
+                    authApi.refreshToken(RefreshRequest(refreshToken))
+                }
 
-        return try {
+                runBlocking {
+                    sessionManager.saveTokens(newToken.accessToken, newToken.refreshToken)
+                }
 
-            Log.d("TokenAuthenticator", "Refresh goi lan 2: '$refreshToken'")
-
-            val newToken = runBlocking {
-                authApi.refreshToken(
-                    RefreshRequest(refreshToken)
-                )
+                response.request.newBuilder()
+                    .header("Authorization", "Bearer ${newToken.accessToken}")
+                    .build()
+            } catch (e: Exception) {
+                runBlocking { sessionManager.clearTokens() }
+                null
             }
-
-
-
-            runBlocking {
-                sessionManager.saveTokens(
-                    newToken.accessToken,
-                    newToken.refreshToken
-                )
-            }
-
-            response.request.newBuilder()
-                .header(
-                    "Authorization",
-                    "Bearer ${newToken.accessToken}"
-                )
-                .build()
-
-        } catch (e: Exception) {
-            Log.d("TokenAuthenticator", "Refresh token: '$refreshToken'")
-            Log.d("TokenAuthenticator", e.toString())
-
-            runBlocking { sessionManager.clearTokens() }
-            Log.d("TokenAuthenticator", "Refresh token: '$refreshToken'")
-            null
         }
     }
 }

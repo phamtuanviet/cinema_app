@@ -1,4 +1,4 @@
-package com.example.myapplication.presentation.screen.payment.failed
+package com.example.myapplication.presentation.screen.booking.sucess
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,14 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun PaymentFailedScreen(onRetry: () -> Unit) {
+fun PaymentSuccessScreen(onBackHome: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Payment Failed ❌")
-        Button(onClick = onRetry) {
-            Text("Try Again")
+        Text("Payment Success 🎉")
+        Button(onClick = onBackHome) {
+            Text("Back to Home")
         }
     }
 }

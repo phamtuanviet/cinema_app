@@ -1,4 +1,4 @@
-package com.example.myapplication.presentation.screen.movie.other_options
+package com.example.myapplication.presentation.screen.booking.other_options
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -14,18 +14,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
-class MovieOtherOptionsViewModel @Inject constructor(
+class BookingOtherOptionsViewModel @Inject constructor(
     private val repository: MovieRepository,
     private val seatHoldSessionRepository: SeatHoldSessionRepository,
     private val voucherRepository: VoucherRepository,
     private val bookingRepository: BookingRepository,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(MovieOtherOptionsState())
+    private val _state = MutableStateFlow(BookingOtherOptionsState())
     val state = _state.asStateFlow()
 
 
@@ -63,7 +62,7 @@ class MovieOtherOptionsViewModel @Inject constructor(
         }
     }
 
-    private fun recalculate(state: MovieOtherOptionsState): MovieOtherOptionsState {
+    private fun recalculate(state: BookingOtherOptionsState): BookingOtherOptionsState {
 
         // 🍿 combo amount
         val comboAmount = state.selectedCombos.entries.sumOf { (id, qty) ->

@@ -1,7 +1,6 @@
-package com.example.myapplication.presentation.screen.movie.checkout
+package com.example.myapplication.presentation.screen.booking.checkout
 
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,15 +19,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.MainActivity
 import com.example.myapplication.data.remote.enums.PaymentMethod
-import com.example.myapplication.presentation.app.AppViewModel
 import com.example.myapplication.utils.openPayment
 
 @Composable
-fun MovieCheckoutScreen(
+fun BookingCheckoutScreen(
     bookingId: String,
     onPaymentSuccess: () -> Unit,
     onPaymentFailed: () -> Unit,
-    viewModel: MovieCheckoutViewModel = hiltViewModel()
+    viewModel: BookingCheckoutViewModel = hiltViewModel()
 ) {
 
     val state by viewModel.state.collectAsState()
@@ -42,9 +40,7 @@ fun MovieCheckoutScreen(
         Log.d("CHECK_PAYMENT", "paymentResult = $paymentResult")
     }
 
-    // =========================
-    // 🔥 OPEN VNPAY
-    // =========================
+
     LaunchedEffect(state.paymentUrl) {
         state.paymentUrl?.let { url ->
             openPayment(context, url)

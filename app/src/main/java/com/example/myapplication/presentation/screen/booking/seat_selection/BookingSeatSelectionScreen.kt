@@ -1,4 +1,4 @@
-package com.example.myapplication.presentation.screen.movie.seat_selection
+package com.example.myapplication.presentation.screen.booking.seat_selection
 
 import SeatGrid
 import androidx.compose.foundation.background
@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.presentation.component.BottomBarSelection
@@ -15,16 +14,15 @@ import com.example.myapplication.presentation.component.CountdownTimer
 import com.example.myapplication.presentation.component.MovieHeader
 import com.example.myapplication.presentation.component.ScreenIndicator
 import com.example.myapplication.presentation.component.SeatLegend
-import com.example.myapplication.utils.parseExpireTime
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
-fun MovieSeatSelectionScreen(
+fun BookingSeatSelectionScreen(
     showtimeId: String,
     onContinueClick: (sessionId: String) -> Unit,
     onSessionExpired: () -> Unit,
-    viewModel: MovieSeatSelectionViewModel = hiltViewModel()
+    viewModel: BookingSeatSelectionViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     var showExpireDialog by remember { mutableStateOf(false) }
@@ -38,7 +36,6 @@ fun MovieSeatSelectionScreen(
 
     state.error?.let { error ->
         LaunchedEffect(error) {
-            // TODO: Tích hợp Snackbar Host vào Scaffold để show lỗi đẹp hơn
             println("ERROR: $error")
             viewModel.clearError()
         }

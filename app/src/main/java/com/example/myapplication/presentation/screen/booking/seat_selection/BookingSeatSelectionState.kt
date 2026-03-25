@@ -1,11 +1,9 @@
-package com.example.myapplication.presentation.screen.movie.seat_selection
+package com.example.myapplication.presentation.screen.booking.seat_selection
 
-import com.example.myapplication.data.remote.dto.MovieDetailDto
 import com.example.myapplication.data.remote.dto.MovieDto
-import com.example.myapplication.data.remote.dto.SeatDto
 import com.example.myapplication.data.remote.dto.SeatMapDto
 
-data class MovieSeatSelectionState(
+data class BookingSeatSelectionState(
 
     val isLoading : Boolean = true,
     val seatMap: SeatMapDto? = null,

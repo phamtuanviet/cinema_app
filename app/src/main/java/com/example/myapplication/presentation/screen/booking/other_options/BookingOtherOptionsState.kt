@@ -1,11 +1,11 @@
-package com.example.myapplication.presentation.screen.movie.other_options
+package com.example.myapplication.presentation.screen.booking.other_options
 
 import com.example.myapplication.data.remote.dto.ComboDto
 import com.example.myapplication.data.remote.dto.MovieDto
 import com.example.myapplication.data.remote.dto.ShowtimeDetailDto
 import com.example.myapplication.data.remote.dto.VoucherDto
 
-data class MovieOtherOptionsState (
+data class BookingOtherOptionsState (
     val isLoading: Boolean = false,
     val error: String? = null,
 

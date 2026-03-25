@@ -26,3 +26,15 @@ fun openPayment(context: Context, paymentUrl: String) {
         Uri.parse(paymentUrl)
     )
 }
+
+fun openTab(context: Context, paymentUrl: String) {
+
+    val customTabsIntent = CustomTabsIntent.Builder()
+        .setShowTitle(true)
+        .build()
+
+    customTabsIntent.launchUrl(
+        context,
+        Uri.parse(paymentUrl)
+    )
+}

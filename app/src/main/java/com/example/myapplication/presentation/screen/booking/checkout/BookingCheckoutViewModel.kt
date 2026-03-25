@@ -1,10 +1,9 @@
-package com.example.myapplication.presentation.screen.movie.checkout
+package com.example.myapplication.presentation.screen.booking.checkout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.remote.enums.PaymentMethod
 import com.example.myapplication.domain.repository.PaymentRepository
-import com.example.myapplication.presentation.app.AppViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,12 +12,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MovieCheckoutViewModel @Inject constructor(
+class BookingCheckoutViewModel @Inject constructor(
     private val paymentRepository: PaymentRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(MovieCheckoutState())
-    val state: StateFlow<MovieCheckoutState> = _state
+    private val _state = MutableStateFlow(BookingCheckoutState())
+    val state: StateFlow<BookingCheckoutState> = _state
 
     fun selectPaymentMethod(method: PaymentMethod) {
         _state.update {

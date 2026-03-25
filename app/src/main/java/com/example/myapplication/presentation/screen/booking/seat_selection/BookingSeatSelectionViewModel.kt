@@ -1,4 +1,4 @@
-package com.example.myapplication.presentation.screen.movie.seat_selection
+package com.example.myapplication.presentation.screen.booking.seat_selection
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -7,10 +7,8 @@ import com.example.myapplication.data.remote.dto.CancelSeatCoupleResponse
 import com.example.myapplication.data.remote.dto.CancelSeatResponse
 import com.example.myapplication.data.remote.dto.HoldSeatCoupleResponse
 import com.example.myapplication.data.remote.dto.HoldSeatResponse
-import com.example.myapplication.data.remote.dto.MovieDto
 import com.example.myapplication.data.remote.dto.SeatMapDto
 import com.example.myapplication.data.remote.enums.SeatStatus
-import com.example.myapplication.domain.repository.MovieRepository
 import com.example.myapplication.domain.repository.SeatRepository
 import com.example.myapplication.domain.repository.ShowtimeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,12 +21,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MovieSeatSelectionViewModel @Inject constructor(
+class BookingSeatSelectionViewModel @Inject constructor(
     private val seatRepository: SeatRepository,
     private val showtimeRepository: ShowtimeRepository,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(MovieSeatSelectionState())
+    private val _state = MutableStateFlow(BookingSeatSelectionState())
     val state = _state.asStateFlow()
 
 

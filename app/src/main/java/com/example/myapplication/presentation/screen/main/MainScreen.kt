@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.presentation.component.BottomBar
+import com.example.myapplication.presentation.navigation.graph.bookingNavGraph
 import com.example.myapplication.presentation.navigation.graph.cinemaNavGraph
 import com.example.myapplication.presentation.navigation.graph.movieNavGraph
 import com.example.myapplication.presentation.navigation.graph.profileNavGraph
@@ -65,7 +66,7 @@ fun MainScreen(rootNavController: NavHostController) {
             voucherNavGraph(navController,rootNavController)
             promotionNavGraph(navController,rootNavController)
             profileNavGraph(navController,rootNavController)
-
+            bookingNavGraph(navController,rootNavController)
         }
 
     }
