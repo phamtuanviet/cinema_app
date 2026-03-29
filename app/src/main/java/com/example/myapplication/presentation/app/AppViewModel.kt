@@ -73,4 +73,11 @@ class AppViewModel @Inject constructor(
     fun clearPaymentResult() {
         _paymentResult.value = null
     }
+
+    fun toggleTheme() {
+        viewModelScope.launch {
+            val current = _appState.value.darkTheme
+            sessionManager.updateDarkTheme(!current)
+        }
+    }
 }

@@ -56,6 +56,10 @@ class SessionManager @Inject constructor(
         return dataStore.refreshTokenFlow.first()
     }
 
+    suspend fun updateDarkTheme(isDark: Boolean) {
+        dataStore.saveDarkTheme(isDark)
+    }
+
     suspend fun getUser(): UserDto? {
         return dataStore.userFlow.first()
     }
