@@ -6,8 +6,11 @@ import com.example.myapplication.data.remote.api.AuthApi
 import com.example.myapplication.data.remote.api.BannerApi
 import com.example.myapplication.data.remote.api.BookingApi
 import com.example.myapplication.data.remote.api.CinemaApi
+import com.example.myapplication.data.remote.api.LoyaltyApi
 import com.example.myapplication.data.remote.api.MovieApi
 import com.example.myapplication.data.remote.api.PaymentApi
+import com.example.myapplication.data.remote.api.PostApi
+import com.example.myapplication.data.remote.api.RatingApi
 import com.example.myapplication.data.remote.api.SeatApi
 import com.example.myapplication.data.remote.api.SeatHoldSessionApi
 import com.example.myapplication.data.remote.api.ShowtimeApi
@@ -128,6 +131,30 @@ object NetworkModule {
         retrofit: Retrofit
     ): CinemaApi {
         return retrofit.create(CinemaApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun providePostApi(
+        retrofit: Retrofit
+    ): PostApi {
+        return retrofit.create(PostApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLoyaltyApi(
+        retrofit: Retrofit
+    ): LoyaltyApi {
+        return retrofit.create(LoyaltyApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRatingApi(
+        retrofit: Retrofit
+    ): RatingApi {
+        return retrofit.create(RatingApi::class.java)
     }
 
 

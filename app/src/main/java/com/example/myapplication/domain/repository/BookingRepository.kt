@@ -1,6 +1,7 @@
 package com.example.myapplication.domain.repository
 
 import com.example.myapplication.data.remote.dto.BookingDto
+import com.example.myapplication.data.remote.dto.BookingMyBookingDto
 import com.example.myapplication.data.remote.dto.BookingResponse
 
 interface BookingRepository{
@@ -8,5 +9,7 @@ interface BookingRepository{
                         ,selectedCombos: Map<String, Int>
                         ,voucherId: String?,usedPoints: Int)
     : Result<BookingResponse>
+
+    suspend fun getMyBookings(type: String): Result<List<BookingMyBookingDto>>
 }
 

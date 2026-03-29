@@ -29,6 +29,6 @@ data class BookingComboRequest(
 data class BookingDto(
     val id: String,
     val ticketCode : String,
-    val qrUrl : String,
+    val qrUrl : String?,
     val status : String,
 )

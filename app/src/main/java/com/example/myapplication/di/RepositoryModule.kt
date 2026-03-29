@@ -5,21 +5,29 @@ import com.example.myapplication.data.remote.repository.AuthRepositoryImpl
 import com.example.myapplication.data.remote.repository.BannerRepositoryImpl
 import com.example.myapplication.data.remote.repository.BookingRepositoryImpl
 import com.example.myapplication.data.remote.repository.CinemaRepositoryImpl
+import com.example.myapplication.data.remote.repository.LoyaltyRepositoryImpl
 import com.example.myapplication.data.remote.repository.MovieRepositoryImpl
 import com.example.myapplication.data.remote.repository.PaymentRepositoryImpl
+import com.example.myapplication.data.remote.repository.PostRepositoryImpl
+import com.example.myapplication.data.remote.repository.RatingRepositoryImpl
 import com.example.myapplication.data.remote.repository.SeatHoldSessionRepositoryImpl
 import com.example.myapplication.data.remote.repository.SeatRepositoryImpl
 import com.example.myapplication.data.remote.repository.ShowtimeRepositoryImpl
+import com.example.myapplication.data.remote.repository.UserRepositoryImpl
 import com.example.myapplication.data.remote.repository.VoucherRepositoryImpl
 import com.example.myapplication.domain.repository.AuthRepository
 import com.example.myapplication.domain.repository.BannerRepository
 import com.example.myapplication.domain.repository.BookingRepository
 import com.example.myapplication.domain.repository.CinemaRepository
+import com.example.myapplication.domain.repository.LoyaltyRepository
 import com.example.myapplication.domain.repository.MovieRepository
 import com.example.myapplication.domain.repository.PaymentRepository
+import com.example.myapplication.domain.repository.PostRepository
+import com.example.myapplication.domain.repository.RatingRepository
 import com.example.myapplication.domain.repository.SeatHoldSessionRepository
 import com.example.myapplication.domain.repository.SeatRepository
 import com.example.myapplication.domain.repository.ShowtimeRepository
+import com.example.myapplication.domain.repository.UserRepository
 import com.example.myapplication.domain.repository.VoucherRepository
 import dagger.Binds
 import dagger.Module
@@ -79,4 +87,25 @@ abstract class RepositoryModule {
     abstract fun bindCinemaRepository(
         impl: CinemaRepositoryImpl
     ): CinemaRepository
+
+    @Binds
+    abstract fun bindPostRepository(
+        impl: PostRepositoryImpl
+    ): PostRepository
+
+    @Binds
+    abstract fun bindLoyaltyRepository(
+        impl: LoyaltyRepositoryImpl
+    ): LoyaltyRepository
+
+    @Binds
+    abstract fun bindUserRepository(
+        impl: UserRepositoryImpl
+    ): UserRepository
+
+    @Binds
+    abstract fun bindRatingRepository(
+        impl: RatingRepositoryImpl
+    ): RatingRepository
+
 }

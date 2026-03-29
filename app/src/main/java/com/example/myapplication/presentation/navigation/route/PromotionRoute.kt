@@ -6,9 +6,9 @@ sealed class PromotionRoute(val route: String) {
     object PromotionList : PromotionRoute("promotion_list")
 
     // chi tiết ưu đãi
-    object PromotionDetail : PromotionRoute("promotion_detail/{promotionId}") {
-        fun createRoute(promotionId: Int): String {
-            return "promotion_detail/$promotionId"
+    object PromotionDetail : PromotionRoute("promotion_detail/{postId}") {
+        fun createRoute(postId: String): String {
+            return "promotion_detail/$postId"
         }
     }
 

@@ -1,6 +1,7 @@
 package com.example.myapplication.presentation.screen.booking.seat_selection
 
 import SeatGrid
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 
@@ -63,13 +64,18 @@ fun BookingSeatSelectionScreen(
                     BottomBarSelection(
                         totalPrice = state.totalPrice,
                         selectedSeats = state.selectedSeatNames,
-                        onContinueClick = {
+                        onContinueClick = { _ ->
+                            val sessionId = state.seatHoldSessionId
+                            if (sessionId == null) {
+                            Log.d("BookingSeatSelectionScreen", "DCM DEL HIEU")}
                             state.seatHoldSessionId?.let { sessionId ->
+                                Log.d("BookingSeatSelectionScreen", "onContinueClick: $sessionId")
                                 onContinueClick(sessionId)
                             }
                         }
                     )
                 }
+
             }
         }
     ) { paddingValues ->

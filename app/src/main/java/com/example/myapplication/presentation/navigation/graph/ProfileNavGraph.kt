@@ -8,7 +8,8 @@ import com.example.myapplication.presentation.navigation.route.MainRoute
 import com.example.myapplication.presentation.navigation.route.ProfileRoute
 import com.example.myapplication.presentation.navigation.route.RootRoute
 import com.example.myapplication.presentation.screen.profile.my_tickets.ProfileMyTicketsScreen
-import com.example.myapplication.presentation.screen.profile.notification.ProfileNotificationScreen
+import com.example.myapplication.presentation.screen.profile.account.ProfileAccountScreen
+import com.example.myapplication.presentation.screen.profile.change_password.ProfileChangePasswordScreen
 import com.example.myapplication.presentation.screen.profile.profile.ProfileScreen
 import com.example.myapplication.presentation.screen.profile.settings.ProfileSettingsScreen
 
@@ -28,6 +29,15 @@ fun NavGraphBuilder.profileNavGraph(
                     rootNavController.navigate(RootRoute.AuthGraph.route) {
                         popUpTo(0)
                     }
+                },
+                onNavigateAccount = {
+                    navController.navigate(ProfileRoute.Account.route)
+                },
+                onNavigateBookings = {
+                    navController.navigate(ProfileRoute.MyTickets.route)
+                },
+                onNavigateSettings = {
+                    navController.navigate(ProfileRoute.Settings.route)
                 }
             )
         }
@@ -36,8 +46,25 @@ fun NavGraphBuilder.profileNavGraph(
             ProfileSettingsScreen()
         }
 
-        composable(ProfileRoute.Notification.route) {
-            ProfileNotificationScreen()
+        composable(ProfileRoute.Account.route) {
+            ProfileAccountScreen(
+                onNavigateToChangePassword = {
+                    navController.navigate(ProfileRoute.ChangePassword.route)
+                }
+            )
+        }
+
+        composable(ProfileRoute.ChangePassword.route) {
+            ProfileChangePasswordScreen(
+                onSuccess = {
+                    navController.navigate(ProfileRoute.Profile.route) {
+                        popUpTo(MainRoute.ProfileGraph.route) {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
 
         composable(ProfileRoute.MyTickets.route) {

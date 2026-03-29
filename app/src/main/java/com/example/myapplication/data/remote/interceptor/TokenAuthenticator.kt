@@ -17,25 +17,35 @@ class TokenAuthenticator @Inject constructor(
 ) : Authenticator {
 
     private val lock = Any()
+
     override fun authenticate(route: Route?, response: Response): Request? {
         synchronized(lock) {
-            val refreshToken = runBlocking { sessionManager.getRefreshToken() } ?: return null
+            val currentToken = runBlocking { sessionManager.getAccessToken() }
 
-            return try {
-                val newToken = runBlocking {
-                    authApi.refreshToken(RefreshRequest(refreshToken))
+            // Nếu request đã retry với token mới, không retry nữa
+            if (response.request.header("Authorization") == "Bearer $currentToken") {
+
+                val refreshToken = runBlocking { sessionManager.getRefreshToken() } ?: return null
+
+                return try {
+                    val newToken = runBlocking { authApi.refreshToken(RefreshRequest(refreshToken)) }
+
+                    runBlocking { sessionManager.saveTokens(newToken.accessToken, newToken.refreshToken) }
+
+                    response.request.newBuilder()
+                        .header("Authorization", "Bearer ${newToken.accessToken}")
+                        .build()
+                } catch (e: Exception) {
+                    runBlocking { sessionManager.clearTokens() }
+                    null
                 }
 
-                runBlocking {
-                    sessionManager.saveTokens(newToken.accessToken, newToken.refreshToken)
-                }
-
-                response.request.newBuilder()
-                    .header("Authorization", "Bearer ${newToken.accessToken}")
+            } else {
+                // token đã được refresh bởi request khác
+                // retry với token mới
+                return response.request.newBuilder()
+                    .header("Authorization", "Bearer $currentToken")
                     .build()
-            } catch (e: Exception) {
-                runBlocking { sessionManager.clearTokens() }
-                null
             }
         }
     }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.repository.MovieRepository
 
 import com.example.myapplication.data.remote.dto.VoucherDto
+import com.example.myapplication.data.remote.enums.VoucherDiscountType
 import com.example.myapplication.domain.repository.BookingRepository
 import com.example.myapplication.domain.repository.SeatHoldSessionRepository
 import com.example.myapplication.domain.repository.VoucherRepository
@@ -18,7 +19,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class BookingOtherOptionsViewModel @Inject constructor(
-    private val repository: MovieRepository,
     private val seatHoldSessionRepository: SeatHoldSessionRepository,
     private val voucherRepository: VoucherRepository,
     private val bookingRepository: BookingRepository,
@@ -76,13 +76,13 @@ class BookingOtherOptionsViewModel @Inject constructor(
         // 🎟 voucher
         val voucher = state.vouchers.find { it.id == state.selectedVoucherId }
         val voucherDiscount = if (voucher != null && voucher.isUsable == true) {
-            when (voucher.discountType.name) {
-                "PERCENT" -> {
+            when (voucher.discountType) {
+                VoucherDiscountType.PERCENTAGE -> {
                     val discount = subtotal * voucher.discountValue.toDouble() / 100
                     minOf(discount, voucher.maxDiscount?.toDouble() ?: discount)
                 }
 
-                "FIXED" -> voucher.discountValue.toDouble()
+                VoucherDiscountType.FIXED -> voucher.discountValue.toDouble()
                 else -> 0.0
             }
         } else 0.0
@@ -142,11 +142,12 @@ class BookingOtherOptionsViewModel @Inject constructor(
         viewModelScope.launch {
 
             _state.update { it.copy(isLoading = true) }
+            Log.d("MovieOtherOptionsViewModel", sessionId)
 
             seatHoldSessionRepository
                 .getSeatHoldSessionInfo(sessionId)
                 .onSuccess { res ->
-                    Log.d("SeatHoldSessionInfo", res.toString())
+
 
                     _state.update {
                         recalculate(

@@ -15,6 +15,41 @@ data class VoucherDto(
     val discountValue: BigDecimal,
     val maxDiscount: BigDecimal?,
     val minOrderAmount: BigDecimal?,
-    val expiryDate: LocalDateTime,
+    val expiryDate: String,
     val isUsable: Boolean
+)
+data class VoucherPostDto(
+    val code: String,
+    val discountType: VoucherDiscountType,
+    val discountValue: Double,
+    val minOrderValue: Double?,
+    val maxDiscount: Double?,
+    val expiryDate: String?,
+    val active: Boolean,
+    val usageLimit: Int?,
+    val usedCount: Int,
+    val remainingUsage: Int?
+)
+
+data class UserVoucherResponse(
+    val id: String,
+    val code: String,
+
+    val discountType: String,
+    val discountValue: Double,
+
+    val minOrderValue: Double?,
+    val maxDiscount: Double?,
+
+    val expiryDate: String?,
+    val isUsed: Boolean,
+
+    // usage info
+    val movieTitle: String?,
+    val cinemaName: String?,
+    val roomName: String?,
+    val showtime: String?,
+
+    val discountAmount: Double?,
+    val usedAt: String?
 )

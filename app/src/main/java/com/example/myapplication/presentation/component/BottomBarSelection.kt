@@ -1,5 +1,6 @@
 package com.example.myapplication.presentation.component
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,8 +24,10 @@ import androidx.compose.ui.unit.dp
 fun BottomBarSelection(
     totalPrice: Double,
     selectedSeats: List<String>,
-    onContinueClick: (List<String>) -> Unit
+    onContinueClick: (sessionId: String) -> Unit
 ) {
+
+
 
     Row(
         modifier = Modifier
@@ -63,8 +66,10 @@ fun BottomBarSelection(
 
         Button(
             onClick = {
+                Log.d("BottomBarSelection", "onContinueClick: $selectedSeats")
                 if (selectedSeats.isNotEmpty()) {
-                    onContinueClick(selectedSeats)
+                    Log.d("BottomBarSelection", "onContinueClick: $selectedSeats")
+                    onContinueClick("Hi")
                 }
             },
             shape = RoundedCornerShape(12.dp)

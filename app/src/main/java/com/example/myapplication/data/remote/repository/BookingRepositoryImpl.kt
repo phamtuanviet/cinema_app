@@ -2,6 +2,7 @@ package com.example.myapplication.data.remote.repository
 
 import com.example.myapplication.data.remote.api.BookingApi
 import com.example.myapplication.data.remote.dto.BookingDto
+import com.example.myapplication.data.remote.dto.BookingMyBookingDto
 import com.example.myapplication.data.remote.dto.BookingRequest
 import com.example.myapplication.data.remote.dto.BookingResponse
 import com.example.myapplication.domain.repository.BookingRepository
@@ -29,6 +30,12 @@ class BookingRepositoryImpl @Inject constructor(
                 )
             )
 
+        }
+    }
+
+    override suspend fun getMyBookings(type: String): Result<List<BookingMyBookingDto>> {
+        return safeApiCall {
+            api.getMyBookings(type)
         }
     }
 }

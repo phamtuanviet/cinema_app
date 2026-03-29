@@ -10,11 +10,9 @@ import androidx.navigation.navigation
 import com.example.myapplication.presentation.navigation.route.BookingRoute
 import com.example.myapplication.presentation.navigation.route.CinemaRoute
 import com.example.myapplication.presentation.navigation.route.MainRoute
-import com.example.myapplication.presentation.screen.cinema.checkout.CinemaCheckoutScreen
 import com.example.myapplication.presentation.screen.cinema.cinema_detail.CinemaDetailScreen
 import com.example.myapplication.presentation.screen.cinema.cinema_list.CinemaListScreen
-import com.example.myapplication.presentation.screen.cinema.seat_selection.CinemaSeatSelectionScreen
-import com.example.myapplication.presentation.screen.cinema.showtime.CinemaShowtimeScreen
+
 import kotlin.collections.listOf
 
 fun NavGraphBuilder.cinemaNavGraph(

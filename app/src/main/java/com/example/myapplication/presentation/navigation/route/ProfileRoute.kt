@@ -9,10 +9,10 @@ sealed class ProfileRoute(val route: String) {
     // cài đặt
     object Settings : ProfileRoute("settings")
 
-    // thông báo
-    object Notification : ProfileRoute("notification")
+    object Account : ProfileRoute("account")
 
-    // vé đã đặt
+    object ChangePassword : ProfileRoute("change_password")
+
     object MyTickets : ProfileRoute("my_tickets")
 
 }

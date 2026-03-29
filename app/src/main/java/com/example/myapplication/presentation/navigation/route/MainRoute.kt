@@ -40,9 +40,9 @@ sealed class MainRoute(
 
     object PromotionGraph : MainRoute(
         route = "promotion_graph",
-        title = "Ưu đãi", // Rút gọn chữ để UI thoáng hơn
-        selectedIcon = Icons.Filled.LocalOffer, // Hoặc CardGiftcard
-        unselectedIcon = Icons.Outlined.LocalOffer
+        title = "Tin tức",
+        selectedIcon = Icons.Filled.Article,
+        unselectedIcon = Icons.Outlined.Article
     )
 
     object ProfileGraph : MainRoute(
