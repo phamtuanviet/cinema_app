@@ -12,6 +12,8 @@ import androidx.compose.ui.res.painterResource
 import com.example.myapplication.R
 import com.example.myapplication.presentation.app.AppState
 import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun SplashScreen(
@@ -45,7 +47,8 @@ fun SplashScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

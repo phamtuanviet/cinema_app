@@ -62,8 +62,9 @@ fun NavGraphBuilder.authNavGraph(
 
     composable(
         route = AuthRoute.Verify.route,
+
         arguments = listOf(
-            navArgument(AuthRoute.Verify.emailArg) {
+            navArgument("email") {
                 type = NavType.StringType
             }
         )
@@ -113,7 +114,7 @@ fun NavGraphBuilder.authNavGraph(
     composable(
         route = AuthRoute.VerifyForgotPassword.route,
         arguments = listOf(
-            navArgument(AuthRoute.VerifyForgotPassword.emailArg) {
+            navArgument("email") {
                 type = NavType.StringType
             }
         )
@@ -144,7 +145,7 @@ fun NavGraphBuilder.authNavGraph(
     composable(
         route = AuthRoute.ResetPassword.route,
         arguments = listOf(
-            navArgument(AuthRoute.ResetPassword.tokenArg) {
+            navArgument("token") {
                 type = NavType.StringType
             }
         )

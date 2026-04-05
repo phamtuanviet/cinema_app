@@ -16,6 +16,8 @@ sealed class MainRoute(
     // Graph (dùng cho BottomBar)
     object BottomGraph : MainRoute("bottom_graph")
 
+    object Chatbot : MainRoute("chatbot_screen")
+
     // Các màn hình chính
     object MovieGraph : MainRoute(
         route = "movie_graph",

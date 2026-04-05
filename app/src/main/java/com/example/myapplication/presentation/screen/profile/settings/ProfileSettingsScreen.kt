@@ -38,9 +38,7 @@ fun ProfileSettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // =========================
-        // 🌗 THEME SWITCH
-        // =========================
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
