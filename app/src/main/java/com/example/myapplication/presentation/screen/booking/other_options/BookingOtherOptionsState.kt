@@ -21,6 +21,7 @@ data class BookingOtherOptionsState (
     val selectedVoucherId: String? = null,
     val usedPoints: Int = 0,
 
+    val subtotal: Double = 0.0,
     val voucherInput: String = "",
 
     // price preview

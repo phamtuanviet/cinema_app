@@ -61,6 +61,7 @@ data class MovieDetailResponse(
 // 6. Lịch chiếu phim
 data class ShowtimeChatbotResponse(
     val showtimeId: String?,
+    val movieId : String?,
     val movieTitle: String?,
     val cinemaName: String?,
     val cinemaAddress: String?,

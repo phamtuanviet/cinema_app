@@ -6,6 +6,7 @@ import com.example.myapplication.data.remote.dto.BookingResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface BookingApi {
@@ -16,5 +17,10 @@ interface BookingApi {
     suspend fun getMyBookings(
         @Query("type") type: String = "ALL"
     ): List<BookingMyBookingDto>
+
+    @GET("booking/{bookingId}")
+    suspend fun getBookingDetail(
+        @Path("bookingId") bookingId: String
+    ): BookingMyBookingDto
 
 }

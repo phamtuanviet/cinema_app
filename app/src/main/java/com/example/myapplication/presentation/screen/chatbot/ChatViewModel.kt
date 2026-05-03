@@ -1,12 +1,15 @@
 package com.example.myapplication.presentation.screen.chatbot
 
+import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.local.entity.ChatMessageEntity
 import com.example.myapplication.data.remote.dto.RawUiAction
+import com.example.myapplication.data.remote.dto.UserLocation
 import com.example.myapplication.domain.model.ChatMessageUi
 import com.example.myapplication.domain.repository.ChatRepository
 import com.example.myapplication.util.ChatActionMapper
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +24,8 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val repository: ChatRepository,
     private val mapper: ChatActionMapper,
-    private val gson: Gson
+    private val gson: Gson,
+    private val fusedLocationClient: FusedLocationProviderClient
 ) : ViewModel() {
 
     // --- STATE ---
@@ -58,6 +62,63 @@ class ChatViewModel @Inject constructor(
                     isLoadingHistory = false,
                     isLastPage = entities.size < pageSize // Nếu số lượng lấy được < 20 -> Đã hết sạch lịch sử
                 )
+            }
+        }
+    }
+
+    fun fetchLocationAndSend() {
+        // Hiển thị trạng thái đang xử lý (có thể dùng isSending để hiện progress)
+        _uiState.update { it.copy(isSending = true, errorMessage = null) }
+
+        try {
+            // Lấy vị trí gần nhất (Last Location) - nhanh và tiết kiệm pin
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    if (location != null) {
+                        // Chuyển đổi sang DTO UserLocation của bạn
+                        val userLoc = UserLocation(
+                            lat = location.latitude,
+                            lng = location.longitude
+                        )
+
+                        // Gửi tin nhắn ngầm (text trống) kèm tọa độ cho Bot
+                        sendInternalMessage(text = "Đã chia sẻ vị trí", location = userLoc)
+                    } else {
+                        _uiState.update {
+                            it.copy(isSending = false, errorMessage = "Không tìm thấy vị trí. Hãy bật GPS.")
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+                    _uiState.update {
+                        it.copy(isSending = false, errorMessage = "Lỗi lấy vị trí: ${e.message}")
+                    }
+                }
+        } catch (e: SecurityException) {
+            _uiState.update { it.copy(isSending = false, errorMessage = "Thiếu quyền truy cập vị trí.") }
+        }
+    }
+
+    // Hàm phụ để xử lý gửi tin nhắn có kèm Location
+    private fun sendInternalMessage(text: String, location: UserLocation?) {
+        viewModelScope.launch {
+            try {
+                // Gọi repository với tham số location mới
+                repository.sendMessage(text, location)
+
+                // Refresh danh sách tin nhắn để hiện câu trả lời của Bot
+                val newLimit = _uiState.value.messages.size + 2
+                val updatedEntities = repository.getMessages(limit = newLimit, offset = 0)
+
+                _uiState.update {
+                    it.copy(
+                        messages = updatedEntities.map { mapEntityToUi(it) }.reversed(),
+                        isSending = false
+                    )
+                }
+                currentOffset = newLimit
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSending = false, errorMessage = "Gửi vị trí thất bại.") }
             }
         }
     }
@@ -102,7 +163,7 @@ class ChatViewModel @Inject constructor(
 
             // Gọi Repo để lưu vào DB -> Gọi Node.js -> Lưu kết quả Node.js vào DB
             try {
-                repository.sendMessage(text.trim())
+                repository.sendMessage(text.trim(),null )
             } catch (e: Exception) {
                 // Nếu lỗi kết nối nặng (bắt thêm ở đây cho chắc)
                 _uiState.update { it.copy(errorMessage = "Không thể gửi tin nhắn. Hãy kiểm tra kết nối.") }

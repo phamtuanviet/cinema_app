@@ -42,7 +42,7 @@ fun CinemaDetailScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = state.showtimes?.cinema?.name ?: "BETA MỸ ĐÌNH",
+                        text = state.showtimes?.cinema?.name ?: "No name cinema",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )

@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 
     id("com.google.dagger.hilt.android")
-
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 val baseUrl = project.findProperty("BASE_URL")?.toString() ?: ""
@@ -122,4 +122,10 @@ dependencies {
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+
+    implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging-ktx")
+
+
 }

@@ -1,74 +1,78 @@
 package com.example.myapplication.presentation.component
 
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.Text
+
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+
+import androidx.navigation.NavController
 import com.example.myapplication.domain.model.ChatUiAction
 
 @Composable
 fun ChatActionRenderer(
     action: ChatUiAction,
-    onMovieClick: (movieId: String) -> Unit,
-    onBookTicketClick: (showtimeId: String) -> Unit
+    navController: NavController,
+    onLocationRequest: () -> Unit
 ) {
     when (action) {
-        // TRƯỜNG HỢP HIỂN THỊ DANH SÁCH PHIM
+        is ChatUiAction.NavigateToMovieDetail -> {
+            val movie = action.data // MovieDetailResponse
+            MovieDetailSnippetWidget(
+                movie = movie,
+                onClick = {
+                    navController.navigate("movie_booking/${movie.movieId}")
+                }
+            )
+        }
+
         is ChatUiAction.ShowMovieList -> {
             val movies = action.data.content ?: emptyList()
-
-            // Vẽ một danh sách vuốt ngang (LazyRow)
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(movies) { movie ->
-                    // Giả sử bạn có 1 component Item Phim riêng biệt
-                    Card(
-                        modifier = Modifier
-                            .width(120.dp)
-                            .clickable {
-                                // KHI CLICK: Gọi callback và truyền ID phim ra ngoài
-                                movie.movieId?.let { id -> onMovieClick(id) }
-                            }
-                    ) {
-                        Column {
-                            Text(text = movie.title ?: "Tên phim", modifier = Modifier.padding(8.dp))
-                        }
-                    }
-                }
+            MovieCarouselWidget(movies) { movieId ->
+                navController.navigate("movie_booking/$movieId")
             }
         }
 
-        // TRƯỜNG HỢP HIỂN THỊ LỊCH CHIẾU
+        // 3. LỊCH CHIẾU (SHOW_SHOWTIMES)
         is ChatUiAction.ShowShowtimes -> {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                action.data.forEach { showtime ->
-                    Button(
-                        onClick = {
-                            // KHI CLICK: Chuyển sang luồng đặt vé
-                            showtime.showtimeId?.let { id -> onBookTicketClick(id) }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Đặt vé ${showtime.cinemaName} - ${showtime.startTime}")
-                    }
-                }
+            ShowtimeListWidget(action.data) { showtimeId, movieId ->
+                // Chuyển đến màn hình chọn ghế
+                navController.navigate("booking_seat_selection/$showtimeId/$movieId")
             }
         }
 
-        // ... Các trường hợp khác
+        // 4. BẢN ĐỒ RẠP (SHOW_CINEMA_MAP)
+        is ChatUiAction.ShowCinemaMap -> {
+            CinemaListWidget(action.data) { cinemaId ->
+                navController.navigate("cinema_detail/$cinemaId")
+            }
+        }
+
+        // 5. ĐIỂM & VOUCHER (SHOW_USER_POINTS / SHOW_VOUCHER_LIST)
+        is ChatUiAction.ShowUserPoints -> {
+            // Widget chuyên biệt cho Điểm thưởng
+            UserPointsWidget(action.data) {
+                navController.navigate("voucher_list")
+            }
+        }
+
+        is ChatUiAction.ShowVoucherList -> {
+            // Widget chuyên biệt cho danh sách Voucher
+            VoucherListWidget(action.data) {
+                navController.navigate("voucher_list")
+            }
+        }
+
+        // 6. LỊCH SỬ ĐẶT VÉ (SHOW_BOOKING_HISTORY)
+        is ChatUiAction.ShowBookingHistory -> {
+            BookingHistoryWidget(action.data) { bookingId ->
+                navController.navigate("ticket_detail/$bookingId")
+            }
+        }
+
+        // 7. XIN QUYỀN VỊ TRÍ
+        is ChatUiAction.RequestLocationPermission -> {
+            LocationRequestWidget(onLocationRequest)
+        }
+
         else -> {}
     }
 }

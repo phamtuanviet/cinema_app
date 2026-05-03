@@ -4,6 +4,7 @@ package com.example.myapplication.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.myapplication.data.local.dao.BookingDao
 import com.example.myapplication.data.local.dao.ChatDao
 import com.example.myapplication.data.local.db.AppDatabase
 import dagger.Module
@@ -35,5 +36,11 @@ object DatabaseModule {
     @Singleton
     fun provideChatDao(database: AppDatabase): ChatDao {
         return database.chatDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideBookingDao(database: AppDatabase): BookingDao {
+        return database.bookingDao()
     }
 }

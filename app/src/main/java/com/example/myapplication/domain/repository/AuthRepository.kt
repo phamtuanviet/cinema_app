@@ -3,7 +3,8 @@ package com.example.myapplication.domain.repository
 interface AuthRepository {
     suspend fun login(
         email: String,
-        password: String
+        password: String,
+        fcmToken: String?
     ): Boolean
 
     suspend fun register(

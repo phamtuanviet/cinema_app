@@ -1,26 +1,32 @@
 package com.example.myapplication.presentation.screen.booking.checkout
 
-import android.util.Log
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+
+import android.util.Log
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.MainActivity
 import com.example.myapplication.data.remote.enums.PaymentMethod
 import com.example.myapplication.utils.openPayment
+import com.example.myapplication.R
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingCheckoutScreen(
     bookingId: String,
@@ -28,18 +34,15 @@ fun BookingCheckoutScreen(
     onPaymentFailed: () -> Unit,
     viewModel: BookingCheckoutViewModel = hiltViewModel()
 ) {
-
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
     val appViewModel = (LocalContext.current as MainActivity).appViewModel
-
     val paymentResult by appViewModel.paymentResult.collectAsState()
 
     LaunchedEffect(paymentResult) {
         Log.d("CHECK_PAYMENT", "paymentResult = $paymentResult")
     }
-
 
     LaunchedEffect(state.paymentUrl) {
         state.paymentUrl?.let { url ->
@@ -68,33 +71,124 @@ fun BookingCheckoutScreen(
     // =========================
     // UI
     // =========================
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Text("Select Payment Method")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                viewModel.selectPaymentMethod(PaymentMethod.VNPAY)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Thanh toán", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                windowInsets = WindowInsets(0.dp) // Tránh lỗi double padding
+            )
+        },
+        bottomBar = {
+            // Đưa nút thanh toán ghim ở dưới cùng màn hình
+            Surface(
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Button(
+                        onClick = { viewModel.createPayment(bookingId) },
+                        enabled = state.selectedPaymentMethod != null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "Thanh toán ngay",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
             }
-        ) {
-            Text("VNPAY")
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = {
-                viewModel.createPayment(bookingId)
-            },
-            enabled = state.selectedPaymentMethod != null
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
         ) {
-            Text("Pay Now")
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Phương thức thanh toán",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ===== Thẻ chọn VNPAY =====
+            val isVnpaySelected = state.selectedPaymentMethod == PaymentMethod.VNPAY
+
+            Surface(
+                onClick = { viewModel.selectPaymentMethod(PaymentMethod.VNPAY) },
+                shape = RoundedCornerShape(12.dp),
+                // Đổi màu nền nếu được chọn
+                color = if (isVnpaySelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface,
+                // Viền đậm hơn nếu được chọn
+                border = BorderStroke(
+                    width = if (isVnpaySelected) 2.dp else 1.dp,
+                    color = if (isVnpaySelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.vnpay),
+                        contentDescription = "Logo VNPAY",
+                        modifier = Modifier
+                            .width(50.dp)
+                            .height(36.dp),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Tên phương thức
+                    Text(
+                        text = "Ví điện tử VNPAY",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Trạng thái chọn (Icon check)
+                    if (isVnpaySelected) {
+                        Icon(
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = "Đã chọn",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        // Vòng tròn xám trống khi chưa chọn
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant,
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
+            }
         }
     }
 }

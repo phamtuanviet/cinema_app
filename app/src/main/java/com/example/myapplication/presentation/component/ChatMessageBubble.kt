@@ -15,14 +15,15 @@ import androidx.compose.ui.Modifier
 import dev.jeziellago.compose.markdowntext.MarkdownText
 
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.myapplication.domain.model.ChatMessageUi
 
 @Composable
 fun ChatMessageBubble(
     message: ChatMessageUi,
-    onMovieClick: (String) -> Unit,
-    onBookTicketClick: (String) -> Unit
-)  {
+    navController: NavController,       // Thay đổi: Nhận trực tiếp NavController
+    onLocationRequest: () -> Unit       // Thay đổi: Nhận callback lấy vị trí
+) {
     val isUser = message.role == "USER"
 
     Column(
@@ -46,19 +47,19 @@ fun ChatMessageBubble(
             MarkdownText(
                 markdown = message.content,
                 color = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge, // Dùng font chữ chuẩn của app
-                disableLinkMovementMethod = true // Tắt click link mặc định để tránh lỗi điều hướng nếu không cần thiết
+                style = MaterialTheme.typography.bodyLarge,
+                disableLinkMovementMethod = true
             )
         }
 
-        // Vẽ các UI Action (Danh sách phim, giờ chiếu...) nếu có
-        if (message.role == "BOT" && message.actions.isNotEmpty()) {
+        // Vẽ các UI Action
+        if (!isUser && message.actions.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             message.actions.forEach { action ->
                 ChatActionRenderer(
                     action = action,
-                    onMovieClick = onMovieClick,           // Truyền tiếp xuống
-                    onBookTicketClick = onBookTicketClick  // Truyền tiếp xuống
+                    navController = navController,      // Truyền đúng tham số
+                    onLocationRequest = onLocationRequest // Truyền đúng tham số
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }

@@ -102,7 +102,8 @@ fun BookingOtherOptionsScreen(
         // 🎟 Voucher list (Đã cải thiện UI)
         VoucherSection(
             vouchers = state.vouchers,
-            selectedVoucher = state.selectedVoucherId,
+            selectedVoucherId = state.selectedVoucherId,
+            currentSubtotal = state.subtotal, // THÊM DÒNG NÀY
             onSelect = viewModel::selectVoucher
         )
 

@@ -6,6 +6,7 @@ import com.example.myapplication.data.local.dao.ChatDao
 import com.example.myapplication.data.local.entity.ChatMessageEntity
 import com.example.myapplication.data.remote.api.ChatbotApi
 import com.example.myapplication.data.remote.dto.ChatRequest
+import com.example.myapplication.data.remote.dto.UserLocation
 import com.example.myapplication.domain.repository.ChatRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
@@ -30,7 +31,7 @@ class ChatRepositoryImpl @Inject constructor(
         return chatDao.getMessagesPaged(getSessionId(), limit, offset)
     }
     // 2. Gửi tin nhắn mới
-    override suspend fun sendMessage(message: String) {
+    override suspend fun sendMessage(message: String,location: UserLocation?) {
         val sessionId = getSessionId() // TỰ ĐỘNG lấy sessionId tại đây!
         val currentTime = System.currentTimeMillis()
 
@@ -49,7 +50,7 @@ class ChatRepositoryImpl @Inject constructor(
         try {
             // Bước B: Gọi API Node.js
             // Ghi chú: Nếu bạn có lấy tọa độ GPS thực tế thì truyền vào đây, tạm thời mình để null
-            val request = ChatRequest(message = message, chatSessionId = sessionId, location = null)
+            val request = ChatRequest(message = message, chatSessionId = sessionId, location = location)
             val response = chatbotApi.sendMessage(request)
 
             if (response.isSuccessful && response.body() != null) {
@@ -76,6 +77,7 @@ class ChatRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            Log.e("ChatRepository", "Error sending message: ${e.message}")
             saveErrorMessage(sessionId, "Mất kết nối đến máy chủ. Vui lòng kiểm tra mạng.")
         }
     }

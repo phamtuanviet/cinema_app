@@ -25,7 +25,28 @@ class AppDataStore @Inject constructor(
         val USER = stringPreferencesKey("user")
         val DARK_THEME = booleanPreferencesKey("dark_theme")
         val HAS_ONBOARDED = booleanPreferencesKey("has_onboarded")
+        val FCM_TOKEN = stringPreferencesKey("fcm_token") // THÊM DÒNG NÀY
+
     }
+
+    val fcmTokenFlow = dataStore.data.map {
+        it[FCM_TOKEN]
+
+    }
+
+    suspend fun saveFcmToken(token: String) {
+        dataStore.edit {
+            it[FCM_TOKEN] = token
+        }
+    }
+
+    suspend fun clearFcmToken() {
+        dataStore.edit {
+            it.remove(FCM_TOKEN)
+        }
+    }
+
+
 
     val accessTokenFlow = dataStore.data.map {
         it[ACCESS_TOKEN]

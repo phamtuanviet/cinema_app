@@ -66,30 +66,19 @@ class SessionManager @Inject constructor(
         return dataStore.userFlow.first()
     }
 
-    // ================= CHECK =================
-    suspend fun isLoggedIn(): Boolean {
-        val token = getAccessToken()
-        return !token.isNullOrEmpty()
+    suspend fun saveFcmToken(token: String) {
+        dataStore.saveFcmToken(token)
     }
 
-    // ================= COMBINE STATE =================
-    val sessionFlow: Flow<Pair<UserDto?, String?>> =
-        combine(userFlow, accessTokenFlow) { user, token ->
-            Pair(user, token)
-        }
-
-    // ================= UPDATE =================
-    suspend fun updateUser(user: UserDto) {
-        dataStore.saveUser(user)
+    suspend fun clearFcmToken() {
+        dataStore.clearFcmToken()
     }
 
-    suspend fun updateAccessToken(newAccessToken: String) {
-        val refresh = getRefreshToken() ?: return
-        dataStore.saveTokens(newAccessToken, refresh)
+    val fcmTokenFlow: Flow<String?> = dataStore.fcmTokenFlow
+
+    suspend fun getFcmToken(): String? {
+        return dataStore.fcmTokenFlow.first()
     }
 
-    // ================= CLEAR =================
-    suspend fun logout() {
-        dataStore.clearAll()
-    }
+
 }

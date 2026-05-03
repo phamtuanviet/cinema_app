@@ -12,6 +12,10 @@ import com.example.myapplication.data.remote.dto.UserDto
 import com.example.myapplication.data.remote.dto.VerifyEmailRequest
 import com.example.myapplication.data.remote.dto.VerifyForgotPasswordRequest
 import com.example.myapplication.domain.repository.AuthRepository
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -20,7 +24,8 @@ class AuthRepositoryImpl @Inject constructor(
 ) : AuthRepository {
     override suspend fun login(
         email: String,
-        password: String
+        password: String,
+        fcmToken : String?
     ): Boolean {
 
 
@@ -29,7 +34,8 @@ class AuthRepositoryImpl @Inject constructor(
             val response = authApi.login(
                 LoginRequest(
                     email = email,
-                    password = password
+                    password = password,
+                    fcmToken = fcmToken
                 )
             )
             if (response.isSuccessful) {
@@ -139,35 +145,43 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun logout(
-        refreshToken: String
-    ): Boolean {
-        sessionManager.clearTokens();
-        sessionManager.clearUser();
-        return true;
-//        return try {
-//        val response = authApi.logout(LogoutRequest(refreshToken))
-//        if (response.isSuccessful) {
-//            val body = response.body()
-//                ?: throw Exception("Empty response")
-//
-//            sessionManager.clearTokens();
-//            sessionManager.clearUser();
-//            return true;
-//        } else {
-//            val body = response.body()
-//                ?: throw Exception("Empty response")
-//
-//            sessionManager.clearTokens();
-//            sessionManager.clearUser();
-//            return true;
-//            throw Exception("Logout failed")
-//
-//        }}
-//        catch (ex: Exception) {
-//
-//            Log.e("LOGOUT_ERROR", ex.toString())
-//            false
-//        }
+    override suspend fun logout(refreshToken: String): Boolean {
+        // 1. Dọn dẹp dữ liệu cũ ngay lập tức
+        sessionManager.clearTokens()
+        sessionManager.clearUser()
+        sessionManager.clearFcmToken() // Xóa token cũ TRƯỚC KHI lấy token mới
+
+        // 2. Xử lý Firebase trên một Coroutine độc lập (tránh block luồng đăng xuất)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Bước 2.1: Xóa Token cũ trên Firebase
+                FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.d("FCM", "Đã xóa token cũ thành công do đăng xuất")
+
+                        // Bước 2.2: Lấy Token mới tinh
+                        FirebaseMessaging.getInstance().token.addOnCompleteListener { newTokenTask ->
+                            if (newTokenTask.isSuccessful) {
+                                val newToken = newTokenTask.result
+                                Log.d("FCM", "Token mới: $newToken")
+
+                                // Lại dùng launch để gọi hàm suspend bên trong callback
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    sessionManager.saveFcmToken(newToken)
+                                }
+                            } else {
+                                Log.e("FCM", "Lỗi khi lấy token mới: ${newTokenTask.exception}")
+                            }
+                        }
+                    } else {
+                        Log.e("FCM", "Lỗi khi xóa token: ${task.exception}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("LOGOUT", "Lỗi trong quá trình xử lý Firebase: ${e.message}")
+            }
+        }
+
+        return true
     }
 }

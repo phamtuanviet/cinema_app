@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.core.datastore.AppDataStore
 import com.example.myapplication.core.datastore.SessionManager
+import com.google.firebase.messaging.FirebaseMessaging
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,18 @@ class AppViewModel @Inject constructor(
     // =========================
     private val _appState = MutableStateFlow(AppState())
     val appState = _appState.asStateFlow()
+
+    private val _deepLinkNavigationRoute = MutableStateFlow<String?>(null)
+    val deepLinkNavigationRoute: StateFlow<String?> = _deepLinkNavigationRoute.asStateFlow()
+
+    fun setDeepLinkNavigationRoute(route: String) {
+        _deepLinkNavigationRoute.value = route
+    }
+
+    // Gọi sau khi Jetpack Compose đã navigate xong để tránh nhảy màn hình lại
+    fun clearDeepLinkNavigationRoute() {
+        _deepLinkNavigationRoute.value = null
+    }
 
     // =========================
     // 🔥 PAYMENT RESULT (DEEP LINK)
@@ -68,6 +81,24 @@ class AppViewModel @Inject constructor(
     fun onPaymentResult(code: String?, txnRef: String?) {
         Log.d("AppViewModel", "onPaymentResult: $code, $txnRef")
         _paymentResult.value = PaymentResult(code, txnRef)
+    }
+
+    fun syncFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("FCM", "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
+            }
+
+            // Lấy token thành công
+            val token = task.result
+            Log.d("FCM", "Token lúc mở app: $token")
+
+            // Lưu vào DataStore
+            viewModelScope.launch {
+                sessionManager.saveFcmToken(token)
+            }
+        }
     }
 
     fun clearPaymentResult() {

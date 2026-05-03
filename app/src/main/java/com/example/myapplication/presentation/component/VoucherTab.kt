@@ -1,5 +1,6 @@
 package com.example.myapplication.presentation.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ConfirmationNumber
+import androidx.compose.material.icons.rounded.Discount
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -28,87 +34,99 @@ import com.example.myapplication.presentation.screen.voucher.voucher_list.Vouche
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.myapplication.data.remote.dto.UserVoucherResponse
 import com.example.myapplication.data.remote.enums.VoucherStatus
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoucherTab(
     state: VoucherListState,
     viewModel: VoucherListViewModel
 ) {
-    // focus manager
     val focusManager = LocalFocusManager.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null // không hiển thị ripple
+                indication = null
             ) {
-                focusManager.clearFocus() // ẩn bàn phím
+                focusManager.clearFocus()
             }
     ) {
-
         // --- SUB TAB ---
         val voucherTabIndex = when (state.selectedVoucherTab) {
-            VoucherStatus.AVAILABLE  -> 0
+            VoucherStatus.AVAILABLE -> 0
             VoucherStatus.USED -> 1
             else -> 2
         }
 
-        TabRow(selectedTabIndex = voucherTabIndex) {
-            Tab(
-                selected = state.selectedVoucherTab == VoucherStatus.AVAILABLE,
-                onClick = { viewModel.onVoucherTabChange(VoucherStatus.AVAILABLE) },
-                text = { Text("Available") }
+        SecondaryTabRow(selectedTabIndex = voucherTabIndex) {
+            val tabs = listOf(
+                VoucherStatus.AVAILABLE to "Khả dụng",
+                VoucherStatus.USED to "Đã dùng",
+                VoucherStatus.EXPIRED to "Hết hạn"
             )
-            Tab(
-                selected = state.selectedVoucherTab == VoucherStatus.USED,
-                onClick = { viewModel.onVoucherTabChange(VoucherStatus.USED) },
-                text = { Text("Used") }
-            )
-            Tab(
-                selected = state.selectedVoucherTab == VoucherStatus.EXPIRED,
-                onClick = { viewModel.onVoucherTabChange(VoucherStatus.EXPIRED) },
-                text = { Text("Expired") }
-            )
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            tabs.forEachIndexed { index, (status, title) ->
+                Tab(
+                    selected = voucherTabIndex == index,
+                    onClick = { viewModel.onVoucherTabChange(status) },
+                    text = { Text(title) }
+                )
+            }
+        }
 
         // --- ADD VOUCHER ---
         var code by remember { mutableStateOf("") }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            TextField(
+            OutlinedTextField(
                 value = code,
-                onValueChange = { code = it },
-                placeholder = { Text("Nhập mã voucher") },
-                modifier = Modifier.weight(1f)
+                onValueChange = { code = it.uppercase() }, // Code thường viết hoa
+                placeholder = { Text("Nhập mã ưu đãi...") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Rounded.Discount, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Button(
-                onClick = { viewModel.addVoucher(code) },
-                enabled = !state.isAddingVoucher
+                onClick = {
+                    focusManager.clearFocus()
+                    viewModel.addVoucher(code)
+                    code = ""
+                },
+                enabled = !state.isAddingVoucher && code.isNotBlank(),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(56.dp) // Đồng bộ chiều cao với TextField
             ) {
                 if (state.isAddingVoucher) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Text("Add")
+                    Text("Thêm", fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // Hiển thị lỗi nếu có
+        state.error?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
 
         // --- VOUCHER LIST ---
         if (state.isLoading) {
@@ -117,42 +135,132 @@ fun VoucherTab(
             }
         } else if (state.vouchers.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Chưa có voucher nào")
+                Text(
+                    text = "Không có mã giảm giá nào ở mục này.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         } else {
-            LazyColumn {
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 items(state.vouchers) { voucher ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                    VoucherItemCard(voucher)
+                }
+            }
+        }
+    }
+}
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(voucher.code, style = MaterialTheme.typography.bodyLarge)
-                                Spacer(modifier = Modifier.weight(1f))
-                                Text(
-                                    text = state.selectedVoucherTab.displayName(),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+@Composable
+fun VoucherItemCard(voucher: UserVoucherResponse) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Phần bên trái (Discount Info)
+            Box(
+                modifier = Modifier
+                    .weight(0.35f)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .fillMaxHeight()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Rounded.ConfirmationNumber,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "${voucher.discountValue}${if (voucher.discountType == "percent") "%" else "đ"}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = "GIẢM",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
 
-                            Spacer(modifier = Modifier.height(4.dp))
+            // Đường nét đứt chia cắt (Mô phỏng)
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .fillMaxHeight()
+                    .background(Color.Gray.copy(alpha = 0.3f))
+            )
 
-                            Text("Giảm: ${voucher.discountValue}${if (voucher.discountType=="percent") "%" else "đ"}")
-                            voucher.minOrderValue?.let { Text("Đơn tối thiểu: $it") }
-                            voucher.maxDiscount?.let { Text("Giảm tối đa: $it") }
+            // Phần bên phải (Chi tiết)
+            Column(
+                modifier = Modifier
+                    .weight(0.65f)
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = voucher.code,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
 
-                            voucher.movieTitle?.let { Text("Phim: $it") }
-                            voucher.cinemaName?.let { Text("Rạp: $it") }
-                            voucher.roomName?.let { Text("Phòng: $it") }
-                            voucher.showtime?.let { Text("Suất chiếu: $it") }
+                Spacer(modifier = Modifier.height(8.dp))
 
-                            voucher.expiryDate?.let { Text("HSD: $it") }
-                            voucher.usedAt?.let { Text("Đã dùng: $it") }
-                        }
-                    }
+                voucher.minOrderValue?.let {
+                    Text(
+                        text = "Đơn tối thiểu: $it đ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                voucher.maxDiscount?.let {
+                    Text(
+                        text = "Giảm tối đa: $it đ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (voucher.movieTitle != null || voucher.cinemaName != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    voucher.movieTitle?.let { Text("Phim: $it", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    voucher.cinemaName?.let { Text("Rạp: $it", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = voucher.expiryDate?.let { "HSD: $it" } ?: "Không thời hạn",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }

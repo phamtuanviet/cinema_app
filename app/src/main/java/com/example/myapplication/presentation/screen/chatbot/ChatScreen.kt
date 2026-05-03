@@ -1,5 +1,7 @@
 package com.example.myapplication.presentation.screen.chatbot
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,11 +33,20 @@ fun ChatScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
-
-    // Quản lý Focus để ẩn bàn phím
     val focusManager = LocalFocusManager.current
 
-    // Tự động cuộn xuống tin nhắn cuối cùng khi có tin nhắn mới
+    // 1. LAUNCHER XỬ LÝ XIN QUYỀN VỊ TRÍ
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val isGranted = permissions.values.all { it }
+        if (isGranted) {
+            // Gọi hàm trong ViewModel để lấy tọa độ thực tế và gửi cho Bot
+            viewModel.fetchLocationAndSend()
+        }
+    }
+
+    // Tự động cuộn xuống tin nhắn cuối cùng
     val messagesSize = uiState.messages.size
     LaunchedEffect(messagesSize) {
         if (messagesSize > 0) {
@@ -43,12 +54,12 @@ fun ChatScreen(
         }
     }
 
-    // Logic cuộn lên để load thêm (giữ nguyên)
+    // Logic load more history
     val shouldLoadMore by remember {
         derivedStateOf {
             val totalItems = listState.layoutInfo.totalItemsCount
             val firstVisibleItem = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.index ?: 0
-            firstVisibleItem <= 2 // Gần chạm nóc trên cùng thì load thêm
+            firstVisibleItem <= 2
         }
     }
 
@@ -74,37 +85,30 @@ fun ChatScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                ),
+                windowInsets = WindowInsets(0.dp)
             )
         },
-        // ĐẶT THANH NHẬP CHỮ VÀO BOTTOM BAR ĐỂ NÓ LUÔN BÁM ĐÁY MÀN HÌNH
         bottomBar = {
             ChatInputBar(
                 isSending = uiState.isSending,
                 onSendMessage = { text ->
                     viewModel.sendMessage(text)
-                    // Gửi xong thì ẩn bàn phím luôn
                     focusManager.clearFocus()
                 }
             )
         }
     ) { paddingValues ->
-
-        // Cột chứa danh sách tin nhắn
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                // THÊM SỰ KIỆN: Chạm vào vùng trống sẽ ẩn bàn phím
                 .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        focusManager.clearFocus()
-                    })
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
                 }
         ) {
             LazyColumn(
                 state = listState,
-                // TẮT REVERSE ĐỂ HIỂN THỊ TỪ TRÊN XUỐNG DƯỚI
                 reverseLayout = false,
                 modifier = Modifier
                     .fillMaxSize()
@@ -120,12 +124,33 @@ fun ChatScreen(
                     }
                 }
 
+                // 2. CẬP NHẬT GỌI CHATMESSAGBUBBLE TẠI ĐÂY
                 items(uiState.messages, key = { it.id }) { message ->
                     ChatMessageBubble(
                         message = message,
-                        onMovieClick = { id -> internalNavController.navigate("movie_detail/$id") },
-                        onBookTicketClick = { id -> internalNavController.navigate("booking/$id") }
+                        navController = internalNavController, // Truyền trực tiếp NavController vào
+                        onLocationRequest = {
+                            // Kích hoạt Launcher xin quyền khi user bấm nút "Chia sẻ vị trí"
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
                     )
+                }
+
+                // Hiển thị trạng thái Bot đang trả lời (Typing...)
+                if (uiState.isSending) {
+                    item {
+                        Text(
+                            text = "Bot đang suy nghĩ...",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 8.dp),
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             }
         }

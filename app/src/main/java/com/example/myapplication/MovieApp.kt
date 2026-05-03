@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -11,6 +12,7 @@ import com.example.myapplication.presentation.navigation.graph.RootNavGraph
 import com.example.myapplication.presentation.theme.MovieAppTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import com.example.myapplication.presentation.navigation.route.RootRoute
 
 import com.example.myapplication.utils.handleDeepLink
 
@@ -25,16 +27,23 @@ fun MovieApp(
     val context = LocalContext.current
     val activity = context as? Activity
 
-    // ================== 🔥 HANDLE DEEP LINK (ĐẶT Ở ĐẦU) ==================
+
+
 
     // Khi app mở lần đầu
     LaunchedEffect(activity?.intent) {
+        Log.d("DEBUG_APP", "handleDeepLink: ${activity?.intent}")
         activity?.intent?.let { intent ->
+
             handleDeepLink(intent, appViewModel)
 
             // tránh gọi lại nhiều lần
             intent.data = null
         }
+    }
+
+    LaunchedEffect(Unit) {
+        appViewModel.syncFcmToken()
     }
 
     // ================== UI ==================

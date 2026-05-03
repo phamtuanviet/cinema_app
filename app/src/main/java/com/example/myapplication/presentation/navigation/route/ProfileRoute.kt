@@ -15,4 +15,6 @@ sealed class ProfileRoute(val route: String) {
 
     object MyTickets : ProfileRoute("my_tickets")
 
+    object TicketDetail : ProfileRoute("ticket_detail")
+
 }

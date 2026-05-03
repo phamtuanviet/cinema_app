@@ -73,29 +73,41 @@ class BookingOtherOptionsViewModel @Inject constructor(
         // 💺 subtotal
         val subtotal = state.seatAmount + comboAmount
 
-        // 🎟 voucher
-        val voucher = state.vouchers.find { it.id == state.selectedVoucherId }
-        val voucherDiscount = if (voucher != null && voucher.isUsable == true) {
-            when (voucher.discountType) {
-                VoucherDiscountType.PERCENTAGE -> {
-                    val discount = subtotal * voucher.discountValue.toDouble() / 100
-                    minOf(discount, voucher.maxDiscount?.toDouble() ?: discount)
-                }
+        // KIỂM TRA ĐIỀU KIỆN VOUCHER HIỆN TẠI (Tự động bỏ chọn nếu không đủ điều kiện)
+        var currentSelectedVoucherId = state.selectedVoucherId
+        val currentVoucher = state.vouchers.find { it.id == currentSelectedVoucherId }
 
-                VoucherDiscountType.FIXED -> voucher.discountValue.toDouble()
+        if (currentVoucher != null) {
+            val minAmount = currentVoucher.minOrderAmount?.toDouble() ?: 0.0
+            if (subtotal < minAmount || currentVoucher.isUsable != true) {
+                currentSelectedVoucherId = null // Bỏ chọn
+            }
+        }
+
+        // 🎟 voucher discount (Dùng voucher đã check ở trên)
+        val activeVoucher = state.vouchers.find { it.id == currentSelectedVoucherId }
+        val voucherDiscount = if (activeVoucher != null) {
+            when (activeVoucher.discountType) {
+                VoucherDiscountType.PERCENT -> {
+                    val discount = subtotal * activeVoucher.discountValue.toDouble() / 100
+                    minOf(discount, activeVoucher.maxDiscount?.toDouble() ?: discount)
+                }
+                VoucherDiscountType.FIXED -> activeVoucher.discountValue.toDouble()
                 else -> 0.0
             }
         } else 0.0
 
-        // 💰 point discount (ví dụ 1 point = 1 VND)
+        // 💰 point discount
         val pointDiscount = state.usedPoints.toDouble()
 
         // 💵 total
-        val total = (subtotal - voucherDiscount - pointDiscount)
-            .coerceAtLeast(0.0)
+        val total = (subtotal - voucherDiscount - pointDiscount).coerceAtLeast(0.0)
+        Log.d("MovieOtherOptionsViewModel", "subtotal: $subtotal")
 
         return state.copy(
             comboAmount = comboAmount,
+            subtotal = subtotal, // Cập nhật subtotal
+            selectedVoucherId = currentSelectedVoucherId, // Cập nhật lại ID (có thể đã bị null)
             voucherDiscount = voucherDiscount,
             pointDiscount = pointDiscount,
             totalAmount = total

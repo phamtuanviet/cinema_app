@@ -43,7 +43,8 @@ fun PromotionListScreen(
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
-                )
+                ),
+                windowInsets = WindowInsets(0.dp)
             )
         },
         containerColor = MaterialTheme.colorScheme.background

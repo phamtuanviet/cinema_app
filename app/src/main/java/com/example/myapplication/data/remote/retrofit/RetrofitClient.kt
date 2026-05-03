@@ -7,6 +7,7 @@ import com.example.myapplication.data.remote.interceptor.TokenAuthenticator
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val MAIN_BASE_URL = "http://localhost:8080/api/"
@@ -23,6 +24,9 @@ object RetrofitClient {
         val authApi = tempRetrofit.create(AuthApi::class.java)
 
         return OkHttpClient.Builder()
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .addInterceptor(AuthInterceptor(sessionManager))
             .authenticator(TokenAuthenticator(sessionManager, authApi))
             .build()

@@ -1,17 +1,20 @@
 package com.example.myapplication.presentation.navigation.graph
 
+import ProfileMyTicketsScreen
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.myapplication.presentation.navigation.route.MainRoute
 import com.example.myapplication.presentation.navigation.route.ProfileRoute
 import com.example.myapplication.presentation.navigation.route.RootRoute
-import com.example.myapplication.presentation.screen.profile.my_tickets.ProfileMyTicketsScreen
 import com.example.myapplication.presentation.screen.profile.account.ProfileAccountScreen
 import com.example.myapplication.presentation.screen.profile.change_password.ProfileChangePasswordScreen
 import com.example.myapplication.presentation.screen.profile.profile.ProfileScreen
 import com.example.myapplication.presentation.screen.profile.settings.ProfileSettingsScreen
+import com.example.myapplication.presentation.screen.profile.ticket_detail.ProfileTicketDetailScreen
 
 fun NavGraphBuilder.profileNavGraph(
     navController: NavHostController,
@@ -43,13 +46,18 @@ fun NavGraphBuilder.profileNavGraph(
         }
 
         composable(ProfileRoute.Settings.route) {
-            ProfileSettingsScreen()
+            ProfileSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(ProfileRoute.Account.route) {
             ProfileAccountScreen(
                 onNavigateToChangePassword = {
                     navController.navigate(ProfileRoute.ChangePassword.route)
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -63,12 +71,31 @@ fun NavGraphBuilder.profileNavGraph(
                         }
                         launchSingleTop = true
                     }
-                }
+                },
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
         composable(ProfileRoute.MyTickets.route) {
-            ProfileMyTicketsScreen()
+            ProfileMyTicketsScreen(
+                onNavigateToDetail = { bookingId ->
+                    navController.navigate(ProfileRoute.TicketDetail.route + "/$bookingId")
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = ProfileRoute.TicketDetail.route + "/{bookingId}", // <-- Tên biến ở đây
+            arguments = listOf(
+                navArgument("bookingId") {
+                    type = NavType.StringType
+                }
+            )
+        ) {
+            ProfileTicketDetailScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }
