@@ -4,6 +4,8 @@ import com.example.myapplication.data.remote.dto.BookingMyBookingDto
 
 data class ProfileTicketDetailState(
     val isLoading: Boolean = true,
-    val booking: BookingMyBookingDto? = null, // Ban đầu chưa có vé thì null
+    val isRefunding: Boolean = false, // Trạng thái đang gọi API hoàn tiền
+    val refundSuccess: Boolean = false, // Trạng thái hoàn tiền thành công
+    val booking: BookingMyBookingDto? = null,
     val error: String? = null
 )

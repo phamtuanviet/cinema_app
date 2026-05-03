@@ -20,4 +20,9 @@ interface PaymentApi {
         @Body request: CreatePaymentRequest
     ): PaymentDto
 
+
+    @POST("payment/refund/{bookingId}")
+    suspend fun refundPayment(
+        @Path("bookingId") bookingId: String
+    ): Any
 }

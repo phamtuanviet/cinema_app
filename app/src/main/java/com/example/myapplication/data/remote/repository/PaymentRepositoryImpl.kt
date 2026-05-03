@@ -20,4 +20,11 @@ class PaymentRepositoryImpl @Inject constructor(
              paymentApi.createPayment(CreatePaymentRequest(bookingId, method))
          }
      }
+
+     override suspend fun refundPayment(bookingId: String): Result<Unit> {
+         return safeApiCall {
+             paymentApi.refundPayment(bookingId)
+             Unit
+         }
+     }
 }

@@ -23,4 +23,7 @@ interface BookingDao {
 
     @Query("DELETE FROM bookings WHERE status = :status")
     suspend fun clearBookingsByStatus(status: String)
+
+    @Query("DELETE FROM bookings WHERE status = :status")
+    suspend fun deleteBookingsByStatus(status: String)
 }

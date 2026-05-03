@@ -94,7 +94,10 @@ fun NavGraphBuilder.profileNavGraph(
             )
         ) {
             ProfileTicketDetailScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onNavigateHome = {
+                    navController.popBackStack(MainRoute.MovieGraph.route, inclusive = false)
+                }
             )
         }
     }

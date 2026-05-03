@@ -52,12 +52,17 @@ class BookingRepositoryImpl @Inject constructor(
         }
     }
 
-     override suspend fun refreshBookingsFromApi(status: String): Result<Unit> {
+    override suspend fun refreshBookingsFromApi(status: String): Result<Unit> {
         return try {
+            // 1. Lấy dữ liệu mới tinh từ Server (đã lọc hết vé Refund)
             val response = api.getMyBookings(status)
 
             Log.d("DEBUG_APP", "Status của vé đầu tiên từ API là: [${response.firstOrNull()?.status}]")
             val entities = response.map { it.toEntity() }
+
+            dao.deleteBookingsByStatus(status)
+
+            // 3. Nhét dữ liệu mới vào DB
             dao.insertBookings(entities)
 
             Result.success(Unit)
