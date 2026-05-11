@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.presentation.component.MovieItemCard
 
-// Bảng màu Custom
 val PrimaryRed = Color(0xFFE53935)
 val BackgroundGray = Color(0xFFF5F5F5)
 val TextGray = Color(0xFF757575)
@@ -42,7 +41,7 @@ fun CinemaDetailScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = state.showtimes?.cinema?.name ?: "No name cinema",
+                        text = state.showtimes?.cinema?.name ?: "No movies in this cinema",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -85,9 +84,8 @@ fun CinemaDetailScreen(
                             },
                             divider = {}
                         ) {
-
                             state.dates.forEachIndexed { index, dateString ->
-                                Log.d("CheckDate", dateString) // VD: "2026-03-26"
+                                Log.d("CheckDate", dateString)
                                 val isSelected = selectedTabIndex == index
 
                                 // Xử lý chuỗi ngày định dạng "yyyy-MM-dd"
@@ -118,7 +116,6 @@ fun CinemaDetailScreen(
                                         }
                                     }
                                 )
-
                             }
                         }
                     }

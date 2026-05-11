@@ -1,0 +1,354 @@
+package com.example.myapplication.presentation.screen.admin.movie.create
+
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import com.example.myapplication.data.remote.dto.AdminGenreDto
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AdminMovieCreateScreen(
+    onNavigateBack: () -> Unit,
+    onSaveSuccess: () -> Unit,
+    viewModel: AdminMovieCreateViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+
+    // Xử lý chuyển trang khi thành công
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) onSaveSuccess()
+    }
+
+    // Launcher mở thư viện ảnh
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> viewModel.onEvent(MovieCreateEvent.PosterPicked(uri)) }
+    )
+
+    // State quản lý Dialog Thể loại
+    var showGenreDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Thêm phim mới", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
+        },
+        bottomBar = {
+            Button(
+                onClick = { viewModel.createMovie(context) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .height(50.dp),
+                enabled = !state.isLoading
+            ) {
+                if (state.isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                else Text("Lưu Phim", style = MaterialTheme.typography.titleMedium)
+            }
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 1. Ảnh Poster
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.LightGray)
+                    .clickable {
+                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (state.posterUri != null) {
+                    AsyncImage(
+                        model = state.posterUri,
+                        contentDescription = "Poster",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+                        Text("Nhấn để chọn ảnh Poster", color = Color.Gray)
+                    }
+                }
+            }
+
+            // 2. Thông tin cơ bản
+            OutlinedTextField(
+                value = state.title,
+                onValueChange = { viewModel.onEvent(MovieCreateEvent.TitleChanged(it)) },
+                label = { Text("Tên phim (*)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = state.durationMinutes,
+                    onValueChange = { viewModel.onEvent(MovieCreateEvent.DurationChanged(it)) },
+                    label = { Text("Thời lượng (phút)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = state.basePrice,
+                    onValueChange = { viewModel.onEvent(MovieCreateEvent.BasePriceChanged(it)) },
+                    label = { Text("Giá vé gốc đ (*)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+            }
+
+            // 3. Ngày khởi chiếu (Tạm dùng TextField, có thể tích hợp DatePickerDialog sau)
+            OutlinedTextField(
+                value = state.releaseDate,
+                onValueChange = { viewModel.onEvent(MovieCreateEvent.ReleaseDateChanged(it)) },
+                label = { Text("Ngày khởi chiếu (YYYY-MM-DD)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            // 4. Dropdown Age Rating
+            AgeRatingDropdown(
+                selectedRating = state.ageRating,
+                onRatingSelected = { viewModel.onEvent(MovieCreateEvent.AgeRatingChanged(it)) }
+            )
+
+            // 5. Thể loại (Bấm để mở Dialog)
+            OutlinedCard(
+                onClick = { showGenreDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Thể loại", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val selectedText = (state.selectedGenres.map { it.name } + state.newGenres).joinToString(", ")
+                    if (selectedText.isNotEmpty()) {
+                        Text(selectedText, fontWeight = FontWeight.SemiBold)
+                    } else {
+                        Text("Chưa chọn thể loại nào", color = Color.Gray)
+                    }
+                }
+            }
+
+            // 6. Mô tả & Trailer
+            OutlinedTextField(
+                value = state.trailerUrl,
+                onValueChange = { viewModel.onEvent(MovieCreateEvent.TrailerUrlChanged(it)) },
+                label = { Text("Link Trailer (YouTube URL)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = state.description,
+                onValueChange = { viewModel.onEvent(MovieCreateEvent.DescriptionChanged(it)) },
+                label = { Text("Mô tả nội dung phim") },
+                modifier = Modifier.fillMaxWidth().height(120.dp),
+                maxLines = 5
+            )
+
+            // 7. Trạng thái hoạt động
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Switch(
+                    checked = state.isActive,
+                    onCheckedChange = { viewModel.onEvent(MovieCreateEvent.IsActiveChanged(it)) }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(if (state.isActive) "Đang hoạt động (Hiển thị cho User)" else "Đã ẩn")
+            }
+
+            if (state.error != null) {
+                Text(text = state.error!!, color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+
+    // Dialog Chọn / Thêm Thể loại
+    if (showGenreDialog) {
+        GenreSelectionDialog(
+            availableGenres = state.availableGenres,
+            selectedGenres = state.selectedGenres,
+            newGenres = state.newGenres,
+            onToggleGenre = { viewModel.onEvent(MovieCreateEvent.GenreToggled(it)) },
+            onAddNewGenre = { viewModel.onEvent(MovieCreateEvent.NewGenreAdded(it)) },
+            onRemoveNewGenre = { viewModel.onEvent(MovieCreateEvent.NewGenreRemoved(it)) },
+            onDismiss = { showGenreDialog = false }
+        )
+    }
+}
+
+// ================= CÁC COMPONENT PHỤ (Dropdown & Dialog) =================
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AgeRatingDropdown(selectedRating: String, onRatingSelected: (String) -> Unit) {
+    // List chuẩn cho chuẩn rạp Việt Nam hoặc Quốc tế (Theo yêu cầu của bạn)
+    val ratings = listOf("P", "PG-13", "R", "NC-17", "K", "T13", "T16", "T18", "C")
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedRating,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Giới hạn độ tuổi") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor().fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            ratings.forEach { rating ->
+                DropdownMenuItem(
+                    text = { Text(rating) },
+                    onClick = {
+                        onRatingSelected(rating)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun GenreSelectionDialog(
+    availableGenres: List<AdminGenreDto>,
+    selectedGenres: List<AdminGenreDto>,
+    newGenres: List<String>,
+    onToggleGenre: (AdminGenreDto) -> Unit,
+    onAddNewGenre: (String) -> Unit,
+    onRemoveNewGenre: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var newGenreText by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.8f)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Chọn Thể loại", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Nhập thể loại mới
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = newGenreText,
+                        onValueChange = { newGenreText = it },
+                        placeholder = { Text("Nhập thể loại khác...") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            if (newGenreText.isNotBlank()) {
+                                onAddNewGenre(newGenreText)
+                                newGenreText = ""
+                            }
+                        },
+                        modifier = Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Divider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Danh sách
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    // Hiển thị các thể loại mới vừa gõ
+                    items(newGenres) { name ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(name, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            IconButton(onClick = { onRemoveNewGenre(name) }) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+
+                    // Hiển thị các thể loại từ Database
+                    items(availableGenres) { genre ->
+                        val isSelected = selectedGenres.contains(genre)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onToggleGenre(genre) }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(checked = isSelected, onCheckedChange = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(genre.name)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                    Text("Xong")
+                }
+            }
+        }
+    }
+}

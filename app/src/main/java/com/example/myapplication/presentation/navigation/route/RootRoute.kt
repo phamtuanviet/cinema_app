@@ -6,4 +6,6 @@ sealed class RootRoute(val route: String) {
     object MainGraph : RootRoute("main_graph")
 
     object OnboardingGraph : RootRoute("onboarding_graph")
+
+    object AdminGraph : RootRoute("admin_graph")
 }

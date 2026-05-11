@@ -1,6 +1,11 @@
 package com.example.myapplication.di
 
 
+import com.example.myapplication.data.remote.repository.AdminCinemaRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminDashboardRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminGenreRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminMovieRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminShowtimeRepositoryImpl
 import com.example.myapplication.data.remote.repository.AuthRepositoryImpl
 import com.example.myapplication.data.remote.repository.BannerRepositoryImpl
 import com.example.myapplication.data.remote.repository.BookingRepositoryImpl
@@ -16,6 +21,11 @@ import com.example.myapplication.data.remote.repository.SeatRepositoryImpl
 import com.example.myapplication.data.remote.repository.ShowtimeRepositoryImpl
 import com.example.myapplication.data.remote.repository.UserRepositoryImpl
 import com.example.myapplication.data.remote.repository.VoucherRepositoryImpl
+import com.example.myapplication.domain.repository.AdminCinemaRepository
+import com.example.myapplication.domain.repository.AdminDashboardRepository
+import com.example.myapplication.domain.repository.AdminGenreRepository
+import com.example.myapplication.domain.repository.AdminMovieRepository
+import com.example.myapplication.domain.repository.AdminShowtimeRepository
 import com.example.myapplication.domain.repository.AuthRepository
 import com.example.myapplication.domain.repository.BannerRepository
 import com.example.myapplication.domain.repository.BookingRepository
@@ -35,6 +45,7 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -110,9 +121,38 @@ abstract class RepositoryModule {
         impl: RatingRepositoryImpl
     ): RatingRepository
 
+
+    @Binds
+    abstract fun bindAdminDashboardRepository(
+        impl: AdminDashboardRepositoryImpl
+    ): AdminDashboardRepository
+
     @Binds
     abstract fun bindChatRepository(
         impl: ChatRepositoryImpl
     ): ChatRepository
+
+    @Binds
+    abstract fun bindAdminMovieRepository(
+        impl: AdminMovieRepositoryImpl
+    ): AdminMovieRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminGenreRepository(
+        adminGenreRepositoryImpl: AdminGenreRepositoryImpl
+    ): AdminGenreRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminCinemaRepository(
+        adminCinemaRepositoryImpl: AdminCinemaRepositoryImpl
+    ): AdminCinemaRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminShowtimeRepository(
+        impl: AdminShowtimeRepositoryImpl
+    ): AdminShowtimeRepository
 
 }

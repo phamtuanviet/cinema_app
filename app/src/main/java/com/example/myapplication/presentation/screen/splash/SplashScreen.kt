@@ -21,6 +21,7 @@ fun SplashScreen(
     onNavigateToOnboarding: () -> Unit,
     onNavigateToAuth: () -> Unit,
     onNavigateToMain: () -> Unit,
+    onNavigateToAdmin: () -> Unit,
 ) {
 
     LaunchedEffect(appState.isLoggedIn, appState.hasOnboarded,appState.isLoading) {
@@ -41,7 +42,13 @@ fun SplashScreen(
             onNavigateToAuth()
         }
         else {
-            onNavigateToMain()
+            Log.d("SplashScreen", appState.role ?: "Hello")
+            if (appState.role == "ADMIN") {
+
+                onNavigateToAdmin()
+            } else {
+                onNavigateToMain()
+            }
         }
 
     }

@@ -23,8 +23,13 @@ fun NavGraphBuilder.authNavGraph(
 
         LoginScreen(
 
-            onLoginSuccess = {
+            onNavigateUserMain = {
                 navController.navigate(RootRoute.MainGraph.route) {
+                    popUpTo(RootRoute.AuthGraph.route) { inclusive = true }
+                }
+            },
+            onNavigateAdminMain = {
+                navController.navigate(RootRoute.AdminGraph.route) {
                     popUpTo(RootRoute.AuthGraph.route) { inclusive = true }
                 }
             },

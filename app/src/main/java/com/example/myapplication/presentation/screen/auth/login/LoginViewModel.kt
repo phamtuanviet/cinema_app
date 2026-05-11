@@ -20,12 +20,10 @@ class LoginViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     fun onEmailChange(email: String) {
-        // Xóa thông báo lỗi khi người dùng bắt đầu nhập lại
         _state.value = _state.value.copy(email = email, error = null)
     }
 
     fun onPasswordChange(password: String) {
-        // Xóa thông báo lỗi khi người dùng bắt đầu nhập lại
         _state.value = _state.value.copy(password = password, error = null)
     }
 
@@ -63,11 +61,23 @@ class LoginViewModel @Inject constructor(
                     sessionManager.getFcmToken()
                 )
 
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = null,
-                    isSuccess = result
-                )
+                if (result) {
+                    // 🔥 LẤY ROLE TỪ SESSION MANAGER SAU KHI LOGIN THÀNH CÔNG
+                    val user = sessionManager.getUser()
+
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = null,
+                        isSuccess = true,
+                        role = user?.role // Gắn role vào State
+                    )
+                } else {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "Đăng nhập thất bại. Kiểm tra lại thông tin!"
+                    )
+                }
+
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isLoading = false,

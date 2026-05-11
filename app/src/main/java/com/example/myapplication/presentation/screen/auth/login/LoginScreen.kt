@@ -23,10 +23,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    onNavigateUserMain: () -> Unit,
+    onNavigateAdminMain: () -> Unit,
     onNavigateRegister: () -> Unit,
     onNavigateForgot: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
@@ -35,23 +35,25 @@ fun LoginScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
 
-    // Trạng thái ẩn/hiện mật khẩu
     var isPasswordVisible by remember { mutableStateOf(false) }
 
+    // 🔥 XỬ LÝ CHUYỂN HƯỚNG DỰA VÀO ROLE
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
-            onLoginSuccess()
+            if (state.role == "ADMIN") {
+                onNavigateAdminMain()
+            } else {
+                onNavigateUserMain()
+            }
         }
     }
 
-    // Hiển thị Snackbar khi có lỗi từ server hoặc validation
     LaunchedEffect(state.error) {
         state.error?.let {
             snackbarHostState.showSnackbar(it)
         }
     }
 
-    // Dùng Scaffold để có chỗ hiển thị Snackbar chuẩn xác
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -64,7 +66,7 @@ fun LoginScreen(
                 }
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally // Căn giữa mọi thứ
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Đăng Nhập",
@@ -75,17 +77,14 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 🔥 Input Email
             OutlinedTextField(
                 value = state.email,
                 onValueChange = { viewModel.onEmailChange(it) },
                 label = { Text("Email") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Email, contentDescription = "Email Icon")
-                },
+                leadingIcon = { Icon(imageVector = Icons.Default.Email, contentDescription = "Email Icon") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next // Nút Next trên bàn phím
+                    imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
@@ -93,39 +92,31 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                isError = state.error?.contains("Email") == true // Đỏ viền nếu lỗi liên quan tới email
+                isError = state.error?.contains("Email") == true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🔥 Input Password
             OutlinedTextField(
                 value = state.password,
                 onValueChange = { viewModel.onPasswordChange(it) },
                 label = { Text("Mật khẩu") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Lock, contentDescription = "Lock Icon")
-                },
+                leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "Lock Icon") },
                 trailingIcon = {
-                    // Nút bấm chuyển đổi ẩn/hiện mật khẩu
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        val iconRes = if (isPasswordVisible)
-                            android.R.drawable.ic_menu_view // Bạn có thể thay bằng icon mắt mở/nhắm của bạn
-                        else
-                            android.R.drawable.ic_secure
-
+                        val iconRes = if (isPasswordVisible) android.R.drawable.ic_menu_view else android.R.drawable.ic_secure
                         Icon(painterResource(id = iconRes), contentDescription = "Toggle Password Visibility")
                     }
                 },
                 visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done // Nút Done trên bàn phím
+                    imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = {
                         focusManager.clearFocus()
-                        viewModel.login() // Bấm done thì gọi login luôn
+                        viewModel.login()
                     }
                 ),
                 modifier = Modifier.fillMaxWidth(),
@@ -136,7 +127,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Quên mật khẩu căn phải
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                 TextButton(onClick = onNavigateForgot) {
                     Text("Quên mật khẩu?")
@@ -145,17 +135,16 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🔥 Nút Login
             Button(
                 onClick = {
-                    focusManager.clearFocus() // Ẩn bàn phím khi bấm
+                    focusManager.clearFocus()
                     viewModel.login()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                enabled = !state.isLoading // Khóa nút khi đang tải
+                enabled = !state.isLoading
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
@@ -170,7 +159,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Chuyển sang màn đăng ký
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Chưa có tài khoản?")
                 TextButton(onClick = onNavigateRegister) {

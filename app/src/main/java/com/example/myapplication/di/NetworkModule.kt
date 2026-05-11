@@ -17,6 +17,11 @@ import com.example.myapplication.data.remote.api.SeatHoldSessionApi
 import com.example.myapplication.data.remote.api.ShowtimeApi
 import com.example.myapplication.data.remote.api.UserApi
 import com.example.myapplication.data.remote.api.VoucherApi
+import com.example.myapplication.data.remote.api.AdminApi
+import com.example.myapplication.data.remote.api.AdminCinemaApi
+import com.example.myapplication.data.remote.api.AdminGenreApi
+import com.example.myapplication.data.remote.api.AdminMovieApi
+import com.example.myapplication.data.remote.api.AdminShowtimeApi
 import com.example.myapplication.data.remote.retrofit.RetrofitClient
 import com.google.gson.Gson
 import dagger.Module
@@ -157,6 +162,16 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideAdminApi(
+        @MainRetrofit retrofit: Retrofit
+    ): AdminApi {
+        return retrofit.create(AdminApi::class.java)
+    }
+
+
+
+    @Provides
+    @Singleton
     fun provideCinemaApi(
         @MainRetrofit retrofit: Retrofit
     ): CinemaApi {
@@ -194,4 +209,34 @@ object NetworkModule {
     ): ChatbotApi {
         return retrofit.create(ChatbotApi::class.java)
     }
+
+
+    @Provides
+    @Singleton
+    fun provideAdminMovieApi(
+        @MainRetrofit retrofit: Retrofit
+    ): AdminMovieApi {
+        return retrofit.create(AdminMovieApi::class.java)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideAdminGenreApi(@MainRetrofit retrofit: Retrofit): AdminGenreApi {
+        return retrofit.create(AdminGenreApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminCinemaApi(@MainRetrofit retrofit: Retrofit): AdminCinemaApi {
+        return retrofit.create(AdminCinemaApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminShowtimeApi(@MainRetrofit retrofit: Retrofit): AdminShowtimeApi {
+        return retrofit.create(AdminShowtimeApi::class.java)
+    }
+
+
 }

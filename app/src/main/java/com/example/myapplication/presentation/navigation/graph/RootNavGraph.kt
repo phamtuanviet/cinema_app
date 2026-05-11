@@ -6,10 +6,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import com.example.myapplication.presentation.app.AppState
+import com.example.myapplication.presentation.navigation.route.AdminRoute
 import com.example.myapplication.presentation.navigation.route.AuthRoute
 import com.example.myapplication.presentation.navigation.route.MainRoute
 import com.example.myapplication.presentation.navigation.route.OnboardingRoute
 import com.example.myapplication.presentation.navigation.route.RootRoute
+import com.example.myapplication.presentation.screen.admin.main.AdminMainScreen
 import com.example.myapplication.presentation.screen.splash.SplashScreen
 
 @Composable
@@ -41,8 +43,17 @@ fun RootNavGraph(
                     navController.navigate(RootRoute.MainGraph.route) {
                         popUpTo(RootRoute.Splash.route) { inclusive = true }
                     }
+                },
+                onNavigateToAdmin = {
+                    navController.navigate(RootRoute.AdminGraph.route) {
+                        popUpTo(RootRoute.Splash.route) { inclusive = true }
+                    }
                 }
             )
+        }
+
+        composable(RootRoute.AdminGraph.route) {
+            AdminMainScreen(rootNavController = navController)
         }
 
         // Onboarding
@@ -68,5 +79,8 @@ fun RootNavGraph(
         ) {
             mainNavGraph(navController)
         }
+
+
     }
+
 }

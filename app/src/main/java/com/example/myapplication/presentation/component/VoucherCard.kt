@@ -1,20 +1,16 @@
 package com.example.myapplication.presentation.component
 
-
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,7 +23,6 @@ fun VoucherCard(
 ) {
     val context = LocalContext.current
 
-    // Dùng ElevatedCard tạo độ nổi bật mượt mà
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -93,7 +88,6 @@ fun VoucherCard(
                     Text("Sao chép")
                 }
 
-                // Nút chính (Action) - Dùng Primary Button
                 Button(
                     onClick = { onNavigateToVoucher(voucher.code) },
                     modifier = Modifier.weight(1f),

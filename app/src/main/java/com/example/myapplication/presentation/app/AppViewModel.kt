@@ -56,17 +56,21 @@ class AppViewModel @Inject constructor(
             combine(
                 sessionManager.accessTokenFlow,
                 sessionManager.hasOnboardedFlow,
-                sessionManager.darkThemeFlow
-            ) { token, onboarded, theme ->
+                sessionManager.darkThemeFlow,
+                sessionManager.userFlow
+            ) { token, onboarded, theme ,user ->
 
                 Log.d("AppViewModel", "token = $token")
                 Log.d("AppViewModel", "onboarded = $onboarded")
                 Log.d("AppViewModel", "darkTheme = $theme")
+                Log.d("AppViewModel", "user = $user.role")
+
 
                 AppState(
                     isLoggedIn = !token.isNullOrEmpty(),
                     hasOnboarded = onboarded,
                     darkTheme = theme,
+                    role = user?.role,
                     isLoading = false
                 )
             }.collect { state ->
