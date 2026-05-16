@@ -5,5 +5,6 @@ data class AppState(
     val hasOnboarded: Boolean = false,
     val darkTheme: Boolean = false,
     val isLoading: Boolean = true,
-    val role: String? = null
+    val role: String? = null,
+    val isBanned: Boolean = false
 )

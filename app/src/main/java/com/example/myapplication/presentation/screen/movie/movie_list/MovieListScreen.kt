@@ -19,18 +19,45 @@ import com.example.myapplication.presentation.component.BannerCarousel
 import com.example.myapplication.presentation.component.MovieItem
 import com.example.myapplication.presentation.component.MovieTabs
 
+import android.content.Intent
+import android.net.Uri
+
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+
+import androidx.compose.ui.platform.LocalContext
+
+
 @Composable
 fun MovieListScreen(
     viewModel: MovieListViewModel = hiltViewModel(),
-    onNavigateBooking: (String) -> Unit
+    onNavigateBooking: (String) -> Unit,
+    onNavigateToMovieDetail: (String) -> Unit // Thêm callback này
 ) {
-    // Lấy state từ ViewModel
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current // Để dùng cho Intent mở URL
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        // Hiển thị banner
-        BannerCarousel(banners = state.banners, onMovieClick = onNavigateBooking)
+        // Hiển thị banner và xử lý click phân nhánh
+        BannerCarousel(
+            banners = state.banners,
+            onBannerClick = { banner ->
+                when (banner.actionType) {
+                    "MOVIE" -> {
+                        // Di chuyển đến màn chi tiết phim
+                        banner.movieId?.let { onNavigateToMovieDetail(it) }
+                    }
+                    "URL" -> {
+                        // Mở trình duyệt web
+                        banner.targetUrl?.let { url ->
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
+                        }
+                    }
+                }
+            }
+        )
 
         // Hiển thị các tab và xử lý thay đổi tab
         MovieTabs(
@@ -60,17 +87,16 @@ fun MovieListScreen(
                     }
 
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(2), // Chuyển xuống 2 cột để UI thoáng và hiện rõ poster hơn
-                        contentPadding = PaddingValues(16.dp), // Padding tổng cho toàn bộ Grid
-                        horizontalArrangement = Arrangement.spacedBy(16.dp), // Khoảng cách ngang giữa 2 cột
-                        verticalArrangement = Arrangement.spacedBy(24.dp), // Khoảng cách dọc giữa các hàng
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(24.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(movies) { movie ->
                             MovieItem(
                                 movie = movie,
                                 onClick = { onNavigateBooking(movie.id) },
-                                // Truyền fillMaxWidth để item tự động giãn full bề ngang của 1 cột
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

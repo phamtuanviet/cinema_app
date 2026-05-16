@@ -1,11 +1,17 @@
 package com.example.myapplication.di
 
 
+import com.example.myapplication.data.remote.repository.AdminBannerRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminBookingRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminCinemaRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminComboRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminDashboardRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminGenreRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminMovieRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminNewsRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminShowtimeRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminUserRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminVoucherRepositoryImpl
 import com.example.myapplication.data.remote.repository.AuthRepositoryImpl
 import com.example.myapplication.data.remote.repository.BannerRepositoryImpl
 import com.example.myapplication.data.remote.repository.BookingRepositoryImpl
@@ -21,11 +27,17 @@ import com.example.myapplication.data.remote.repository.SeatRepositoryImpl
 import com.example.myapplication.data.remote.repository.ShowtimeRepositoryImpl
 import com.example.myapplication.data.remote.repository.UserRepositoryImpl
 import com.example.myapplication.data.remote.repository.VoucherRepositoryImpl
+import com.example.myapplication.domain.repository.AdminBannerRepository
+import com.example.myapplication.domain.repository.AdminBookingRepository
 import com.example.myapplication.domain.repository.AdminCinemaRepository
+import com.example.myapplication.domain.repository.AdminComboRepository
 import com.example.myapplication.domain.repository.AdminDashboardRepository
 import com.example.myapplication.domain.repository.AdminGenreRepository
 import com.example.myapplication.domain.repository.AdminMovieRepository
+import com.example.myapplication.domain.repository.AdminNewsRepository
 import com.example.myapplication.domain.repository.AdminShowtimeRepository
+import com.example.myapplication.domain.repository.AdminUserRepository
+import com.example.myapplication.domain.repository.AdminVoucherRepository
 import com.example.myapplication.domain.repository.AuthRepository
 import com.example.myapplication.domain.repository.BannerRepository
 import com.example.myapplication.domain.repository.BookingRepository
@@ -155,4 +167,39 @@ abstract class RepositoryModule {
         impl: AdminShowtimeRepositoryImpl
     ): AdminShowtimeRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindAdminUserRepository(
+        impl: AdminUserRepositoryImpl
+    ): AdminUserRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminBookingRepository(
+        impl: AdminBookingRepositoryImpl
+    ): AdminBookingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminComboRepository(
+        impl: AdminComboRepositoryImpl
+    ): AdminComboRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminVoucherRepository(
+        impl: AdminVoucherRepositoryImpl
+    ): AdminVoucherRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminNewsRepository(
+        impl: AdminNewsRepositoryImpl
+    ): AdminNewsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminBannerRepository(
+        impl: AdminBannerRepositoryImpl
+    ): AdminBannerRepository
 }

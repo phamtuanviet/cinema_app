@@ -1,5 +1,7 @@
 package com.example.myapplication.domain.repository
 
+import com.example.myapplication.data.remote.dto.UserDto
+
 interface AuthRepository {
     suspend fun login(
         email: String,
@@ -36,5 +38,7 @@ interface AuthRepository {
     suspend fun logout(
         refreshToken: String
     ): Boolean
+
+    suspend fun getCurrentUser(): Result<UserDto>
 
 }

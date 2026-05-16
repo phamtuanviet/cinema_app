@@ -24,10 +24,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.myapplication.presentation.navigation.graph.adminBannerNavGraph
 import com.example.myapplication.presentation.navigation.graph.adminBookingNavGraph
 import com.example.myapplication.presentation.navigation.graph.adminCinemaNavGraph
 import com.example.myapplication.presentation.navigation.graph.adminComboNavGraph
 import com.example.myapplication.presentation.navigation.graph.adminMovieNavGraph
+import com.example.myapplication.presentation.navigation.graph.adminNewsNavGraph
 import com.example.myapplication.presentation.navigation.graph.adminPaymentNavGraph
 import com.example.myapplication.presentation.navigation.graph.adminShowtimeNavGraph
 import com.example.myapplication.presentation.navigation.graph.adminUserNavGraph
@@ -110,12 +112,13 @@ fun AdminMainScreen(
                     onNavigateToBookings = { adminNavController.navigate(AdminRoute.BookingGraph.route) },
                     onNavigateToCombos = { adminNavController.navigate(AdminRoute.ComboGraph.route) },
                     onNavigateToVouchers = { adminNavController.navigate(AdminRoute.VoucherGraph.route) },
-                    onNavigateToPayments = { adminNavController.navigate(AdminRoute.PaymentGraph.route) },
                     onLogoutSuccess = {
                         rootNavController.navigate(RootRoute.AuthGraph.route) {
                             popUpTo(0)
                         }
-                    }
+                    },
+                    onNavigateToNews = { adminNavController.navigate(AdminRoute.NewsGraph.route) },
+                    onNavigateToBanners = { adminNavController.navigate(AdminRoute.BannerGraph.route) }
                 )
             }
 
@@ -127,7 +130,8 @@ fun AdminMainScreen(
             adminBookingNavGraph(adminNavController)
             adminComboNavGraph(adminNavController)
             adminVoucherNavGraph(adminNavController)
-            adminPaymentNavGraph(adminNavController)
+            adminNewsNavGraph(adminNavController)
+            adminBannerNavGraph(adminNavController)
         }
     }
 }

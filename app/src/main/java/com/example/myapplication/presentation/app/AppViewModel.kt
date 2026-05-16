@@ -14,9 +14,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+
+import com.example.myapplication.domain.repository.AuthRepository // Nhúng Repository chứa API gọi /me và logout
+
+import retrofit2.HttpException
+import java.io.IOException
+
 @HiltViewModel
 class AppViewModel @Inject constructor(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val authRepository: AuthRepository // 🔥 Thêm AuthRepository để gọi API
 ) : ViewModel() {
 
     // =========================
@@ -28,49 +36,31 @@ class AppViewModel @Inject constructor(
     private val _deepLinkNavigationRoute = MutableStateFlow<String?>(null)
     val deepLinkNavigationRoute: StateFlow<String?> = _deepLinkNavigationRoute.asStateFlow()
 
-    fun setDeepLinkNavigationRoute(route: String) {
-        _deepLinkNavigationRoute.value = route
-    }
-
-    // Gọi sau khi Jetpack Compose đã navigate xong để tránh nhảy màn hình lại
-    fun clearDeepLinkNavigationRoute() {
-        _deepLinkNavigationRoute.value = null
-    }
-
-    // =========================
-    // 🔥 PAYMENT RESULT (DEEP LINK)
-    // =========================
     private val _paymentResult = MutableStateFlow<PaymentResult?>(null)
-    val paymentResult: StateFlow<PaymentResult?> = _paymentResult
+    val paymentResult: StateFlow<PaymentResult?> = _paymentResult.asStateFlow()
 
     init {
         observeAppState()
     }
 
     // =========================
-    // 🔥 OBSERVE APP STATE
+    // 🔥 LẮNG NGHE DATASTORE ĐỂ CẬP NHẬT TRẠNG THÁI APP
     // =========================
     private fun observeAppState() {
         viewModelScope.launch {
-
             combine(
                 sessionManager.accessTokenFlow,
                 sessionManager.hasOnboardedFlow,
                 sessionManager.darkThemeFlow,
                 sessionManager.userFlow
-            ) { token, onboarded, theme ,user ->
-
-                Log.d("AppViewModel", "token = $token")
-                Log.d("AppViewModel", "onboarded = $onboarded")
-                Log.d("AppViewModel", "darkTheme = $theme")
-                Log.d("AppViewModel", "user = $user.role")
-
+            ) { token, onboarded, theme, user ->
 
                 AppState(
                     isLoggedIn = !token.isNullOrEmpty(),
                     hasOnboarded = onboarded,
                     darkTheme = theme,
                     role = user?.role,
+                    isBanned = user?.isBanned == true, // Lấy trạng thái khóa từ DataStore
                     isLoading = false
                 )
             }.collect { state ->
@@ -80,39 +70,120 @@ class AppViewModel @Inject constructor(
     }
 
     // =========================
-    // 🔥 HANDLE DEEP LINK PAYMENT
+    // 🔥 KIỂM TRA TRẠNG THÁI LIVE CỦA NGƯỜI DÙNG (GỌI TẠI SPLASH SCREEN)
     // =========================
+    fun verifyUserStatusAndNavigate(
+        onSuccess: (String?) -> Unit,
+        onBannedOrError: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val token = sessionManager.getAccessToken()
+
+            // Nếu chưa có token thì ra thẳng màn Auth
+            if (token.isNullOrEmpty()) {
+                onBannedOrError()
+                return@launch
+            }
+
+            try {
+                // Gọi API lấy thông tin MỚI NHẤT từ Server
+                val result = authRepository.getCurrentUser()
+
+                if (result.isSuccess) {
+                    val user = result.getOrNull()
+
+                    // Kiểm tra thêm một lớp bảo vệ an toàn
+                    if (user?.isBanned == true) {
+                        forceLogout()
+                        onBannedOrError()
+                    } else {
+                        // Cập nhật lại DataStore để đồng bộ với Server
+                        user?.let { sessionManager.saveUser(it) }
+                        onSuccess(user?.role)
+                    }
+                } else {
+                    // Xử lý lỗi trả về từ API (ví dụ 401 hoặc 403)
+                    val exception = result.exceptionOrNull()
+                    if (exception is HttpException && (exception.code() == 401 || exception.code() == 403)) {
+                        Log.e("VERIFY", "Token hết hạn hoặc tài khoản bị Ban!")
+                        forceLogout()
+                        onBannedOrError()
+                    } else {
+                        // Lỗi Server (500) -> Dùng dữ liệu Local tạm thời
+                        fallbackToLocalData(onSuccess, onBannedOrError)
+                    }
+                }
+            } catch (e: IOException) {
+                // Mất mạng -> Dùng dữ liệu Local
+                fallbackToLocalData(onSuccess, onBannedOrError)
+            }
+        }
+    }
+
+    private suspend fun fallbackToLocalData(onSuccess: (String?) -> Unit, onBannedOrError: () -> Unit) {
+        val localUser = sessionManager.getUser()
+        if (localUser?.isBanned == true) {
+            forceLogout()
+            onBannedOrError()
+        } else {
+            onSuccess(localUser?.role)
+        }
+    }
+
+    // =========================
+    // 🔥 ÉP ĐĂNG XUẤT KHI PHÁT HIỆN LỖI HOẶC BỊ BAN
+    // =========================
+    fun forceLogout() {
+        viewModelScope.launch {
+            val refreshToken = sessionManager.getRefreshToken() ?: ""
+
+            // 1. Gọi Repo để xử lý thu hồi Token Backend + Reset Firebase Token
+            authRepository.logout(refreshToken)
+
+            // 2. Xóa sạch Session dưới Local.
+            // Lúc này observeAppState() sẽ bắt được token = null và tự động đá UI ra màn Auth.
+            sessionManager.clearSession()
+        }
+    }
+
+    // =========================
+    // 🔥 FIREBASE & THEME
+    // =========================
+    fun syncFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("FCM", "Lấy token FCM thất bại", task.exception)
+                return@addOnCompleteListener
+            }
+            viewModelScope.launch {
+                sessionManager.saveFcmToken(task.result)
+            }
+        }
+    }
+
+    fun toggleTheme() {
+        viewModelScope.launch {
+            sessionManager.updateDarkTheme(!_appState.value.darkTheme)
+        }
+    }
+
+    // =========================
+    // 🔥 NAVIGATION & PAYMENT HANDLERS
+    // =========================
+    fun setDeepLinkNavigationRoute(route: String) {
+        _deepLinkNavigationRoute.value = route
+    }
+
+    fun clearDeepLinkNavigationRoute() {
+        _deepLinkNavigationRoute.value = null
+    }
+
     fun onPaymentResult(code: String?, txnRef: String?) {
         Log.d("AppViewModel", "onPaymentResult: $code, $txnRef")
         _paymentResult.value = PaymentResult(code, txnRef)
     }
 
-    fun syncFcmToken() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("FCM", "Fetching FCM registration token failed", task.exception)
-                return@addOnCompleteListener
-            }
-
-            // Lấy token thành công
-            val token = task.result
-            Log.d("FCM", "Token lúc mở app: $token")
-
-            // Lưu vào DataStore
-            viewModelScope.launch {
-                sessionManager.saveFcmToken(token)
-            }
-        }
-    }
-
     fun clearPaymentResult() {
         _paymentResult.value = null
-    }
-
-    fun toggleTheme() {
-        viewModelScope.launch {
-            val current = _appState.value.darkTheme
-            sessionManager.updateDarkTheme(!current)
-        }
     }
 }

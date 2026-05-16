@@ -37,7 +37,6 @@ data class AdminMenuItem(
     val onClick: () -> Unit
 )
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminMoreMenuScreen(
@@ -49,7 +48,9 @@ fun AdminMoreMenuScreen(
     onNavigateToBookings: () -> Unit,
     onNavigateToCombos: () -> Unit,
     onNavigateToVouchers: () -> Unit,
-    onNavigateToPayments: () -> Unit,
+    onNavigateToBanners : () -> Unit,
+    // 🔥 THÊM 2 CALLBACK CHO TIN TỨC VÀ ĐIỂM
+    onNavigateToNews: () -> Unit,
     onLogoutSuccess: () -> Unit // Callback khi logout xong
 ) {
     val state by viewModel.state.collectAsState()
@@ -86,7 +87,7 @@ fun AdminMoreMenuScreen(
         )
     }
 
-    // Danh sách menu như bạn đã thấy ở câu trước...
+    // Danh sách menu đã được bổ sung
     val menuItems = listOf(
         AdminMenuItem("Quản lý Phim", Icons.Default.Movie, Color(0xFFE53935), Color(0xFFFFEBEE), onNavigateToMovies),
         AdminMenuItem("Quản lý Rạp", Icons.Default.Domain, Color(0xFF1E88E5), Color(0xFFE3F2FD), onNavigateToCinemas),
@@ -95,8 +96,9 @@ fun AdminMoreMenuScreen(
         AdminMenuItem("Đơn Vé (Booking)", Icons.Default.Receipt, Color(0xFFFF8F00), Color(0xFFFFF8E1), onNavigateToBookings),
         AdminMenuItem("Combo Bắp Nước", Icons.Default.Fastfood, Color(0xFFF4511E), Color(0xFFFBE9E7), onNavigateToCombos),
         AdminMenuItem("Khuyến Mãi (Voucher)", Icons.Default.LocalOffer, Color(0xFFE91E63), Color(0xFFFCE4EC), onNavigateToVouchers),
-        AdminMenuItem("Giao Dịch (Payment)", Icons.Default.Payments, Color(0xFF43A047), Color(0xFFE8F5E9), onNavigateToPayments)
-    )
+        // 🔥 THÊM 2 MỤC MỚI VÀO ĐÂY
+        AdminMenuItem("Tin Tức", Icons.Default.Article, Color(0xFF546E7A), Color(0xFFECEFF1), onNavigateToNews),
+        AdminMenuItem("Quản lý Banner", Icons.Default.ViewCarousel, Color(0xFFFB8C00), Color(0xFFFFF3E0), onNavigateToBanners)    )
 
     Scaffold(
         topBar = {
@@ -132,7 +134,7 @@ fun AdminMoreMenuScreen(
 
                 // Nút Đăng Xuất mở Dialog
                 Button(
-                    onClick = { showLogoutDialog = true }, // Mở Dialog thay vì gọi trực tiếp
+                    onClick = { showLogoutDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier
                         .fillMaxWidth()

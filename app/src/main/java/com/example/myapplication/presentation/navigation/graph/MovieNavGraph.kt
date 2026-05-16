@@ -29,6 +29,10 @@ fun NavGraphBuilder.movieNavGraph(
             MovieListScreen(
                 onNavigateBooking = { movieId ->
                     navController.navigate(MovieRoute.MovieBooking.createRoute(movieId))
+                },
+                onNavigateToMovieDetail = { movieId ->
+                    // Mở màn detail dựa theo route bạn đã cung cấp
+                    navController.navigate(MovieRoute.MovieDetail.createRoute(movieId))
                 }
             )
         }

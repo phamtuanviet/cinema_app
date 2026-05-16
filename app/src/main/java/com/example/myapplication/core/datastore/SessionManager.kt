@@ -80,5 +80,11 @@ class SessionManager @Inject constructor(
         return dataStore.fcmTokenFlow.first()
     }
 
+    suspend fun clearSession() {
+        clearTokens()
+        clearUser()
+        clearFcmToken() // Xóa luôn FCM để không nhận Push thông báo rác
+    }
+
 
 }

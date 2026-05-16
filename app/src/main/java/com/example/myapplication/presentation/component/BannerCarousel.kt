@@ -28,7 +28,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun BannerCarousel(
     banners: List<BannerDto>,
-    onMovieClick: (movieId: String) -> Unit,
+    onBannerClick: (bannerDto: BannerDto) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -71,11 +71,11 @@ fun BannerCarousel(
                             "URL" -> {
                                 val intent = Intent(
                                     Intent.ACTION_VIEW,
-                                    Uri.parse(banner.actionValue)
+                                    Uri.parse(banner.targetUrl)
                                 )
                                 context.startActivity(intent)
                             }
-                            "MOVIE" -> onMovieClick(banner.actionValue)
+                            "MOVIE" -> onBannerClick(banner)
                         }
                     },
                 placeholder = painterResource(id = com.example.myapplication.R.drawable.empty),

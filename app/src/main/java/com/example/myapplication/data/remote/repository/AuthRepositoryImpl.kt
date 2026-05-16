@@ -50,7 +50,7 @@ class AuthRepositoryImpl @Inject constructor(
                 )
                 sessionManager.saveUser(UserDto(user.id, user.email
                     , user.fullName, user.phone, user.isVerified
-                    , user.role,user.avatarUrl))
+                    , user.role,user.avatarUrl,user.isBanned))
 
                 return true;
             } else {
@@ -184,4 +184,7 @@ class AuthRepositoryImpl @Inject constructor(
 
         return true
     }
+
+    override suspend fun getCurrentUser() = runCatching { authApi.getCurrentUser() }
+
 }

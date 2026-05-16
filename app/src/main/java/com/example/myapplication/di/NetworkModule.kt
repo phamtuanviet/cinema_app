@@ -18,10 +18,16 @@ import com.example.myapplication.data.remote.api.ShowtimeApi
 import com.example.myapplication.data.remote.api.UserApi
 import com.example.myapplication.data.remote.api.VoucherApi
 import com.example.myapplication.data.remote.api.AdminApi
+import com.example.myapplication.data.remote.api.AdminBannerApi
+import com.example.myapplication.data.remote.api.AdminBookingApi
 import com.example.myapplication.data.remote.api.AdminCinemaApi
+import com.example.myapplication.data.remote.api.AdminComboApi
 import com.example.myapplication.data.remote.api.AdminGenreApi
 import com.example.myapplication.data.remote.api.AdminMovieApi
+import com.example.myapplication.data.remote.api.AdminNewsApi
 import com.example.myapplication.data.remote.api.AdminShowtimeApi
+import com.example.myapplication.data.remote.api.AdminUserApi
+import com.example.myapplication.data.remote.api.AdminVoucherApi
 import com.example.myapplication.data.remote.retrofit.RetrofitClient
 import com.google.gson.Gson
 import dagger.Module
@@ -238,5 +244,39 @@ object NetworkModule {
         return retrofit.create(AdminShowtimeApi::class.java)
     }
 
+    @Provides
+    @Singleton
+    fun provideAdminUserApi(@MainRetrofit retrofit: Retrofit): AdminUserApi {
+        return retrofit.create(AdminUserApi::class.java)
+    }
 
+    @Provides
+    @Singleton
+    fun provideAdminBookingApi(@MainRetrofit retrofit: Retrofit): AdminBookingApi {
+        return retrofit.create(AdminBookingApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminComboApi(@MainRetrofit retrofit: Retrofit): AdminComboApi {
+        return retrofit.create(AdminComboApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminVoucherApi(@MainRetrofit retrofit: Retrofit): AdminVoucherApi {
+        return retrofit.create(AdminVoucherApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminNewsApi(@MainRetrofit retrofit: Retrofit): AdminNewsApi {
+        return retrofit.create(AdminNewsApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminBannerApi(@MainRetrofit retrofit: Retrofit): AdminBannerApi {
+        return retrofit.create(AdminBannerApi::class.java)
+    }
 }

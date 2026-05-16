@@ -12,12 +12,14 @@ import com.example.myapplication.data.remote.dto.RegisterRequest
 import com.example.myapplication.data.remote.dto.RegisterResponse
 import com.example.myapplication.data.remote.dto.ResetPasswordRequest
 import com.example.myapplication.data.remote.dto.ResetPasswordResponse
+import com.example.myapplication.data.remote.dto.UserDto
 import com.example.myapplication.data.remote.dto.VerifyEmailRequest
 import com.example.myapplication.data.remote.dto.VerifyEmailResponse
 import com.example.myapplication.data.remote.dto.VerifyForgotPasswordRequest
 import com.example.myapplication.data.remote.dto.VerifyForgotPasswordResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface AuthApi {
@@ -60,5 +62,8 @@ interface AuthApi {
     suspend fun logout(
         @Body request: LogoutRequest
     ): Response<LogoutResponse>
+
+    @GET("auth/me")
+    suspend fun getCurrentUser(): UserDto
 
 }

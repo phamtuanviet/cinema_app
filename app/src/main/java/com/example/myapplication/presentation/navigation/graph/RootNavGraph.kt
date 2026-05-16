@@ -1,6 +1,8 @@
 package com.example.myapplication.presentation.navigation.graph
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,26 +29,21 @@ fun RootNavGraph(
 
         // Splash
         composable(RootRoute.Splash.route) {
-            SplashScreen (
-                appState,
-                onNavigateToOnboarding = {
-                    navController.navigate(RootRoute.OnboardingGraph.route) {
-                        popUpTo(RootRoute.Splash.route) { inclusive = true }
-                    }
-                },
-                onNavigateToAuth = {
+            val context = LocalContext.current
+
+            SplashScreen(
+                appState = appState,
+                onNavigateToOnboarding = { navController.navigate(RootRoute.OnboardingGraph.route) },
+                onNavigateToAuth = { navController.navigate(RootRoute.AuthGraph.route) },
+                onNavigateToMain = { navController.navigate(RootRoute.MainGraph.route) },
+                onNavigateToAdmin = { navController.navigate(RootRoute.AdminGraph.route) },
+                onUserBanned = {
+                    // Thông báo cho người dùng
+                    Toast.makeText(context, "Phiên đăng nhập hết hạn hoặc tài khoản bị khóa!", Toast.LENGTH_LONG).show()
+
+                    // Đá về màn Auth, xóa sạch backstack để không ấn nút Back quay lại Splash được
                     navController.navigate(RootRoute.AuthGraph.route) {
-                        popUpTo(RootRoute.Splash.route) { inclusive = true }
-                    }
-                },
-                onNavigateToMain = {
-                    navController.navigate(RootRoute.MainGraph.route) {
-                        popUpTo(RootRoute.Splash.route) { inclusive = true }
-                    }
-                },
-                onNavigateToAdmin = {
-                    navController.navigate(RootRoute.AdminGraph.route) {
-                        popUpTo(RootRoute.Splash.route) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )

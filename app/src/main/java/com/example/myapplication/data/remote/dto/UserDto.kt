@@ -8,4 +8,5 @@ data class UserDto(
     val isVerified : Boolean,
     val role : String,
     val avatarUrl : String? = null,
+    val isBanned : Boolean
 )
