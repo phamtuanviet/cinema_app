@@ -56,9 +56,11 @@ fun AdminBookingListScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
                 TopAppBar(
+                    windowInsets = WindowInsets(0.dp),
                     title = { Text("Quản lý Đơn đặt vé", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }

@@ -182,7 +182,7 @@ fun VoucherItemCard(voucher: UserVoucherResponse) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "${voucher.discountValue}${if (voucher.discountType == "percent") "%" else "đ"}",
+                        text = "${voucher.discountValue}${if (voucher.discountType == "PERCENT") "%" else "đ"}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer

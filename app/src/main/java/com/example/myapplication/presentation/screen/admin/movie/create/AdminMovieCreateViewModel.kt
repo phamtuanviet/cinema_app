@@ -39,6 +39,7 @@ class AdminMovieCreateViewModel @Inject constructor(
 
     fun onEvent(event: MovieCreateEvent) {
         when (event) {
+            is MovieCreateEvent.SendNotificationChanged -> _state.update { it.copy(sendNotification = event.sendNotification) }
             is MovieCreateEvent.TitleChanged -> _state.update { it.copy(title = event.title, error = null) }
             is MovieCreateEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
             is MovieCreateEvent.DurationChanged -> _state.update { it.copy(durationMinutes = event.duration) }
@@ -87,6 +88,7 @@ class AdminMovieCreateViewModel @Inject constructor(
                 language = currentState.language,
                 trailerUrl = currentState.trailerUrl.takeIf { it.isNotEmpty() },
                 isActive = currentState.isActive,
+                sendNotification = currentState.sendNotification,
                 genreIds = currentState.selectedGenres.map { it.id },
                 newGenres = currentState.newGenres
             )
@@ -112,6 +114,7 @@ sealed class MovieCreateEvent {
     data class LanguageChanged(val lang: String) : MovieCreateEvent()
     data class AgeRatingChanged(val rating: String) : MovieCreateEvent()
     data class IsActiveChanged(val isActive: Boolean) : MovieCreateEvent()
+    data class SendNotificationChanged(val sendNotification: Boolean) : MovieCreateEvent()
     data class PosterPicked(val uri: Uri?) : MovieCreateEvent()
     data class GenreToggled(val genre: AdminGenreDto) : MovieCreateEvent()
     data class NewGenreAdded(val name: String) : MovieCreateEvent()

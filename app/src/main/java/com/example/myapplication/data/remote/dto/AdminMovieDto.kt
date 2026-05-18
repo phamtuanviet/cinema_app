@@ -44,7 +44,8 @@ data class AdminMovieCreateRequest(
     val trailerUrl: String?,
     val isActive: Boolean,
     val genreIds: List<String>,
-    val newGenres: List<String>
+    val newGenres: List<String>,
+    val sendNotification: Boolean
 )
 
 data class AdminMovieUpdateRequest(

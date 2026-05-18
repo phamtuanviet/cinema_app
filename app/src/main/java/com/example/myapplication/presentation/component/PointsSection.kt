@@ -1,18 +1,22 @@
 package com.example.myapplication.presentation.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+
+
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.*
+
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun PointsSection(
@@ -21,6 +25,11 @@ fun PointsSection(
     onChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // State cục bộ giúp quản lý chữ đang nhập mượt mà, tránh lỗi nhảy con trỏ
+    var inputText by remember(usedPoints) {
+        mutableStateOf(if (usedPoints == 0) "" else usedPoints.toString())
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -59,7 +68,7 @@ fun PointsSection(
                     text = "$availablePoints điểm",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary // Dùng màu nhấn cho điểm
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
 
@@ -67,7 +76,7 @@ fun PointsSection(
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🎛 Bộ đếm sử dụng điểm
+            // 🎛 Ô nhập điểm muốn sử dụng
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -76,55 +85,60 @@ fun PointsSection(
                 Text(
                     text = "Sử dụng:",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Khối nút +/- có nền riêng
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(4.dp)
-                ) {
-                    // Nút Trừ (-)
-                    val canDecrease = usedPoints >= 1000
-                    IconButton(
-                        onClick = { if (canDecrease) onChange(usedPoints - 1000) },
-                        enabled = canDecrease,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Remove,
-                            contentDescription = "Giảm",
-                            tint = if (canDecrease) MaterialTheme.colorScheme.primary else Color.Gray
-                        )
-                    }
+                // Ô nhập liệu (TextField) chuẩn Material 3
+                OutlinedTextField(
+                    value = inputText,
+                    onValueChange = { newValue ->
+                        // Xử lý khi người dùng xóa hết (để chuỗi rỗng)
+                        if (newValue.isEmpty()) {
+                            inputText = ""
+                            onChange(0)
+                            return@OutlinedTextField
+                        }
 
-                    // Số điểm đang dùng
-                    Text(
-                        text = "$usedPoints",
-                        style = MaterialTheme.typography.titleMedium,
+                        // Lọc chỉ lấy các ký tự là chữ số (chống copy/paste chữ cái)
+                        val digitsOnly = newValue.filter { it.isDigit() }
+                        val parsedInt = digitsOnly.toIntOrNull()
+
+                        if (parsedInt != null) {
+                            if (parsedInt <= availablePoints) {
+                                // Nếu số điểm nhập <= điểm hiện có thì cho phép
+                                inputText = digitsOnly
+                                onChange(parsedInt)
+                            } else {
+                                // Nếu nhập quá số điểm đang có -> Tự động ép về max điểm
+                                inputText = availablePoints.toString()
+                                onChange(availablePoints)
+                            }
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number, // Mở bàn phím số
+                        imeAction = ImeAction.Done
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.width(150.dp), // Độ rộng ô nhập
+                    textStyle = MaterialTheme.typography.titleMedium.copy(
+                        textAlign = TextAlign.End, // Căn phải số liệu cho đẹp
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-
-                    // Nút Cộng (+)
-                    val canIncrease = usedPoints + 1000 <= availablePoints
-                    IconButton(
-                        onClick = { if (canIncrease) onChange(usedPoints + 1000) },
-                        enabled = canIncrease,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Tăng",
-                            tint = if (canIncrease) MaterialTheme.colorScheme.primary else Color.Gray
+                        color = MaterialTheme.colorScheme.primary
+                    ),
+                    suffix = {
+                        Text(
+                            text = "điểm",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
+                )
             }
         }
     }

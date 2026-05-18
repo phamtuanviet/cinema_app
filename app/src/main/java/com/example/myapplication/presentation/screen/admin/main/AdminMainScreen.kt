@@ -38,6 +38,8 @@ import com.example.myapplication.presentation.navigation.route.AdminRoute
 import com.example.myapplication.presentation.navigation.route.RootRoute
 import com.example.myapplication.presentation.screen.admin.dashboard.AdminDashboardScreen
 import com.example.myapplication.presentation.screen.admin.menu.AdminMoreMenuScreen
+import com.example.myapplication.presentation.screen.admin.revenue.AdminRevenueScreen
+import com.example.myapplication.presentation.screen.profile.settings.ProfileSettingsScreen
 
 
 @Composable
@@ -58,6 +60,7 @@ fun AdminMainScreen(
     val showBottomBar = bottomTabs.any { it.route == currentDestination?.route }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
@@ -97,7 +100,13 @@ fun AdminMainScreen(
             // ---- MÀN HÌNH TAB CHÍNH ----
             composable(AdminRoute.Dashboard.route) {
                 AdminDashboardScreen(
-                    onNavigateToMore = { adminNavController.navigate(AdminRoute.MoreMenu.route) }
+                    onNavigateToMore = { adminNavController.navigate(AdminRoute.MoreMenu.route) },
+                    // THÊM ĐIỀU HƯỚNG MỚI VÀO ĐÂY
+                    onNavigateToUsers = { adminNavController.navigate(AdminRoute.UserGraph.route) },
+                    onNavigateToMovies = { adminNavController.navigate(AdminRoute.MovieGraph.route) },
+                    onNavigateToCinemas = { adminNavController.navigate(AdminRoute.CinemaGraph.route) },
+                    onNavigateToShowtimes = { adminNavController.navigate(AdminRoute.ShowtimeGraph.route) },
+                    onNavigateToRevenue = { adminNavController.navigate(AdminRoute.RevenueRoute.route) }
                 )
             }
 
@@ -117,8 +126,22 @@ fun AdminMainScreen(
                             popUpTo(0)
                         }
                     },
+                    onNavigateToRevenue = { adminNavController.navigate(AdminRoute.RevenueRoute.route) },
                     onNavigateToNews = { adminNavController.navigate(AdminRoute.NewsGraph.route) },
-                    onNavigateToBanners = { adminNavController.navigate(AdminRoute.BannerGraph.route) }
+                    onNavigateToBanners = { adminNavController.navigate(AdminRoute.BannerGraph.route) },
+                    onNavigateToSettings = { adminNavController.navigate(AdminRoute.AdminSettings.route) },
+                )
+            }
+
+            composable(AdminRoute.AdminSettings.route) {
+                ProfileSettingsScreen(
+                    onNavigateBack = { adminNavController.popBackStack() }
+                )
+            }
+
+            composable(AdminRoute.RevenueRoute.route) {
+                AdminRevenueScreen(
+                    onNavigateBack = { adminNavController.popBackStack() }
                 )
             }
 

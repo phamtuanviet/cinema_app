@@ -7,18 +7,43 @@ import com.example.myapplication.presentation.app.AppViewModel
 
 fun handleDeepLink(
     intent: Intent,
-    appViewModel: AppViewModel
+    appViewModel: AppViewModel,
+    userRole: String?
 ) {
 
     val action = intent.getStringExtra("action")
     val bookingId = intent.getStringExtra("bookingId")
+    val movieId = intent.getStringExtra("movieId")
 
     Log.d("DEBUG_APP", "Action nhận được: $action, BookingID: $bookingId")
 
-    if (action == "OPEN_BOOKING_DETAIL" && bookingId != null) {
-        Log.d("DEEP_LINK", "Bắt được thông báo! Mở vé số: $bookingId")
-        appViewModel.setDeepLinkNavigationRoute("ticket_detail/$bookingId")
-        return // Xử lý xong Push thì return để không chạy xuống dưới nữa
+    if (action == "OPEN_BOOKING_DETAIL" && !bookingId.isNullOrBlank()) {
+        if (userRole == "ADMIN") {
+            // Nếu có màn hình chi tiết vé cho Admin thì đổi route ở đây
+        } else {
+            appViewModel.setDeepLinkNavigationRoute("ticket_detail/$bookingId")
+        }
+        return
+    }
+
+    if (action == "OPEN_MOVIE_DETAIL" && !movieId.isNullOrBlank()) {
+        if (userRole == "ADMIN") {
+
+        } else {
+            Log.d("DEEP_LINK", "User bấm vào phim. Chuyển đến màn đặt vé.")
+            appViewModel.setDeepLinkNavigationRoute("movie_detail/$movieId")
+        }
+        return
+    }
+
+    if (action == "OPEN_NEWS_DETAIL" && !movieId.isNullOrBlank()) {
+        if (userRole == "ADMIN") {
+
+        } else {
+            Log.d("DEEP_LINK", "User bấm vào phim. Chuyển đến màn post.")
+            appViewModel.setDeepLinkNavigationRoute("promotion_detail/$movieId")
+        }
+        return
     }
 
     val uri = intent.data ?: return

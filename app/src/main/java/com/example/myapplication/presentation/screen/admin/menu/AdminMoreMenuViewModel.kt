@@ -3,6 +3,7 @@ package com.example.myapplication.presentation.screen.admin.menu
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.core.datastore.SessionManager
+import com.example.myapplication.data.remote.dto.UserDto
 import com.example.myapplication.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 data class AdminMoreMenuState(
     val isLoading: Boolean = false,
     val isLoggedOut: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val user: UserDto? = null
 )
 
 @HiltViewModel
@@ -25,6 +27,18 @@ class AdminMoreMenuViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(AdminMoreMenuState())
     val state = _state.asStateFlow()
+
+    init {
+        observeUser() // BẮT ĐẦU LẮNG NGHE USER KHI KHỞI TẠO
+    }
+
+    private fun observeUser() {
+        viewModelScope.launch {
+            sessionManager.userFlow.collect { user ->
+                _state.update { it.copy(user = user) }
+            }
+        }
+    }
 
     fun onLogoutClick() {
         viewModelScope.launch {

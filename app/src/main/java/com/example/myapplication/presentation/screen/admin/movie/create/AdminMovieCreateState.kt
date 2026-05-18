@@ -16,7 +16,7 @@ data class AdminMovieCreateState(
     val isActive: Boolean = true,
 
     val posterUri: Uri? = null,
-
+    val sendNotification: Boolean = false,
     val availableGenres: List<AdminGenreDto> = emptyList(),
     val selectedGenres: List<AdminGenreDto> = emptyList(), // Các thể loại đã có
     val newGenres: List<String> = emptyList(),             // Các thể loại mới người dùng gõ thêm

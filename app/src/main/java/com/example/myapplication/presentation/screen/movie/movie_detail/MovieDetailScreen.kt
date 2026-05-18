@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,8 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.example.myapplication.presentation.component.InfoRow
 import com.example.myapplication.presentation.component.YoutubePlayer
+
 
 @Composable
 fun MovieDetailScreen(
@@ -99,7 +100,6 @@ fun MovieDetailScreen(
                 }
 
                 Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
-                    // Ảnh nền banner
                     AsyncImage(
                         model = movie.posterUrl,
                         contentDescription = movie.title,
@@ -109,7 +109,6 @@ fun MovieDetailScreen(
                         error = painterResource(id = com.example.myapplication.R.drawable.empty),
                     )
 
-                    // Lớp phủ Gradient đen tối dần từ dưới lên và trên xuống để chữ/icon nổi bật
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -124,7 +123,6 @@ fun MovieDetailScreen(
                             )
                     )
 
-                    // Nút Play chuẩn Material
                     FilledIconButton(
                         onClick = { showTrailer = true },
                         modifier = Modifier
@@ -143,7 +141,6 @@ fun MovieDetailScreen(
                         )
                     }
 
-                    // Title Header
                     Text(
                         text = "Chi tiết phim",
                         color = Color.White,
@@ -163,7 +160,6 @@ fun MovieDetailScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                // Poster thu nhỏ có bo góc và đổ bóng
                 AsyncImage(
                     model = movie.posterUrl,
                     contentDescription = null,
@@ -179,9 +175,8 @@ fun MovieDetailScreen(
 
                 Spacer(Modifier.width(16.dp))
 
-                // Thông tin chi tiết
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp), // Tự động tạo khoảng cách
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(top = 4.dp)
                 ) {
                     Text(
@@ -190,7 +185,32 @@ fun MovieDetailScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Divider(
+                    // 🔥 PHẦN HIỂN THỊ RATING ĐƯỢC THÊM VÀO ĐÂY
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = "Rating",
+                            tint = Color(0xFFFFC107), // Màu vàng chuẩn Material cho sao đánh giá
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "${movie.rating}",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "/5.0",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 2.dp, top = 2.dp)
+                        )
+                    }
+
+                    HorizontalDivider(
                         modifier = Modifier.padding(vertical = 4.dp),
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
@@ -228,5 +248,27 @@ fun MovieDetailScreen(
                 )
             }
         }
+    }
+}
+
+// Hàm phụ trợ cho InfoRow (nếu bạn chưa có)
+
+@Composable
+fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top // Đã sửa đổi tại đây
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(80.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }

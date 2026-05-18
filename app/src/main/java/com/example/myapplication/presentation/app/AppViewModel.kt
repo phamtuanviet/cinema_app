@@ -17,6 +17,8 @@ import javax.inject.Inject
 
 
 import com.example.myapplication.domain.repository.AuthRepository // Nhúng Repository chứa API gọi /me và logout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 
 import retrofit2.HttpException
 import java.io.IOException
@@ -68,6 +70,7 @@ class AppViewModel @Inject constructor(
             }
         }
     }
+
 
     // =========================
     // 🔥 KIỂM TRA TRẠNG THÁI LIVE CỦA NGƯỜI DÙNG (GỌI TẠI SPLASH SCREEN)
@@ -150,13 +153,17 @@ class AppViewModel @Inject constructor(
     // 🔥 FIREBASE & THEME
     // =========================
     fun syncFcmToken() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("FCM", "Lấy token FCM thất bại", task.exception)
-                return@addOnCompleteListener
-            }
-            viewModelScope.launch {
-                sessionManager.saveFcmToken(task.result)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Dùng .await() thay vì addOnCompleteListener
+                val token = FirebaseMessaging.getInstance().token.await()
+                sessionManager.saveFcmToken(token)
+
+                // (Tùy chọn) Đảm bảo chắc chắn máy này đã đưng ký topic
+                FirebaseMessaging.getInstance().subscribeToTopic("ALL_USERS").await()
+
+            } catch (e: Exception) {
+                Log.e("FCM", "Lỗi sync FCM: ${e.message}")
             }
         }
     }

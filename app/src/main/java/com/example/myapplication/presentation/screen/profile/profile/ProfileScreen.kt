@@ -16,6 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.data.remote.dto.UserDto
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +84,7 @@ fun ProfileScreen(
     }
 }
 
+
 @Composable
 fun ProfileContent(
     user: UserDto,
@@ -108,19 +112,29 @@ fun ProfileContent(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Khung chứa Avatar
-                // Lưu ý: Nếu bạn có dùng thư viện Coil, hãy thay thế Surface này bằng AsyncImage(model = user.avatarUrl, ...)
+                // Khung chứa Avatar sử dụng Coil
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.size(72.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Person,
-                        contentDescription = "Avatar",
-                        modifier = Modifier.padding(16.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    if (!user.avatarUrl.isNullOrEmpty()) {
+                        // Hiển thị ảnh nếu có URL
+                        AsyncImage(
+                            model = user.avatarUrl,
+                            contentDescription = "Avatar của ${user.fullName}",
+                            contentScale = ContentScale.Crop, // Cắt ảnh cho vừa hình tròn
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        // Hiển thị Icon mặc định nếu không có ảnh
+                        Icon(
+                            imageVector = Icons.Rounded.Person,
+                            contentDescription = "Avatar mặc định",
+                            modifier = Modifier.padding(16.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -225,7 +239,6 @@ fun ProfileContent(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
             shape = RoundedCornerShape(12.dp),
-            // Dùng màu Error để làm nổi bật hành động mang tính cảnh báo
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer

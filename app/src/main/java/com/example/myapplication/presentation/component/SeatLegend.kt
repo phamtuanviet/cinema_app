@@ -23,17 +23,16 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SeatLegend() {
-    // 4. Cập nhật Legend cho 4 trạng thái
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween // Đổi sang SpaceBetween để dàn đều 4 item
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        LegendItemCustom(ColorAvailable, "Trống")
-        LegendItemCustom(ColorSelected, "Ghế bạn")
-        LegendItemCustom(ColorHeldByOther, "Đang giữ")
-        LegendItemCustom(ColorBooked, "Đã bán")
+        LegendItemCustom(SeatColors.available, "Trống")
+        LegendItemCustom(SeatColors.selected, "Ghế bạn")
+        LegendItemCustom(SeatColors.heldByOther, "Đang giữ")
+        LegendItemCustom(SeatColors.booked, "Đã bán")
     }
 }
 
@@ -47,6 +46,10 @@ fun LegendItemCustom(color: Color, label: String) {
                 .background(color)
         )
         Spacer(modifier = Modifier.width(6.dp))
-        Text(text = label, style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface // Đảm bảo chữ luôn tương phản
+        )
     }
 }

@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import java.time.Instant
 
+import androidx.compose.material3.*
+
 @Composable
 fun CountdownTimer(
     expiresAt: String?, // Nhận trực tiếp String thay vì Long
@@ -19,6 +21,9 @@ fun CountdownTimer(
 ) {
     var timeLeft by remember { mutableStateOf(0L) }
 
+    // ==============================
+    // 1. LOGIC TÍNH TOÁN (Giữ nguyên hoàn toàn)
+    // ==============================
     LaunchedEffect(expiresAt) {
         if (expiresAt.isNullOrBlank()) return@LaunchedEffect
 
@@ -51,19 +56,34 @@ fun CountdownTimer(
     val seconds = totalSeconds % 60
     val minutes = totalSeconds / 60
 
+    // ==============================
+    // 2. GIAO DIỆN (Chuẩn Material Design 3)
+    // ==============================
     Row(
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically, // Căn giữa Icon và Text cho đẹp
-        modifier = Modifier.fillMaxWidth()
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp) // Thêm chút padding dọc để Timer không bị dính sát vào nội dung khác
     ) {
         Icon(
             imageVector = Icons.Default.AccessTime,
-            contentDescription = "Time remaining"
+            contentDescription = "Time remaining",
+            // Sử dụng màu error (đỏ) hoặc primary. Ở đây dùng colorScheme.error
+            // để nhấn mạnh đây là thời gian đếm ngược (cảnh báo).
+            // Nếu bạn muốn màu nhẹ nhàng hơn, có thể đổi thành MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.error
         )
+
         Spacer(Modifier.width(8.dp))
+
         Text(
             text = String.format("%02d:%02d", minutes, seconds),
-            fontWeight = FontWeight.Bold
+            // Sử dụng Typography chuẩn của MD3
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            // Đồng bộ màu sắc chữ với Icon
+            color = MaterialTheme.colorScheme.error
         )
     }
 }

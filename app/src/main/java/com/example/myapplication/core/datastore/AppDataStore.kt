@@ -25,7 +25,7 @@ class AppDataStore @Inject constructor(
         val USER = stringPreferencesKey("user")
         val DARK_THEME = booleanPreferencesKey("dark_theme")
         val HAS_ONBOARDED = booleanPreferencesKey("has_onboarded")
-        val FCM_TOKEN = stringPreferencesKey("fcm_token") // THÊM DÒNG NÀY
+        val FCM_TOKEN = stringPreferencesKey("fcm_token")
 
     }
 

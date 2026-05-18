@@ -75,7 +75,7 @@ fun PromotionContent(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
 
-                if (!post.endDate.isNullOrEmpty()) {
+                if (!post.endDate.isNullOrEmpty() && post.type == PostType.VOUCHER) {
                     AssistChip(
                         onClick = { },
                         label = { Text("HSD: ${post.endDate}") },

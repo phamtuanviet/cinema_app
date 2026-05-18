@@ -9,6 +9,7 @@ import com.example.myapplication.data.remote.repository.AdminDashboardRepository
 import com.example.myapplication.data.remote.repository.AdminGenreRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminMovieRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminNewsRepositoryImpl
+import com.example.myapplication.data.remote.repository.AdminRevenueRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminShowtimeRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminUserRepositoryImpl
 import com.example.myapplication.data.remote.repository.AdminVoucherRepositoryImpl
@@ -35,6 +36,7 @@ import com.example.myapplication.domain.repository.AdminDashboardRepository
 import com.example.myapplication.domain.repository.AdminGenreRepository
 import com.example.myapplication.domain.repository.AdminMovieRepository
 import com.example.myapplication.domain.repository.AdminNewsRepository
+import com.example.myapplication.domain.repository.AdminRevenueRepository
 import com.example.myapplication.domain.repository.AdminShowtimeRepository
 import com.example.myapplication.domain.repository.AdminUserRepository
 import com.example.myapplication.domain.repository.AdminVoucherRepository
@@ -202,4 +204,10 @@ abstract class RepositoryModule {
     abstract fun bindAdminBannerRepository(
         impl: AdminBannerRepositoryImpl
     ): AdminBannerRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminRevenueRepository(
+        impl: AdminRevenueRepositoryImpl
+    ): AdminRevenueRepository
 }

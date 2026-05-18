@@ -44,5 +44,6 @@ data class AdminPostCreateRequest(
     val type: String,
     val startDate: String?, // yyyy-MM-dd'T'HH:mm:ss
     val endDate: String?,
-    val voucherId: String?
+    val voucherId: String?,
+    val sendNotification: Boolean = false
 )

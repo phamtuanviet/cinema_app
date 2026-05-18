@@ -58,9 +58,11 @@ fun AdminNewsListScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
                 TopAppBar(
+                    windowInsets = WindowInsets(0.dp),
                     title = { Text("Quản lý Bài viết & Sự kiện", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }

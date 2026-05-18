@@ -33,9 +33,11 @@ fun MovieApp(
     // Khi app mở lần đầu
     LaunchedEffect(activity?.intent) {
         Log.d("DEBUG_APP", "handleDeepLink: ${activity?.intent}")
+        val currentRole = appViewModel.appState.value.role
         activity?.intent?.let { intent ->
 
-            handleDeepLink(intent, appViewModel)
+
+            handleDeepLink(intent, appViewModel,currentRole)
 
             // tránh gọi lại nhiều lần
             intent.data = null

@@ -57,6 +57,7 @@ fun AdminMovieListScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
                 TopAppBar(
@@ -66,7 +67,10 @@ fun AdminMovieListScreen(
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
+
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    ,windowInsets = WindowInsets(0.dp)
+
                 )
 
                 OutlinedTextField(

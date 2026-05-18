@@ -28,9 +28,10 @@ class MainActivity : ComponentActivity() {
 
 
     override fun onNewIntent(intent: Intent) {
+        val currentRole = appViewModel.appState.value.role
         super.onNewIntent(intent)
         setIntent(intent)
-        handleDeepLink(intent, appViewModel)
+        handleDeepLink(intent, appViewModel,currentRole )
     }
 
 }

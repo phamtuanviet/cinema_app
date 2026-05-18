@@ -9,7 +9,6 @@ import com.example.myapplication.data.remote.dto.AdminGenreDto
 import com.example.myapplication.data.remote.dto.AdminMovieUpdateRequest
 import com.example.myapplication.domain.repository.AdminGenreRepository
 import com.example.myapplication.domain.repository.AdminMovieRepository
-import com.example.myapplication.presentation.screen.admin.movie.create.MovieCreateEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,30 +103,30 @@ class AdminMovieEditViewModel @Inject constructor(
         }
     }
 
-    // Tái sử dụng MovieCreateEvent hoặc tạo MovieEditEvent tương tự
-    fun onEvent(event: MovieCreateEvent) {
+    // Tái sử dụng MovieEditEvent hoặc tạo MovieEditEvent tương tự
+    fun onEvent(event: MovieEditEvent) {
         when (event) {
-            is MovieCreateEvent.TitleChanged -> _state.update { it.copy(title = event.title, error = null) }
-            is MovieCreateEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
-            is MovieCreateEvent.DurationChanged -> _state.update { it.copy(durationMinutes = event.duration) }
-            is MovieCreateEvent.ReleaseDateChanged -> _state.update { it.copy(releaseDate = event.date) }
-            is MovieCreateEvent.BasePriceChanged -> _state.update { it.copy(basePrice = event.price) }
-            is MovieCreateEvent.TrailerUrlChanged -> _state.update { it.copy(trailerUrl = event.url) }
-            is MovieCreateEvent.LanguageChanged -> _state.update { it.copy(language = event.lang) }
-            is MovieCreateEvent.AgeRatingChanged -> _state.update { it.copy(ageRating = event.rating) }
-            is MovieCreateEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
-            is MovieCreateEvent.PosterPicked -> _state.update { it.copy(newPosterUri = event.uri) } // Lưu vào newPosterUri
-            is MovieCreateEvent.GenreToggled -> {
+            is MovieEditEvent.TitleChanged -> _state.update { it.copy(title = event.title, error = null) }
+            is MovieEditEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
+            is MovieEditEvent.DurationChanged -> _state.update { it.copy(durationMinutes = event.duration) }
+            is MovieEditEvent.ReleaseDateChanged -> _state.update { it.copy(releaseDate = event.date) }
+            is MovieEditEvent.BasePriceChanged -> _state.update { it.copy(basePrice = event.price) }
+            is MovieEditEvent.TrailerUrlChanged -> _state.update { it.copy(trailerUrl = event.url) }
+            is MovieEditEvent.LanguageChanged -> _state.update { it.copy(language = event.lang) }
+            is MovieEditEvent.AgeRatingChanged -> _state.update { it.copy(ageRating = event.rating) }
+            is MovieEditEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
+            is MovieEditEvent.PosterPicked -> _state.update { it.copy(newPosterUri = event.uri) } // Lưu vào newPosterUri
+            is MovieEditEvent.GenreToggled -> {
                 val current = _state.value.selectedGenres.toMutableList()
                 if (current.contains(event.genre)) current.remove(event.genre) else current.add(event.genre)
                 _state.update { it.copy(selectedGenres = current) }
             }
-            is MovieCreateEvent.NewGenreAdded -> {
+            is MovieEditEvent.NewGenreAdded -> {
                 val currentNew = _state.value.newGenres.toMutableList()
                 if (event.name.isNotBlank() && !currentNew.contains(event.name)) currentNew.add(event.name.trim())
                 _state.update { it.copy(newGenres = currentNew) }
             }
-            is MovieCreateEvent.NewGenreRemoved -> {
+            is MovieEditEvent.NewGenreRemoved -> {
                 val currentNew = _state.value.newGenres.toMutableList()
                 currentNew.remove(event.name)
                 _state.update { it.copy(newGenres = currentNew) }
@@ -168,4 +167,20 @@ class AdminMovieEditViewModel @Inject constructor(
             }
         }
     }
+}
+
+sealed class MovieEditEvent {
+    data class TitleChanged(val title: String) : MovieEditEvent()
+    data class DescriptionChanged(val desc: String) : MovieEditEvent()
+    data class DurationChanged(val duration: String) : MovieEditEvent()
+    data class ReleaseDateChanged(val date: String) : MovieEditEvent()
+    data class BasePriceChanged(val price: String) : MovieEditEvent()
+    data class TrailerUrlChanged(val url: String) : MovieEditEvent()
+    data class LanguageChanged(val lang: String) : MovieEditEvent()
+    data class AgeRatingChanged(val rating: String) : MovieEditEvent()
+    data class IsActiveChanged(val isActive: Boolean) : MovieEditEvent()
+    data class PosterPicked(val uri: Uri?) : MovieEditEvent()
+    data class GenreToggled(val genre: AdminGenreDto) : MovieEditEvent()
+    data class NewGenreAdded(val name: String) : MovieEditEvent()
+    data class NewGenreRemoved(val name: String) : MovieEditEvent()
 }

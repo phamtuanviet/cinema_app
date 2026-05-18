@@ -61,6 +61,7 @@ fun AdminComboListScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
                 TopAppBar(
@@ -68,6 +69,7 @@ fun AdminComboListScreen(
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
                     },
+                    windowInsets = WindowInsets(0.dp),
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
 

@@ -41,8 +41,10 @@ fun AdminNewsCreateScreen(
     LaunchedEffect(state.isSuccess) { if (state.isSuccess) onSaveSuccess() }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets(0.dp),
                 title = { Text("Tạo Bài viết Mới", fontWeight = FontWeight.Bold) },
                 navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, null) } }
             )
@@ -113,12 +115,54 @@ fun AdminNewsCreateScreen(
                 OutlinedTextField(value = state.endDateStr, onValueChange = { viewModel.onEvent(NewsCreateEvent.EndDateChanged(it)) }, label = { Text("Ngày kết thúc") }, modifier = Modifier.weight(1f), placeholder = { Text("yyyy-mm-dd hh:mm") })
             }
 
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Xuất bản ngay", fontWeight = FontWeight.Bold)
-                Switch(checked = state.published, onCheckedChange = { viewModel.onEvent(NewsCreateEvent.PublishedChanged(it)) })
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Cài đặt bổ sung", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Switch 1: Xuất bản ngay
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(if (state.published) "Xuất bản ngay (Hiển thị ngay)" else "Lưu nháp (Chưa hiển thị)")
+                        Switch(
+                            checked = state.published,
+                            onCheckedChange = { viewModel.onEvent(NewsCreateEvent.PublishedChanged(it)) }
+                        )
+                    }
+
+                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                    // 🔥 Switch 2: Gửi thông báo Push
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Gửi thông báo (Push Notification)", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                text = if (state.type == "VOUCHER") "Báo cho User biết có Voucher mới." else "Thông báo tin tức mới cho toàn bộ User.",
+                                style = MaterialTheme.typography.bodySmall, color = Color.Gray
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = state.sendNotification,
+                            onCheckedChange = { viewModel.onEvent(NewsCreateEvent.SendNotificationChanged(it)) }
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(80.dp))
+
+
         }
     }
 }

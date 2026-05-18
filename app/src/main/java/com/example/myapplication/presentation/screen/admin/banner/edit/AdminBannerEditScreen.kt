@@ -47,8 +47,10 @@ fun AdminBannerEditScreen(
     LaunchedEffect(state.isSuccess) { if (state.isSuccess) onSaveSuccess() }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets(0.dp),
                 title = { Text("Chỉnh sửa Banner", fontWeight = FontWeight.Bold) },
                 navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, null) } }
             )

@@ -25,6 +25,7 @@ import com.example.myapplication.data.remote.api.AdminComboApi
 import com.example.myapplication.data.remote.api.AdminGenreApi
 import com.example.myapplication.data.remote.api.AdminMovieApi
 import com.example.myapplication.data.remote.api.AdminNewsApi
+import com.example.myapplication.data.remote.api.AdminRevenueApi
 import com.example.myapplication.data.remote.api.AdminShowtimeApi
 import com.example.myapplication.data.remote.api.AdminUserApi
 import com.example.myapplication.data.remote.api.AdminVoucherApi
@@ -278,5 +279,11 @@ object NetworkModule {
     @Singleton
     fun provideAdminBannerApi(@MainRetrofit retrofit: Retrofit): AdminBannerApi {
         return retrofit.create(AdminBannerApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminRevenueApi(@MainRetrofit retrofit: Retrofit): AdminRevenueApi {
+        return retrofit.create(AdminRevenueApi::class.java)
     }
 }

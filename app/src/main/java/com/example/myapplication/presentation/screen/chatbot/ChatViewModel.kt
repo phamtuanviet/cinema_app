@@ -44,14 +44,11 @@ class ChatViewModel @Inject constructor(
     // CÁC HÀM TƯƠNG TÁC TỪ UI (INTENTS)
     // =========================================================================
 
-    // 1. Nạp dữ liệu lần đầu
     private fun loadInitialMessages() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingHistory = true) }
 
             val entities = repository.getMessages(limit = pageSize, offset = 0)
-
-            // Vì Room trả về tin nhắn mới nhất trước (DESC), ta phải .reversed() lại để tin cũ nằm trên, tin mới nằm dưới cùng
             val uiMessages = entities.map { mapEntityToUi(it) }.reversed()
 
             currentOffset = pageSize
@@ -60,28 +57,23 @@ class ChatViewModel @Inject constructor(
                 it.copy(
                     messages = uiMessages,
                     isLoadingHistory = false,
-                    isLastPage = entities.size < pageSize // Nếu số lượng lấy được < 20 -> Đã hết sạch lịch sử
+                    isLastPage = entities.size < pageSize
                 )
             }
         }
     }
 
     fun fetchLocationAndSend() {
-        // Hiển thị trạng thái đang xử lý (có thể dùng isSending để hiện progress)
         _uiState.update { it.copy(isSending = true, errorMessage = null) }
 
         try {
-            // Lấy vị trí gần nhất (Last Location) - nhanh và tiết kiệm pin
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location: Location? ->
                     if (location != null) {
-                        // Chuyển đổi sang DTO UserLocation của bạn
                         val userLoc = UserLocation(
                             lat = location.latitude,
                             lng = location.longitude
                         )
-
-                        // Gửi tin nhắn ngầm (text trống) kèm tọa độ cho Bot
                         sendInternalMessage(text = "Đã chia sẻ vị trí", location = userLoc)
                     } else {
                         _uiState.update {
@@ -99,15 +91,35 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    // Hàm phụ để xử lý gửi tin nhắn có kèm Location
+    // ĐÃ SỬA: Cập nhật UI ngay lập tức trước khi gọi Repository
     private fun sendInternalMessage(text: String, location: UserLocation?) {
+        val currentSize = _uiState.value.messages.size
+
+        // 1. Tạo tin nhắn tạm (ảo) cho User để hiển thị ngay lập tức
+        val tempUserMessage = ChatMessageUi(
+            id = System.currentTimeMillis(), // ID tạm
+            sessionId = "current_session",
+            role = "user", // Đảm bảo role này đúng với logic check "isFromUser" trong UI của bạn
+            content = text,
+            timestamp = System.currentTimeMillis(),
+            actions = emptyList()
+        )
+
+        // 2. Cập nhật state hiển thị ngay lên màn hình
+        _uiState.update {
+            it.copy(
+                messages = it.messages + tempUserMessage,
+                isSending = true
+            )
+        }
+
         viewModelScope.launch {
             try {
-                // Gọi repository với tham số location mới
+                // Gọi repository với tham số location
                 repository.sendMessage(text, location)
 
-                // Refresh danh sách tin nhắn để hiện câu trả lời của Bot
-                val newLimit = _uiState.value.messages.size + 2
+                // Refresh danh sách tin nhắn để lấy tin chuẩn từ DB (gồm cả tin user đã lưu và tin bot)
+                val newLimit = currentSize + 2
                 val updatedEntities = repository.getMessages(limit = newLimit, offset = 0)
 
                 _uiState.update {
@@ -118,14 +130,19 @@ class ChatViewModel @Inject constructor(
                 }
                 currentOffset = newLimit
             } catch (e: Exception) {
-                _uiState.update { it.copy(isSending = false, errorMessage = "Gửi vị trí thất bại.") }
+                // Nếu lỗi, rollback UI bằng cách xóa tin nhắn tạm và báo lỗi
+                _uiState.update {
+                    it.copy(
+                        messages = it.messages.filter { msg -> msg.id != tempUserMessage.id },
+                        isSending = false,
+                        errorMessage = "Gửi vị trí thất bại."
+                    )
+                }
             }
         }
     }
 
-    // 2. Kéo lên để tải thêm lịch sử (Load More)
     fun loadMoreMessages() {
-        // Đang tải dở hoặc đã hết lịch sử thì không tải nữa
         if (_uiState.value.isLoadingHistory || _uiState.value.isLastPage) return
 
         viewModelScope.launch {
@@ -135,8 +152,6 @@ class ChatViewModel @Inject constructor(
 
             if (oldEntities.isNotEmpty()) {
                 val oldUiMsgs = oldEntities.map { mapEntityToUi(it) }.reversed()
-
-                // Nối tin nhắn cũ lên ĐẦU danh sách hiện tại
                 val updatedMessages = oldUiMsgs + _uiState.value.messages
                 currentOffset += pageSize
 
@@ -153,48 +168,67 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    // 3. Gửi tin nhắn mới
+    // ĐÃ SỬA: Cập nhật UI ngay lập tức trước khi gọi Repository
     fun sendMessage(text: String) {
         if (text.isBlank() || _uiState.value.isSending) return
 
+        val currentSize = _uiState.value.messages.size
+
+        // 1. Tạo tin nhắn tạm (ảo) cho User
+        val tempUserMessage = ChatMessageUi(
+            id = System.currentTimeMillis(), // Sinh ID tạm bằng timestamp
+            sessionId = "current_session",
+            role = "user", // Hoặc "me" tùy thuộc vào logic phân biệt role trong ChatMessageUi của bạn
+            content = text,
+            timestamp = System.currentTimeMillis(),
+            actions = emptyList()
+        )
+
+        // 2. Cập nhật UI ngay lập tức, bật trạng thái isSending = true
+        _uiState.update {
+            it.copy(
+                messages = it.messages + tempUserMessage,
+                isSending = true,
+                errorMessage = null
+            )
+        }
+
         viewModelScope.launch {
-            // Hiển thị trạng thái "Đang gửi"
-            _uiState.update { it.copy(isSending = true, errorMessage = null) }
-
-            // Gọi Repo để lưu vào DB -> Gọi Node.js -> Lưu kết quả Node.js vào DB
             try {
-                repository.sendMessage(text.trim(),null )
+                // 3. Tiến hành gọi ngầm
+                repository.sendMessage(text.trim(), null)
+
+                // 4. Lấy dữ liệu chuẩn từ DB lên (gồm tin của user thật trong DB + tin của Bot)
+                val newLimit = currentSize + 2
+                val updatedEntities = repository.getMessages(limit = newLimit, offset = 0)
+
+                _uiState.update {
+                    it.copy(
+                        messages = updatedEntities.map { entity -> mapEntityToUi(entity) }.reversed(),
+                        isSending = false
+                    )
+                }
+
+                currentOffset = newLimit
             } catch (e: Exception) {
-                // Nếu lỗi kết nối nặng (bắt thêm ở đây cho chắc)
-                _uiState.update { it.copy(errorMessage = "Không thể gửi tin nhắn. Hãy kiểm tra kết nối.") }
+                // Bắt lỗi, khôi phục giao diện (bỏ tin nhắn lỗi ra khỏi màn hình)
+                _uiState.update {
+                    it.copy(
+                        messages = it.messages.filter { msg -> msg.id != tempUserMessage.id },
+                        isSending = false,
+                        errorMessage = "Không thể gửi tin nhắn. Hãy kiểm tra kết nối."
+                    )
+                }
             }
-
-            // Gửi xong, chúng ta làm mới lại danh sách (Lấy thêm 2 tin nhắn vừa sinh ra: 1 của user, 1 của bot)
-            // Để đơn giản và đồng bộ, ta nạp lại offset = 0 với số lượng tin nhắn hiện tại + 2
-            val newLimit = _uiState.value.messages.size + 2
-            val updatedEntities = repository.getMessages(limit = newLimit, offset = 0)
-
-            _uiState.update {
-                it.copy(
-                    messages = updatedEntities.map { mapEntityToUi(it) }.reversed(),
-                    isSending = false
-                )
-            }
-
-            // Cập nhật lại Offset để Load More không bị lệch
-            currentOffset = newLimit
         }
     }
 
-    // 4. Dọn dẹp phiên chat (New Chat)
     fun clearSession() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingHistory = true) }
 
-            // Gọi Node.js xóa Redis và xóa Room DB
             repository.clearChat()
 
-            // Đưa State về trạng thái trắng tinh
             currentOffset = 0
             _uiState.update {
                 it.copy(
@@ -207,7 +241,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    // 5. Tắt thông báo lỗi (được gọi từ UI sau khi Toast/Snackbar đã hiện xong)
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
@@ -216,7 +249,6 @@ class ChatViewModel @Inject constructor(
     // HÀM BỔ TRỢ (HELPER)
     // =========================================================================
 
-    // Biến dữ liệu thô từ Room DB thành dữ liệu sạch sẽ cho UI vẽ
     private fun mapEntityToUi(entity: ChatMessageEntity): ChatMessageUi {
         val rawActions: List<RawUiAction> = if (!entity.rawUiActions.isNullOrEmpty()) {
             val type = object : TypeToken<List<RawUiAction>>() {}.type
@@ -229,7 +261,6 @@ class ChatViewModel @Inject constructor(
             emptyList()
         }
 
-        // Dùng Mapper ở Bước 4 để ép kiểu sang các Sealed Class
         val mappedActions = rawActions.map { mapper.map(it) }
 
         return ChatMessageUi(

@@ -58,10 +58,12 @@ fun AdminCinemaListScreen(
     }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
                 TopAppBar(
                     title = { Text("Quản lý Rạp", fontWeight = FontWeight.Bold) },
+                    windowInsets = WindowInsets(0.dp),
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")

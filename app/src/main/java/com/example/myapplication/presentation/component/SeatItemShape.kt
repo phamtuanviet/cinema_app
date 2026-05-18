@@ -12,11 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.remote.enums.SeatStatus
 
-// Định nghĩa màu sắc cho gọn
-val ColorAvailable = Color(0xFFE0E0E0)   // Xám nhạt (Trống)
-val ColorSelected = Color(0xFFE50914)    // Đỏ (Bạn đang chọn)
-val ColorHeldByOther = Color(0xFFFF9800) // Cam (Người khác đang chọn/giữ)
-val ColorBooked = Color(0xFF424242)
 
 @Composable
 fun SeatItemShape(
@@ -35,19 +30,18 @@ fun SeatItemShape(
 
 @Composable
 fun SingleSeatItem(status: SeatStatus, onClick: () -> Unit) {
-    // 2. Map đúng 4 màu tương ứng với 4 Enum
+    // Map đúng 4 màu từ SeatColors (Đã đồng bộ Sáng/Tối)
     val seatColor = when (status) {
-        SeatStatus.AVAILABLE -> ColorAvailable
-        SeatStatus.HOLD_BY_ME -> ColorSelected
-        SeatStatus.HOLD_BY_OTHER -> ColorHeldByOther
-        SeatStatus.BOOKED -> ColorBooked
+        SeatStatus.AVAILABLE -> SeatColors.available
+        SeatStatus.HOLD_BY_ME -> SeatColors.selected
+        SeatStatus.HOLD_BY_OTHER -> SeatColors.heldByOther
+        SeatStatus.BOOKED -> SeatColors.booked
     }
 
     SeatItemShape(
         color = seatColor,
         modifier = Modifier.width(32.dp),
         onClick = {
-            // Chỉ cho phép click nếu ghế trống (hoặc bạn muốn cho phép bỏ chọn ghế HOLD_BY_ME)
             if (status == SeatStatus.AVAILABLE || status == SeatStatus.HOLD_BY_ME) {
                 onClick()
             }
@@ -57,17 +51,15 @@ fun SingleSeatItem(status: SeatStatus, onClick: () -> Unit) {
 
 @Composable
 fun CoupleSeatItem(status1: SeatStatus, status2: SeatStatus, onClick: () -> Unit) {
-    // 3. Xử lý logic ưu tiên màu cho ghế đôi
-    // Ưu tiên: Đã bán > Mình đang chọn > Người khác đang chọn > Trống
     val isBooked = status1 == SeatStatus.BOOKED || status2 == SeatStatus.BOOKED
     val isSelected = status1 == SeatStatus.HOLD_BY_ME || status2 == SeatStatus.HOLD_BY_ME
     val isHeldByOther = status1 == SeatStatus.HOLD_BY_OTHER || status2 == SeatStatus.HOLD_BY_OTHER
 
     val seatColor = when {
-        isBooked -> ColorBooked
-        isSelected -> ColorSelected
-        isHeldByOther -> ColorHeldByOther
-        else -> ColorAvailable
+        isBooked -> SeatColors.booked
+        isSelected -> SeatColors.selected
+        isHeldByOther -> SeatColors.heldByOther
+        else -> SeatColors.available
     }
 
     SeatItemShape(

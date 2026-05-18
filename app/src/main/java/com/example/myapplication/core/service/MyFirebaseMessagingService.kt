@@ -105,6 +105,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             // Lấy dữ liệu ngầm từ Spring Boot gửi qua và nhét vào Intent
             data["action"]?.let { putExtra("action", it) }
             data["bookingId"]?.let { putExtra("bookingId", it) }
+            data["movieId"]?.let { putExtra("movieId", it) }
         }
 
         // Bắt buộc dùng FLAG_UPDATE_CURRENT để Intent mới đè lên Intent cũ

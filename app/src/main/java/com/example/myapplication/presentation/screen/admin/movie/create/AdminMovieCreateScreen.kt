@@ -58,12 +58,14 @@ fun AdminMovieCreateScreen(
     var showGenreDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
                 title = { Text("Thêm phim mới", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
                 },
+                windowInsets = WindowInsets(0.dp),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
@@ -195,17 +197,62 @@ fun AdminMovieCreateScreen(
             )
 
             // 7. Trạng thái hoạt động
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(
-                    checked = state.isActive,
-                    onCheckedChange = { viewModel.onEvent(MovieCreateEvent.IsActiveChanged(it)) }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(if (state.isActive) "Đang hoạt động (Hiển thị cho User)" else "Đã ẩn")
-            }
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
 
-            if (state.error != null) {
-                Text(text = state.error!!, color = MaterialTheme.colorScheme.error)
+                    Text(
+                        text = "Cài đặt bổ sung",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Công tắc: Đang hoạt động
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (state.isActive) "Phim đang mở (Hiển thị cho User)" else "Đang ẩn phim",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Switch(
+                            checked = state.isActive,
+                            onCheckedChange = { viewModel.onEvent(MovieCreateEvent.IsActiveChanged(it)) }
+                        )
+                    }
+
+                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                    // 🔥 Công tắc mới: Gửi Thông báo Push
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Gửi thông báo (Push Notification)",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "Báo cho tất cả người dùng biết có phim mới.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = state.sendNotification,
+                            onCheckedChange = { viewModel.onEvent(MovieCreateEvent.SendNotificationChanged(it)) }
+                        )
+                    }
+                }
             }
         }
     }

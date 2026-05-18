@@ -11,5 +11,6 @@ data class MovieDto(
     val trailerUrl : String,
     val releaseDate: String,
     val description: String,
-    val genres: List<String>
+    val genres: List<String>,
+    val rating: Double
 )

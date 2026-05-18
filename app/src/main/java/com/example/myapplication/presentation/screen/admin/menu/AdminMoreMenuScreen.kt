@@ -1,7 +1,7 @@
 package com.example.myapplication.presentation.screen.admin.menu
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -50,6 +50,8 @@ fun AdminMoreMenuScreen(
     onNavigateToVouchers: () -> Unit,
     onNavigateToBanners : () -> Unit,
     // 🔥 THÊM 2 CALLBACK CHO TIN TỨC VÀ ĐIỂM
+    onNavigateToSettings: () -> Unit,
+    onNavigateToRevenue: () -> Unit,
     onNavigateToNews: () -> Unit,
     onLogoutSuccess: () -> Unit // Callback khi logout xong
 ) {
@@ -89,6 +91,7 @@ fun AdminMoreMenuScreen(
 
     // Danh sách menu đã được bổ sung
     val menuItems = listOf(
+        AdminMenuItem("Doanh Thu", Icons.Default.Insights, Color(0xFF43A047), Color(0xFFE8F5E9), onNavigateToRevenue),
         AdminMenuItem("Quản lý Phim", Icons.Default.Movie, Color(0xFFE53935), Color(0xFFFFEBEE), onNavigateToMovies),
         AdminMenuItem("Quản lý Rạp", Icons.Default.Domain, Color(0xFF1E88E5), Color(0xFFE3F2FD), onNavigateToCinemas),
         AdminMenuItem("Lịch Chiếu", Icons.Default.DateRange, Color(0xFF8E24AA), Color(0xFFF3E5F5), onNavigateToShowtimes),
@@ -98,12 +101,15 @@ fun AdminMoreMenuScreen(
         AdminMenuItem("Khuyến Mãi (Voucher)", Icons.Default.LocalOffer, Color(0xFFE91E63), Color(0xFFFCE4EC), onNavigateToVouchers),
         // 🔥 THÊM 2 MỤC MỚI VÀO ĐÂY
         AdminMenuItem("Tin Tức", Icons.Default.Article, Color(0xFF546E7A), Color(0xFFECEFF1), onNavigateToNews),
-        AdminMenuItem("Quản lý Banner", Icons.Default.ViewCarousel, Color(0xFFFB8C00), Color(0xFFFFF3E0), onNavigateToBanners)    )
+        AdminMenuItem("Quản lý Banner", Icons.Default.ViewCarousel, Color(0xFFFB8C00), Color(0xFFFFF3E0), onNavigateToBanners),
+        AdminMenuItem("Cài đặt", Icons.Default.Settings, Color(0xFF607D8B), Color(0xFFCFD8DC), onNavigateToSettings))
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
                 title = { Text("Menu Quản Trị", fontWeight = FontWeight.Bold) },
+                windowInsets = WindowInsets(0.dp),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -207,22 +213,32 @@ fun AdminProfileHeader() {
     }
 }
 
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminMenuCard(item: AdminMenuItem) {
     Card(
+        onClick = item.onClick, // Chuẩn MD3: Dùng onClick trực tiếp trên Card tạo Ripple effect mượt mà
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = item.onClick)
+            // 1. CỐ ĐỊNH CHIỀU CAO CHO TẤT CẢ CÁC THẺ
+            // Hoặc bạn có thể dùng .aspectRatio(1f) nếu muốn thẻ vuông chằn chặn 100%
+            .height(136.dp)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
+            // 2. CĂN GIỮA TOÀN BỘ NỘI DUNG THEO CHIỀU DỌC
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(vertical = 24.dp, horizontal = 16.dp)
+            modifier = Modifier
+                // 3. Bắt buộc Column phải chiếm toàn bộ 136.dp chiều cao của Card
+                .fillMaxSize()
+                .padding(horizontal = 8.dp, vertical = 8.dp)
         ) {
-            // Icon với background màu sắc nhẹ
+            // Icon
             Box(
                 modifier = Modifier
                     .size(56.dp)
@@ -240,12 +256,17 @@ fun AdminMenuCard(item: AdminMenuItem) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Text
             Text(
                 text = item.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                // 4. KIỂM SOÁT TEXT
+                maxLines = 2, // Chỉ cho phép tối đa 2 dòng
+                minLines = 2, // Ép luôn luôn chiếm không gian của 2 dòng (giúp các Icon thẳng hàng nhau tuyệt đối)
+                overflow = TextOverflow.Ellipsis // Nếu chữ dài quá 2 dòng thì hiển thị "..."
             )
         }
     }

@@ -24,7 +24,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.myapplication.presentation.screen.admin.movie.create.AgeRatingDropdown
 import com.example.myapplication.presentation.screen.admin.movie.create.GenreSelectionDialog
-import com.example.myapplication.presentation.screen.admin.movie.create.MovieCreateEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,18 +42,20 @@ fun AdminMovieEditScreen(
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> viewModel.onEvent(MovieCreateEvent.PosterPicked(uri)) }
+        onResult = { uri -> viewModel.onEvent(MovieEditEvent.PosterPicked(uri)) }
     )
 
     var showGenreDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
                 title = { Text("Chỉnh sửa Phim", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
                 },
+                windowInsets = WindowInsets(0.dp),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
@@ -123,7 +124,7 @@ fun AdminMovieEditScreen(
                     // ... (Tất cả các TextField, Dropdown AgeRating, Card Thể loại y hệt như màn Create)
                     OutlinedTextField(
                         value = state.title,
-                        onValueChange = { viewModel.onEvent(MovieCreateEvent.TitleChanged(it)) },
+                        onValueChange = { viewModel.onEvent(MovieEditEvent.TitleChanged(it)) },
                         label = { Text("Tên phim (*)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -132,7 +133,7 @@ fun AdminMovieEditScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         OutlinedTextField(
                             value = state.durationMinutes,
-                            onValueChange = { viewModel.onEvent(MovieCreateEvent.DurationChanged(it)) },
+                            onValueChange = { viewModel.onEvent(MovieEditEvent.DurationChanged(it)) },
                             label = { Text("Thời lượng (phút)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
@@ -140,7 +141,7 @@ fun AdminMovieEditScreen(
                         )
                         OutlinedTextField(
                             value = state.basePrice,
-                            onValueChange = { viewModel.onEvent(MovieCreateEvent.BasePriceChanged(it)) },
+                            onValueChange = { viewModel.onEvent(MovieEditEvent.BasePriceChanged(it)) },
                             label = { Text("Giá vé gốc đ (*)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
@@ -151,7 +152,7 @@ fun AdminMovieEditScreen(
                     // 3. Ngày khởi chiếu (Tạm dùng TextField, có thể tích hợp DatePickerDialog sau)
                     OutlinedTextField(
                         value = state.releaseDate,
-                        onValueChange = { viewModel.onEvent(MovieCreateEvent.ReleaseDateChanged(it)) },
+                        onValueChange = { viewModel.onEvent(MovieEditEvent.ReleaseDateChanged(it)) },
                         label = { Text("Ngày khởi chiếu (YYYY-MM-DD)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -160,7 +161,7 @@ fun AdminMovieEditScreen(
                     // 4. Dropdown Age Rating
                     AgeRatingDropdown(
                         selectedRating = state.ageRating,
-                        onRatingSelected = { viewModel.onEvent(MovieCreateEvent.AgeRatingChanged(it)) }
+                        onRatingSelected = { viewModel.onEvent(MovieEditEvent.AgeRatingChanged(it)) }
                     )
 
 
@@ -168,7 +169,7 @@ fun AdminMovieEditScreen(
                     // 6. Mô tả & Trailer
                     OutlinedTextField(
                         value = state.trailerUrl,
-                        onValueChange = { viewModel.onEvent(MovieCreateEvent.TrailerUrlChanged(it)) },
+                        onValueChange = { viewModel.onEvent(MovieEditEvent.TrailerUrlChanged(it)) },
                         label = { Text("Link Trailer (YouTube URL)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -176,7 +177,7 @@ fun AdminMovieEditScreen(
 
                     OutlinedTextField(
                         value = state.description,
-                        onValueChange = { viewModel.onEvent(MovieCreateEvent.DescriptionChanged(it)) },
+                        onValueChange = { viewModel.onEvent(MovieEditEvent.DescriptionChanged(it)) },
                         label = { Text("Mô tả nội dung phim") },
                         modifier = Modifier.fillMaxWidth().height(120.dp),
                         maxLines = 5
@@ -202,7 +203,7 @@ fun AdminMovieEditScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Switch(
                             checked = state.isActive,
-                            onCheckedChange = { viewModel.onEvent(MovieCreateEvent.IsActiveChanged(it)) }
+                            onCheckedChange = { viewModel.onEvent(MovieEditEvent.IsActiveChanged(it)) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(if (state.isActive) "Đang hoạt động (Hiển thị cho User)" else "Đã ẩn")
@@ -218,9 +219,9 @@ fun AdminMovieEditScreen(
             availableGenres = state.availableGenres,
             selectedGenres = state.selectedGenres,
             newGenres = state.newGenres,
-            onToggleGenre = { viewModel.onEvent(MovieCreateEvent.GenreToggled(it)) },
-            onAddNewGenre = { viewModel.onEvent(MovieCreateEvent.NewGenreAdded(it)) },
-            onRemoveNewGenre = { viewModel.onEvent(MovieCreateEvent.NewGenreRemoved(it)) },
+            onToggleGenre = { viewModel.onEvent(MovieEditEvent.GenreToggled(it)) },
+            onAddNewGenre = { viewModel.onEvent(MovieEditEvent.NewGenreAdded(it)) },
+            onRemoveNewGenre = { viewModel.onEvent(MovieEditEvent.NewGenreRemoved(it)) },
             onDismiss = { showGenreDialog = false }
         )
     }

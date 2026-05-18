@@ -27,11 +27,13 @@ data class AdminNewsCreateState(
     val endDateStr: String = "",
     val selectedVoucherId: String? = null,
     val selectedImageUri: Uri? = null,
+    val sendNotification: Boolean = false,
 
     val availableVouchers: List<AdminVoucherSimpleDto> = emptyList()
 )
 
 sealed class NewsCreateEvent {
+    data class SendNotificationChanged(val v: Boolean) : NewsCreateEvent()
     data class TitleChanged(val v: String) : NewsCreateEvent()
     data class ContentChanged(val v: String) : NewsCreateEvent()
     data class TypeChanged(val v: String) : NewsCreateEvent()
@@ -60,6 +62,7 @@ class AdminNewsCreateViewModel @Inject constructor(
 
     fun onEvent(event: NewsCreateEvent) {
         when (event) {
+            is NewsCreateEvent.SendNotificationChanged -> _state.update { it.copy(sendNotification = event.v) }
             is NewsCreateEvent.TitleChanged -> _state.update { it.copy(title = event.v) }
             is NewsCreateEvent.ContentChanged -> _state.update { it.copy(content = event.v) }
             is NewsCreateEvent.TypeChanged -> _state.update { it.copy(type = event.v, selectedVoucherId = null) }
@@ -83,7 +86,8 @@ class AdminNewsCreateViewModel @Inject constructor(
             val request = AdminPostCreateRequest(
                 title = st.title, content = st.content, published = st.published,
                 type = st.type, startDate = formatISO(st.startDateStr),
-                endDate = formatISO(st.endDateStr), voucherId = st.selectedVoucherId
+                endDate = formatISO(st.endDateStr), voucherId = st.selectedVoucherId,
+                sendNotification = st.sendNotification
             )
             val result = repository.createPost(request, st.selectedImageUri, context)
             if (result.isSuccess) _state.update { it.copy(isSaving = false, isSuccess = true) }

@@ -15,7 +15,11 @@ sealed class AdminRoute(val route: String) {
     object UserDetail : AdminRoute("admin_user_detail/{userId}") {
         fun createRoute(userId: String) = "admin_user_detail/$userId"
     }
+
+    object RevenueRoute : AdminRoute("admin_revenue_route")
     object BookingGraph : AdminRoute("admin_booking_graph")
+
+    object AdminSettings : AdminRoute("admin_settings")
 
 
     object BookingEdit : AdminRoute("admin_booking_edit/{bookingId}") {

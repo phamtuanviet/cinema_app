@@ -48,14 +48,14 @@ fun VerifyForgotPasswordScreen(
     ) {
 
         Text(
-            text = "Verify Code",
+            text = "Mã xác nhận",
             style = MaterialTheme.typography.headlineMedium
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Enter the 6-digit code sent to $email"
+            text = "Hãy nhập 6 số được gửi đến $email"
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -63,7 +63,7 @@ fun VerifyForgotPasswordScreen(
         OutlinedTextField(
             value = state.otp,
             onValueChange = { viewModel.onOtpChange(it) },
-            label = { Text("OTP Code") },
+            label = { Text("Mã OTP") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -77,7 +77,7 @@ fun VerifyForgotPasswordScreen(
             if (state.isLoading) {
                 CircularProgressIndicator()
             } else {
-                Text("Verify")
+                Text("Xác nhận")
             }
 
         }

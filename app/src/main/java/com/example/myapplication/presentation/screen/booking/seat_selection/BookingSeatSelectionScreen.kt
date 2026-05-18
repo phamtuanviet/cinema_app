@@ -17,6 +17,7 @@ import com.example.myapplication.presentation.component.ScreenIndicator
 import com.example.myapplication.presentation.component.SeatLegend
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun BookingSeatSelectionScreen(
@@ -29,7 +30,7 @@ fun BookingSeatSelectionScreen(
     var showExpireDialog by remember { mutableStateOf(false) }
 
     // ==============================
-    // 1. LOAD DATA & EFFECTS
+    // 1. LOAD DATA & EFFECTS (Giữ nguyên Logic)
     // ==============================
     LaunchedEffect(showtimeId) {
         viewModel.loadData(showtimeId)
@@ -43,39 +44,50 @@ fun BookingSeatSelectionScreen(
     }
 
     // ==============================
-    // 2. MAIN LAYOUT (Sử dụng Scaffold)
+    // 2. MAIN LAYOUT (Sử dụng Scaffold MD3)
     // ==============================
     Scaffold(
+        // Scaffold MD3 mặc định sử dụng MaterialTheme.colorScheme.background làm màu nền,
+        // tự động tương thích Sáng/Tối.
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            // Bao bọc cả Countdown và BottomBar vào khu vực dưới cùng
-            Column(
-                modifier = Modifier.background(Color.White)
+            // Bao bọc bằng Surface của MD3 để tạo độ nổi (elevation) và màu sắc nền tảng
+            // tự động thích ứng với Dark Mode thay vì dùng Color.White
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainer, // Màu nền khuyên dùng cho BottomBar MD3
+                tonalElevation = 8.dp, // Tạo hiệu ứng nổi nhẹ
+                shadowElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // COUNTDOWN
-                if (state.expiresAt != null) {
-                    CountdownTimer(
-                        expiresAt = state.expiresAt, // Đảm bảo hàm này parse đúng Long
-                        onExpire = { showExpireDialog = true }
-                    )
-                }
+                Column(
+                    modifier = Modifier.padding(bottom = 16.dp) // Thêm padding cho thanh điều hướng dưới của điện thoại
+                ) {
+                    // COUNTDOWN
+                    if (state.expiresAt != null) {
+                        CountdownTimer(
+                            expiresAt = state.expiresAt,
+                            onExpire = { showExpireDialog = true }
+                        )
+                    }
 
-                // BOTTOM BAR TIẾP TỤC
-                if (state.selectedSeats.isNotEmpty()) {
-                    BottomBarSelection(
-                        totalPrice = state.totalPrice,
-                        selectedSeats = state.selectedSeatNames,
-                        onContinueClick = { _ ->
-                            val sessionId = state.seatHoldSessionId
-                            if (sessionId == null) {
-                            Log.d("BookingSeatSelectionScreen", "DCM DEL HIEU")}
-                            state.seatHoldSessionId?.let { sessionId ->
-                                Log.d("BookingSeatSelectionScreen", "onContinueClick: $sessionId")
-                                onContinueClick(sessionId)
+                    // BOTTOM BAR TIẾP TỤC
+                    if (state.selectedSeats.isNotEmpty()) {
+                        BottomBarSelection(
+                            totalPrice = state.totalPrice,
+                            selectedSeats = state.selectedSeatNames,
+                            onContinueClick = { _ ->
+                                val sessionId = state.seatHoldSessionId
+                                if (sessionId == null) {
+                                    Log.d("BookingSeatSelectionScreen", "SessionId is null")
+                                }
+                                state.seatHoldSessionId?.let { validSessionId ->
+                                    Log.d("BookingSeatSelectionScreen", "onContinueClick: $validSessionId")
+                                    onContinueClick(validSessionId)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
-
             }
         }
     ) { paddingValues ->
@@ -86,16 +98,17 @@ fun BookingSeatSelectionScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF4F4F4))
-                .padding(paddingValues) // Padding tự động để không bị lẹm vào BottomBar
+                .padding(paddingValues) // Padding tự động để không lẹm BottomBar
+            // Đã xóa .background(Color(0xFFF4F4F4)) vì Scaffold đã lo việc này
         ) {
             if (state.isLoading) {
-                // LOADING HIỂN THỊ ĐÈ LÊN BOX HOẶC Ở GIỮA
+                // LOADING
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
                 )
             } else {
-                // NỘI DUNG CHÍNH (Chỉ cuộn phần nội dung nếu màn hình nhỏ)
+                // NỘI DUNG CHÍNH
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -120,27 +133,41 @@ fun BookingSeatSelectionScreen(
     }
 
     // ==============================
-    // 4. DIALOGS
+    // 4. DIALOGS (Chuẩn AlertDialog MD3)
     // ==============================
     if (showExpireDialog) {
         AlertDialog(
-            onDismissRequest = { /* Không cho dismiss bằng cách bấm ra ngoài */ },
+            onDismissRequest = { /* Không cho dismiss */ },
             title = {
-                Text("Hết thời gian giữ ghế")
+                Text(
+                    text = "Hết thời gian giữ ghế",
+                    style = MaterialTheme.typography.titleLarge
+                )
             },
             text = {
-                Text("Phiên giữ ghế của bạn đã hết hạn. Các ghế đã được giải phóng. Vui lòng chọn lại.")
+                Text(
+                    text = "Phiên giữ ghế của bạn đã hết hạn. Các ghế đã được giải phóng. Vui lòng chọn lại.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             },
             confirmButton = {
                 Button(
                     onClick = {
                         showExpireDialog = false
                         onSessionExpired()
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     Text("Đồng ý")
                 }
-            }
+            },
+            // Thuộc tính của MD3 giúp Dialog hiển thị đẹp hơn trong Dark/Light mode
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

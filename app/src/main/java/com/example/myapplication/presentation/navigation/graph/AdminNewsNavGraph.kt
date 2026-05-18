@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.myapplication.presentation.navigation.route.AdminRoute
+import com.example.myapplication.presentation.screen.admin.news.create.AdminNewsCreateScreen
 import com.example.myapplication.presentation.screen.admin.news.edit.AdminNewsEditScreen
 import com.example.myapplication.presentation.screen.admin.news.list.AdminNewsListScreen
 
@@ -29,13 +30,12 @@ fun NavGraphBuilder.adminNewsNavGraph(
             )
         }
 
-        // 2. Màn hình Thêm Tin tức mới
-//        composable(AdminRoute.NewsCreate.route) {
-//            AdminNewsCreateScreen(
-//                onNavigateBack = { navController.popBackStack() },
-//                onSaveSuccess = { navController.popBackStack() } // Lưu xong quay về list
-//            )
-//        }
+        composable(AdminRoute.NewsCreate.route) {
+            AdminNewsCreateScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onSaveSuccess = { navController.popBackStack() } // Lưu xong quay về list
+            )
+        }
 //
 //        // 3. Màn hình Chỉnh sửa Tin tức
         composable(

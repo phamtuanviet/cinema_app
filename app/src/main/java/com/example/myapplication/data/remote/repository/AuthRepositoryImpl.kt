@@ -16,6 +16,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -149,39 +150,32 @@ class AuthRepositoryImpl @Inject constructor(
         // 1. Dọn dẹp dữ liệu cũ ngay lập tức
         sessionManager.clearTokens()
         sessionManager.clearUser()
-        sessionManager.clearFcmToken() // Xóa token cũ TRƯỚC KHI lấy token mới
+        sessionManager.clearFcmToken()
 
-        // 2. Xử lý Firebase trên một Coroutine độc lập (tránh block luồng đăng xuất)
+        // 2. Dùng launch để "bắn" luồng chạy ngầm (Không block luồng đăng xuất)
+        // Nhờ vậy hàm sẽ return true ngay lập tức -> Giao diện chuyển mượt mà
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Bước 2.1: Xóa Token cũ trên Firebase
-                FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.d("FCM", "Đã xóa token cũ thành công do đăng xuất")
+                val firebaseMessaging = FirebaseMessaging.getInstance()
 
-                        // Bước 2.2: Lấy Token mới tinh
-                        FirebaseMessaging.getInstance().token.addOnCompleteListener { newTokenTask ->
-                            if (newTokenTask.isSuccessful) {
-                                val newToken = newTokenTask.result
-                                Log.d("FCM", "Token mới: $newToken")
+                // Các lệnh Firebase vẫn dùng .await() để code tuần tự, sạch sẽ, không bị lồng nhau
+                firebaseMessaging.deleteToken().await()
+                Log.d("FCM", "Đã xóa token cũ thành công do đăng xuất")
 
-                                // Lại dùng launch để gọi hàm suspend bên trong callback
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    sessionManager.saveFcmToken(newToken)
-                                }
-                            } else {
-                                Log.e("FCM", "Lỗi khi lấy token mới: ${newTokenTask.exception}")
-                            }
-                        }
-                    } else {
-                        Log.e("FCM", "Lỗi khi xóa token: ${task.exception}")
-                    }
-                }
+                val newToken = firebaseMessaging.token.await()
+                sessionManager.saveFcmToken(newToken)
+                Log.d("FCM", "Token mới cho khách: $newToken")
+
+                // Vẫn giữ lại lệnh đăng ký Topic để khách vẫn nhận được thông báo Phim mới
+                firebaseMessaging.subscribeToTopic("ALL_USERS").await()
+                Log.d("FCM", "Đã đăng ký lại topic ALL_USERS cho khách")
+
             } catch (e: Exception) {
                 Log.e("LOGOUT", "Lỗi trong quá trình xử lý Firebase: ${e.message}")
             }
         }
 
+        // 3. Trả về true lập tức để UI bay thẳng ra màn hình Login
         return true
     }
 

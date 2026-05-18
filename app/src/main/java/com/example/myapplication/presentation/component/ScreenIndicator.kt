@@ -1,6 +1,7 @@
 package com.example.myapplication.presentation.component
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,12 +21,45 @@ import kotlin.io.path.moveTo
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 
+object SeatColors {
+    // 1. Ghế trống (Available):
+    // Dùng secondaryContainer để ghế trống nhìn sáng sủa, sạch sẽ và có sức sống hơn
+    // (nó sẽ có một chút sắc độ của màu theme thay vì chỉ là màu xám xịt).
+    val available: Color
+        @Composable get() = MaterialTheme.colorScheme.secondaryContainer
+
+    // 2. Ghế bạn đang chọn (Selected):
+    val selected: Color
+        @Composable get() = MaterialTheme.colorScheme.primary
+
+    // 3. Ghế người khác đang giữ (Held by other):
+    val heldByOther: Color
+        @Composable get() = if (isSystemInDarkTheme()) Color(0xFFFFB74D) else Color(0xFFFF9800)
+
+    // 4. Ghế đã bán (Booked):
+    // Để ghế trông có vẻ "đã chết" và không thể click, ta dùng chính màu viền (outline)
+    // hoặc một màu xám tĩnh có độ tương phản cao với nền.
+    val booked: Color
+        @Composable get() = if (isSystemInDarkTheme()) {
+            Color(0xFF333333) // Xám rất tối (chìm vào nền đen)
+        } else {
+            Color(0xFFBDBDBD) // Xám đục (phân biệt rõ với secondaryContainer sáng)
+        }
+}
+// ==============================
+// 2. MÀN HÌNH CHIẾU
+// ==============================
 @Composable
 fun ScreenIndicator() {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Lấy màu primary từ theme cho đường cong
+        val strokeColor = MaterialTheme.colorScheme.primary
+
         Canvas(modifier = Modifier.width(260.dp).height(20.dp)) {
             val path = Path().apply {
                 moveTo(0f, size.height)
@@ -36,11 +70,16 @@ fun ScreenIndicator() {
             }
             drawPath(
                 path = path,
-                color = Color(0xFF1E88E5),
+                color = strokeColor, // Thay thế Color(0xFF1E88E5)
                 style = Stroke(width = 4.dp.toPx())
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text("MÀN HÌNH CHIẾU", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+        Text(
+            text = "MÀN HÌNH CHIẾU",
+            style = MaterialTheme.typography.labelMedium,
+            // Dùng onSurfaceVariant thay cho Color.Gray để nhìn sang trọng hơn
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
