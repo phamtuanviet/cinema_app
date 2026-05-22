@@ -3,6 +3,7 @@ package com.example.myapplication.presentation.screen.profile.account
 
 
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -12,6 +13,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
@@ -26,6 +29,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,6 +55,17 @@ fun ProfileAccountScreen(
 
     var showPicker by remember { mutableStateOf(false) }
     var showCamera by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.error, state.updateSuccess) {
+        if (state.updateSuccess) {
+            Toast.makeText(context, "Cập nhật thông tin thành công!", Toast.LENGTH_SHORT).show()
+            viewModel.clearFlags()
+        }
+        state.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearFlags()
+        }
+    }
 
     // ===== Permission & Gallery Launchers giữ nguyên =====
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -171,25 +187,42 @@ fun ProfileAccountScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // ===== Form nhập liệu =====
+            // 🔥 FORM NHẬP LIỆU CHUYÊN NGHIỆP
+            val isNameEmpty = state.fullName.trim().isEmpty()
+
             OutlinedTextField(
                 value = state.fullName,
                 onValueChange = viewModel::onFullNameChange,
-                label = { Text("Họ và tên") },
-                leadingIcon = {
-                    Icon(Icons.Rounded.Badge, contentDescription = null)
-                },
+                label = { Text("Họ và tên (*)") },
+                leadingIcon = { Icon(Icons.Rounded.Badge, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                isError = isNameEmpty, // Viền đỏ nếu để trống
+                supportingText = {
+                    if (isNameEmpty) {
+                        Text("Tên không được để trống", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Words, // Tự động viết hoa chữ cái đầu
+                    imeAction = ImeAction.Done // Phím Done trên bàn phím
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { focusManager.clearFocus() } // Nhấn Done tự cất bàn phím
+                )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // 🔥 NÚT BẤM (Bị mờ đi nếu tên trống)
             Button(
-                onClick = viewModel::updateProfile,
+                onClick = {
+                    focusManager.clearFocus() // Ẩn bàn phím ngay lập tức khi bấm
+                    viewModel.updateProfile()
+                },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = !state.isUpdating,
+                enabled = !state.isUpdating && !isNameEmpty, // KHÓA NÚT NẾU TÊN RỖNG
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (state.isUpdating) {
@@ -215,22 +248,7 @@ fun ProfileAccountScreen(
                 Text("Đổi mật khẩu")
             }
 
-            // Hiển thị thông báo lỗi nếu có
-            state.error?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
+
 
             // Hiển thị thông báo thành công (tuỳ chọn)
             if (state.updateSuccess) {

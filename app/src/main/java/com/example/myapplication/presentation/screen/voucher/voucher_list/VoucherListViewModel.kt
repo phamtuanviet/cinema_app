@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -101,22 +103,64 @@ class VoucherListViewModel @Inject constructor(
     }
 
     fun addVoucher(code: String) {
+        if (code.isBlank()) {
+            _state.update { it.copy(error = "Vui lòng nhập mã giảm giá") }
+            return
+        }
+
         viewModelScope.launch {
             _state.update { it.copy(isAddingVoucher = true) }
 
-            voucherRepository.addVoucher(code)
+            voucherRepository.addVoucher(code.trim())
                 .onSuccess {
                     loadVouchers(_state.value.selectedVoucherTab)
-                    _state.update { it.copy(isAddingVoucher = false) }
-                }
-                .onFailure { e ->
                     _state.update {
                         it.copy(
                             isAddingVoucher = false,
-                            error = e.message
+                            error = "Lưu mã giảm giá thành công!" // Báo thành công cho User
                         )
                     }
                 }
+                .onFailure { e ->
+                    val friendlyMessage = getFriendlyErrorMessage(e)
+                    _state.update {
+                        it.copy(
+                            isAddingVoucher = false,
+                            error = friendlyMessage
+                        )
+                    }
+                }
+        }
+    }
+
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
+    // 🔥 Bộ "phiên dịch" lỗi kỹ thuật sang tiếng Việt thân thiện
+    private fun getFriendlyErrorMessage(e: Throwable): String {
+        val responseBody = if (e is HttpException) {
+            try { e.response()?.errorBody()?.string() ?: "" } catch (ex: Exception) { "" }
+        } else ""
+
+        val fullMessage = "${e.message} $responseBody".lowercase()
+
+        return when {
+            "not found" in fullMessage -> "Mã giảm giá không tồn tại. Vui lòng kiểm tra lại."
+            "expired" in fullMessage -> "Rất tiếc! Mã giảm giá này đã hết hạn sử dụng."
+            "out of stock" in fullMessage || "limit" in fullMessage -> "Mã giảm giá này đã hết lượt lưu mất rồi!"
+            "already added" in fullMessage -> "Bạn đã lưu mã giảm giá này trong ví rồi."
+            "not active" in fullMessage -> "Mã giảm giá này hiện không khả dụng."
+            e is HttpException -> {
+                // Xử lý theo mã HTTP nếu không bắt được text cụ thể
+                when (e.code()) {
+                    403 -> "Mã giảm giá không hợp lệ hoặc bạn không đủ điều kiện."
+                    404 -> "Không tìm thấy mã giảm giá."
+                    else -> "Lỗi hệ thống (${e.code()}). Vui lòng thử lại sau."
+                }
+            }
+            e is IOException -> "Lỗi kết nối mạng. Vui lòng kiểm tra Wifi/4G."
+            else -> "Không thể lưu mã lúc này. Vui lòng thử lại sau."
         }
     }
 }

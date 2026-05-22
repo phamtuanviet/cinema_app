@@ -36,6 +36,17 @@ class ProfileMyTicketsViewModel @Inject constructor(
         loadTab(BookingTab.UPCOMING)
     }
 
+
+    fun resetState() {
+        _state.update {
+            it.copy(
+                upcoming = emptyList(),
+                ongoing = emptyList(),
+                completed = emptyList()
+            )
+        }
+    }
+
     private fun observeBookings(status: String, updateState: (List<BookingMyBookingDto>) -> Unit) {
         viewModelScope.launch {
             bookingRepository.getMyBookingsFlow(status)

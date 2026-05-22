@@ -31,24 +31,23 @@ class AdminMovieCreateViewModel @Inject constructor(
     private fun loadGenres() {
         viewModelScope.launch {
             val result = genreRepository.getAllGenres()
-            if (result.isSuccess) {
-                _state.update { it.copy(availableGenres = result.getOrNull().orEmpty()) }
-            }
+            if (result.isSuccess) _state.update { it.copy(availableGenres = result.getOrNull().orEmpty()) }
         }
     }
 
     fun onEvent(event: MovieCreateEvent) {
         when (event) {
-            is MovieCreateEvent.SendNotificationChanged -> _state.update { it.copy(sendNotification = event.sendNotification) }
-            is MovieCreateEvent.TitleChanged -> _state.update { it.copy(title = event.title, error = null) }
+            // Khi người dùng gõ lại, lập tức xóa dòng báo lỗi đỏ đi
+            is MovieCreateEvent.TitleChanged -> _state.update { it.copy(title = event.title, titleError = null) }
+            is MovieCreateEvent.DurationChanged -> _state.update { it.copy(durationMinutes = event.duration, durationError = null) }
+            is MovieCreateEvent.BasePriceChanged -> _state.update { it.copy(basePrice = event.price, priceError = null) }
+            is MovieCreateEvent.ReleaseDateChanged -> _state.update { it.copy(releaseDate = event.date, releaseDateError = null) }
+
             is MovieCreateEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
-            is MovieCreateEvent.DurationChanged -> _state.update { it.copy(durationMinutes = event.duration) }
-            is MovieCreateEvent.ReleaseDateChanged -> _state.update { it.copy(releaseDate = event.date) }
-            is MovieCreateEvent.BasePriceChanged -> _state.update { it.copy(basePrice = event.price) }
             is MovieCreateEvent.TrailerUrlChanged -> _state.update { it.copy(trailerUrl = event.url) }
-            is MovieCreateEvent.LanguageChanged -> _state.update { it.copy(language = event.lang) }
             is MovieCreateEvent.AgeRatingChanged -> _state.update { it.copy(ageRating = event.rating) }
             is MovieCreateEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
+            is MovieCreateEvent.SendNotificationChanged -> _state.update { it.copy(sendNotification = event.sendNotification) }
             is MovieCreateEvent.PosterPicked -> _state.update { it.copy(posterUri = event.uri) }
             is MovieCreateEvent.GenreToggled -> {
                 val current = _state.value.selectedGenres.toMutableList()
@@ -65,40 +64,81 @@ class AdminMovieCreateViewModel @Inject constructor(
                 currentNew.remove(event.name)
                 _state.update { it.copy(newGenres = currentNew) }
             }
+            is MovieCreateEvent.LanguageChanged -> _state.update { it.copy(language = event.lang) }
         }
     }
 
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     fun createMovie(context: Context) {
-        val currentState = _state.value
-        if (currentState.title.isBlank() || currentState.basePrice.isBlank()) {
-            _state.update { it.copy(error = "Vui lòng nhập Tên phim và Giá vé gốc") }
+        val st = _state.value
+        var isValid = true
+
+        // 1. Kiểm tra Poster & Thể loại (Báo lỗi chung qua Toast)
+        if (st.posterUri == null) {
+            _state.update { it.copy(error = "Vui lòng chọn ảnh Poster cho bộ phim!") }
             return
         }
+        if (st.selectedGenres.isEmpty() && st.newGenres.isEmpty()) {
+            _state.update { it.copy(error = "Vui lòng chọn ít nhất 1 thể loại phim!") }
+            return
+        }
+
+        // 2. Kiểm tra Tên phim
+        if (st.title.isBlank()) {
+            _state.update { it.copy(titleError = "Tên phim không được để trống") }
+            isValid = false
+        }
+
+        // 3. Kiểm tra Thời lượng (Phải là số và > 0)
+        val duration = st.durationMinutes.toIntOrNull()
+        if (duration == null || duration <= 0) {
+            _state.update { it.copy(durationError = "Thời lượng phải là số lớn hơn 0") }
+            isValid = false
+        }
+
+        // 4. Kiểm tra Giá vé (Phải là số và >= 0)
+        val price = st.basePrice.toDoubleOrNull()
+        if (price == null || price < 0) {
+            _state.update { it.copy(priceError = "Giá vé không hợp lệ") }
+            isValid = false
+        }
+
+        // 5. Kiểm tra Ngày chiếu
+        if (st.releaseDate.isBlank()) {
+            _state.update { it.copy(releaseDateError = "Vui lòng chọn ngày khởi chiếu") }
+            isValid = false
+        }
+
+        // NẾU CÓ LỖI -> DỪNG LẠI KHÔNG GỌI API
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
             val request = AdminMovieCreateRequest(
-                title = currentState.title.trim(),
-                description = currentState.description.trim().takeIf { it.isNotEmpty() },
-                durationMinutes = currentState.durationMinutes.toIntOrNull(),
-                releaseDate = currentState.releaseDate.takeIf { it.isNotEmpty() }, // Format YYYY-MM-DD
-                basePrice = currentState.basePrice.toDoubleOrNull(),
-                ageRating = currentState.ageRating,
-                language = currentState.language,
-                trailerUrl = currentState.trailerUrl.takeIf { it.isNotEmpty() },
-                isActive = currentState.isActive,
-                sendNotification = currentState.sendNotification,
-                genreIds = currentState.selectedGenres.map { it.id },
-                newGenres = currentState.newGenres
+                title = st.title.trim(),
+                description = st.description.trim().takeIf { it.isNotEmpty() },
+                durationMinutes = duration,
+                releaseDate = st.releaseDate,
+                basePrice = price,
+                ageRating = st.ageRating,
+                language = st.language,
+                trailerUrl = st.trailerUrl.takeIf { it.isNotEmpty() },
+                isActive = st.isActive,
+                sendNotification = st.sendNotification,
+                genreIds = st.selectedGenres.map { it.id },
+                newGenres = st.newGenres
             )
 
-            val result = movieRepository.createMovie(request, currentState.posterUri, context)
+            val result = movieRepository.createMovie(request, st.posterUri, context)
 
             if (result.isSuccess) {
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
             } else {
-                _state.update { it.copy(isLoading = false, error = result.exceptionOrNull()?.message) }
+                _state.update { it.copy(isLoading = false, error = "Tạo phim thất bại. Vui lòng thử lại!") }
             }
         }
     }

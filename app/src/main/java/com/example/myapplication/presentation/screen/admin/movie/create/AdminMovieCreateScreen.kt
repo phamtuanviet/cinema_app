@@ -1,11 +1,12 @@
 package com.example.myapplication.presentation.screen.admin.movie.create
 
-import android.net.Uri
+import java.util.Calendar
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -42,11 +44,19 @@ fun AdminMovieCreateScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
-    // Xử lý chuyển trang khi thành công
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) onSaveSuccess()
+    LaunchedEffect(state.error, state.isSuccess) {
+        if (state.isSuccess) {
+            Toast.makeText(context, "Thêm phim thành công!", Toast.LENGTH_SHORT).show()
+            onSaveSuccess()
+        }
+        state.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
     }
+
 
     // Launcher mở thư viện ảnh
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -56,6 +66,19 @@ fun AdminMovieCreateScreen(
 
     // State quản lý Dialog Thể loại
     var showGenreDialog by remember { mutableStateOf(false) }
+
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            // Định dạng chuẩn xác YYYY-MM-DD
+            val formattedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
+            viewModel.onEvent(MovieCreateEvent.ReleaseDateChanged(formattedDate))
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     Scaffold(
         modifier = Modifier.imePadding(),
@@ -124,7 +147,9 @@ fun AdminMovieCreateScreen(
                 onValueChange = { viewModel.onEvent(MovieCreateEvent.TitleChanged(it)) },
                 label = { Text("Tên phim (*)") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = state.titleError != null,
+                supportingText = { state.titleError?.let { Text(it) } }
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -134,7 +159,9 @@ fun AdminMovieCreateScreen(
                     label = { Text("Thời lượng (phút)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    isError = state.durationError != null,
+                    supportingText = { state.durationError?.let { Text(it) } }
                 )
                 OutlinedTextField(
                     value = state.basePrice,
@@ -142,17 +169,33 @@ fun AdminMovieCreateScreen(
                     label = { Text("Giá vé gốc đ (*)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    isError = state.priceError != null,
+                    supportingText = { state.priceError?.let { Text(it) } }
                 )
             }
 
             // 3. Ngày khởi chiếu (Tạm dùng TextField, có thể tích hợp DatePickerDialog sau)
             OutlinedTextField(
                 value = state.releaseDate,
-                onValueChange = { viewModel.onEvent(MovieCreateEvent.ReleaseDateChanged(it)) },
-                label = { Text("Ngày khởi chiếu (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                onValueChange = {}, // Không cho gõ tay
+                readOnly = true,    // Khóa bàn phím
+                label = { Text("Ngày khởi chiếu (*)") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        focusManager.clearFocus() // Ẩn bàn phím nếu đang mở
+                        datePickerDialog.show()   // Hiển thị lịch
+                    },
+                enabled = false, // Vô hiệu hóa để bắt sự kiện click ở TextFieldWrapper
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = if (state.releaseDateError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = if (state.releaseDateError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = "Chọn ngày") },
+                isError = state.releaseDateError != null,
+                supportingText = { state.releaseDateError?.let { Text(it) } }
             )
 
             // 4. Dropdown Age Rating

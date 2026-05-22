@@ -19,21 +19,23 @@ data class AdminShowtimeEditState(
     val isLoadingData: Boolean = true,
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null,
+    val error: String? = null, // Lỗi chung dùng để hiển thị Toast
 
-    // Thông tin chỉ đọc (Để Admin nhìn cho rõ)
+    // Thông tin chỉ đọc
     val movieName: String = "",
     val cinemaRoomInfo: String = "",
     val currentStatus: String = "ACTIVE",
 
-    // Thông tin cho phép sửa
+    // Thông tin cho phép sửa (Kèm biến báo lỗi)
     val startTimeStr: String = "",
+    val startTimeError: String? = null,
+
     val endTimeStr: String = "",
+    val endTimeError: String? = null,
 
     // Trạng thái bật/tắt Dialog cảnh báo hủy
     val showCancelDialog: Boolean = false
 )
-
 // --- EVENT ---
 sealed class ShowtimeEditEvent {
     data class StartTimeChanged(val time: String) : ShowtimeEditEvent()
@@ -67,12 +69,12 @@ class AdminShowtimeEditViewModel @Inject constructor(
             if (result.isSuccess) {
                 val showtime = result.getOrNull()!!
 
-                // Parse thời gian từ chuẩn ISO về định dạng hiển thị cho Picker (yyyy-MM-dd HH:mm)
+                // Parse thời gian từ chuẩn ISO về định dạng hiển thị cho Picker
                 val formatterIn = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
                 val formatterOut = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
-                val startParsed = LocalDateTime.parse(showtime.startTime, formatterIn).format(formatterOut)
-                val endParsed = LocalDateTime.parse(showtime.endTime, formatterIn).format(formatterOut)
+                val startParsed = try { LocalDateTime.parse(showtime.startTime, formatterIn).format(formatterOut) } catch (e: Exception) { showtime.startTime }
+                val endParsed = try { LocalDateTime.parse(showtime.endTime, formatterIn).format(formatterOut) } catch (e: Exception) { showtime.endTime }
 
                 _state.update {
                     it.copy(
@@ -92,8 +94,9 @@ class AdminShowtimeEditViewModel @Inject constructor(
 
     fun onEvent(event: ShowtimeEditEvent) {
         when (event) {
-            is ShowtimeEditEvent.StartTimeChanged -> _state.update { it.copy(startTimeStr = event.time) }
-            is ShowtimeEditEvent.EndTimeChanged -> _state.update { it.copy(endTimeStr = event.time) }
+            // 🔥 Xóa lỗi đỏ khi Admin chọn lại giờ mới
+            is ShowtimeEditEvent.StartTimeChanged -> _state.update { it.copy(startTimeStr = event.time, startTimeError = null) }
+            is ShowtimeEditEvent.EndTimeChanged -> _state.update { it.copy(endTimeStr = event.time, endTimeError = null) }
 
             is ShowtimeEditEvent.ToggleCancelDialog -> {
                 _state.update { it.copy(showCancelDialog = !it.showCancelDialog) }
@@ -110,34 +113,73 @@ class AdminShowtimeEditViewModel @Inject constructor(
         }
     }
 
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun updateShowtimeToServer(newStatus: String) {
-        val currentState = _state.value
+        val st = _state.value
+        var isValid = true
+        var isoStart = ""
+        var isoEnd = ""
 
-        try {
-            // Parse ngược lại từ UI (yyyy-MM-dd HH:mm) sang ISO (yyyy-MM-ddTHH:mm:ss) để gửi Backend
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-            val isoStart = LocalDateTime.parse(currentState.startTimeStr, formatter).toString()
-            val isoEnd = LocalDateTime.parse(currentState.endTimeStr, formatter).toString()
+        // 1. Kiểm tra không được để trống
+        if (st.startTimeStr.isBlank()) {
+            _state.update { it.copy(startTimeError = "Vui lòng chọn giờ bắt đầu") }
+            isValid = false
+        }
+        if (st.endTimeStr.isBlank()) {
+            _state.update { it.copy(endTimeError = "Vui lòng chọn giờ kết thúc") }
+            isValid = false
+        }
 
-            viewModelScope.launch {
-                _state.update { it.copy(isSaving = true, error = null) }
+        // 2. Kiểm tra Logic thời gian (Kết thúc phải lớn hơn Bắt đầu)
+        if (st.startTimeStr.isNotBlank() && st.endTimeStr.isNotBlank()) {
+            try {
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                val startDt = LocalDateTime.parse(st.startTimeStr, formatter)
+                val endDt = LocalDateTime.parse(st.endTimeStr, formatter)
 
-                val request = AdminShowtimeUpdateRequest(
-                    startTime = isoStart,
-                    endTime = isoEnd,
-                    status = newStatus
-                )
-
-                val result = repository.updateShowtime(showtimeId, request)
-
-                if (result.isSuccess) {
-                    _state.update { it.copy(isSaving = false, isSuccess = true) }
+                if (endDt.isBefore(startDt) || endDt.isEqual(startDt)) {
+                    _state.update { it.copy(endTimeError = "Giờ kết thúc phải sau giờ bắt đầu") }
+                    isValid = false
                 } else {
-                    _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+                    isoStart = startDt.toString()
+                    isoEnd = endDt.toString()
                 }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Định dạng thời gian bị lỗi. Vui lòng thử lại.") }
+                isValid = false
             }
-        } catch (e: Exception) {
-            _state.update { it.copy(error = "Định dạng thời gian không hợp lệ!") }
+        }
+
+        // Dừng gọi API nếu có lỗi
+        if (!isValid) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isSaving = true, error = null) }
+
+            val request = AdminShowtimeUpdateRequest(
+                startTime = isoStart,
+                endTime = isoEnd,
+                status = newStatus
+            )
+
+            val result = repository.updateShowtime(showtimeId, request)
+
+            if (result.isSuccess) {
+                _state.update { it.copy(isSaving = false, isSuccess = true) }
+            } else {
+                val errorMsg = result.exceptionOrNull()?.message?.lowercase() ?: ""
+                // Dịch lỗi nếu do server báo trùng lịch phòng
+                val friendlyError = if (errorMsg.contains("conflict") || errorMsg.contains("overlap")) {
+                    "Lịch chiếu này bị trùng giờ với một phim khác trong cùng phòng!"
+                } else {
+                    result.exceptionOrNull()?.message ?: "Có lỗi xảy ra, vui lòng thử lại!"
+                }
+
+                _state.update { it.copy(isSaving = false, error = friendlyError) }
+            }
         }
     }
 }

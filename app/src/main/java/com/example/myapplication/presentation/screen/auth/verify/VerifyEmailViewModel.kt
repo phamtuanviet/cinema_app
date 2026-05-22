@@ -28,6 +28,10 @@ class VerifyEmailViewModel @Inject constructor(
         _state.value = _state.value.copy(otp = filtered, error = null)
     }
 
+    fun onEventConsumed() {
+        _state.value = _state.value.copy(error = null, isSuccess = false)
+    }
+
     fun verify() {
         val current = _state.value
 

@@ -1,5 +1,6 @@
 package com.example.myapplication.presentation.screen.admin.movie.edit
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -24,20 +26,33 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.myapplication.presentation.screen.admin.movie.create.AgeRatingDropdown
 import com.example.myapplication.presentation.screen.admin.movie.create.GenreSelectionDialog
-
+import android.app.DatePickerDialog
+import java.util.Calendar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminMovieEditScreen(
-    movieId: String, // Trực tiếp nhận từ NavGraph, mặc dù ViewModel đã tự lấy
+    movieId: String,
     onNavigateBack: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: AdminMovieEditViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) onSaveSuccess()
+    // 🔥 Xử lý chuyển trang & Toast
+    LaunchedEffect(state.isSuccess, state.error) {
+        if (state.isSuccess) {
+            Toast.makeText(context, "Cập nhật phim thành công!", Toast.LENGTH_SHORT).show()
+            onSaveSuccess()
+        }
+        state.error?.let {
+            // Bỏ qua lỗi Loading lúc mới vào màn hình nếu title đang rỗng
+            if (!state.isLoadingData) {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                viewModel.clearError()
+            }
+        }
     }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -46,6 +61,19 @@ fun AdminMovieEditScreen(
     )
 
     var showGenreDialog by remember { mutableStateOf(false) }
+
+    // 🔥 LỊCH DATEPICKER
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val formattedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
+            viewModel.onEvent(MovieEditEvent.ReleaseDateChanged(formattedDate))
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     Scaffold(
         modifier = Modifier.imePadding(),
@@ -60,9 +88,12 @@ fun AdminMovieEditScreen(
             )
         },
         bottomBar = {
-            if (!state.isLoadingData) {
+            if (!state.isLoadingData && state.error == null) {
                 Button(
-                    onClick = { viewModel.updateMovie(context) },
+                    onClick = {
+                        focusManager.clearFocus()
+                        viewModel.updateMovie(context)
+                    },
                     modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp),
                     enabled = !state.isSaving
                 ) {
@@ -81,10 +112,8 @@ fun AdminMovieEditScreen(
             if (state.isLoadingData) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (state.error != null && state.title.isEmpty()) {
-                // Lỗi khi lấy data
                 Text(text = state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
             } else {
-                // Form hiển thị y hệt Create Screen
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -92,16 +121,12 @@ fun AdminMovieEditScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // 1. Ảnh Poster (Ưu tiên ảnh mới chọn, nếu không thì lấy ảnh DB)
+                    // 1. Ảnh Poster
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp))
                             .background(Color.LightGray)
-                            .clickable {
-                                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                            },
+                            .clickable { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                         contentAlignment = Alignment.Center
                     ) {
                         val imageToShow = state.newPosterUri ?: state.currentPosterUrl
@@ -121,13 +146,15 @@ fun AdminMovieEditScreen(
                         }
                     }
 
-                    // ... (Tất cả các TextField, Dropdown AgeRating, Card Thể loại y hệt như màn Create)
+                    // 2. Thông tin cơ bản có bắt lỗi
                     OutlinedTextField(
                         value = state.title,
                         onValueChange = { viewModel.onEvent(MovieEditEvent.TitleChanged(it)) },
                         label = { Text("Tên phim (*)") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        isError = state.titleError != null,
+                        supportingText = { state.titleError?.let { Text(it) } }
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -137,7 +164,9 @@ fun AdminMovieEditScreen(
                             label = { Text("Thời lượng (phút)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            isError = state.durationError != null,
+                            supportingText = { state.durationError?.let { Text(it) } }
                         )
                         OutlinedTextField(
                             value = state.basePrice,
@@ -145,28 +174,42 @@ fun AdminMovieEditScreen(
                             label = { Text("Giá vé gốc đ (*)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            isError = state.priceError != null,
+                            supportingText = { state.priceError?.let { Text(it) } }
                         )
                     }
 
-                    // 3. Ngày khởi chiếu (Tạm dùng TextField, có thể tích hợp DatePickerDialog sau)
+                    // 3. Ngày khởi chiếu (Bật Lịch)
                     OutlinedTextField(
                         value = state.releaseDate,
-                        onValueChange = { viewModel.onEvent(MovieEditEvent.ReleaseDateChanged(it)) },
-                        label = { Text("Ngày khởi chiếu (YYYY-MM-DD)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        onValueChange = {}, // Chặn gõ tay
+                        readOnly = true,
+                        label = { Text("Ngày khởi chiếu (*)") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                focusManager.clearFocus()
+                                datePickerDialog.show()
+                            },
+                        enabled = false,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = if (state.releaseDateError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = if (state.releaseDateError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = "Chọn ngày") },
+                        isError = state.releaseDateError != null,
+                        supportingText = { state.releaseDateError?.let { Text(it) } }
                     )
 
-                    // 4. Dropdown Age Rating
+                    // 4. Age Rating (Giữ nguyên)
                     AgeRatingDropdown(
                         selectedRating = state.ageRating,
                         onRatingSelected = { viewModel.onEvent(MovieEditEvent.AgeRatingChanged(it)) }
                     )
 
-
-
-                    // 6. Mô tả & Trailer
+                    // 5. Mô tả & Trailer (Giữ nguyên)
                     OutlinedTextField(
                         value = state.trailerUrl,
                         onValueChange = { viewModel.onEvent(MovieEditEvent.TrailerUrlChanged(it)) },
@@ -183,6 +226,7 @@ fun AdminMovieEditScreen(
                         maxLines = 5
                     )
 
+                    // 6. Thể loại (Giữ nguyên)
                     OutlinedCard(
                         onClick = { showGenreDialog = true },
                         modifier = Modifier.fillMaxWidth()
@@ -200,6 +244,7 @@ fun AdminMovieEditScreen(
                         }
                     }
 
+                    // 7. Cài đặt trạng thái
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Switch(
                             checked = state.isActive,
@@ -213,7 +258,7 @@ fun AdminMovieEditScreen(
         }
     }
 
-    // Dialog Chọn / Thêm Thể loại (Dùng chung component GenreSelectionDialog bạn đã có)
+    // Dialog (Giữ nguyên dùng chung)
     if (showGenreDialog) {
         GenreSelectionDialog(
             availableGenres = state.availableGenres,

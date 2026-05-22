@@ -1,5 +1,6 @@
 package com.example.myapplication.presentation.screen.admin.voucher.edit
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -7,6 +8,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,14 +18,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.myapplication.presentation.screen.admin.showtime.create.DateTimePickerField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,10 +41,19 @@ fun AdminVoucherEditScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
-    LaunchedEffect(state.isSuccess) {
+    // 🔥 XỬ LÝ TOAST & ĐIỀU HƯỚNG
+    LaunchedEffect(state.isSuccess, state.error) {
         if (state.isSuccess) {
+            Toast.makeText(context, "Cập nhật Voucher thành công!", Toast.LENGTH_SHORT).show()
             onSaveSuccess()
+        }
+        state.error?.let {
+            if (!state.isLoadingData) {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                viewModel.clearError()
+            }
         }
     }
 
@@ -54,9 +69,12 @@ fun AdminVoucherEditScreen(
             )
         },
         bottomBar = {
-            if (!state.isLoadingData) {
+            if (!state.isLoadingData && state.error == null) {
                 Button(
-                    onClick = { viewModel.onEvent(VoucherEditEvent.SaveClicked) },
+                    onClick = {
+                        focusManager.clearFocus()
+                        viewModel.onEvent(VoucherEditEvent.SaveClicked)
+                    },
                     modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp),
                     enabled = !state.isSaving
                 ) {
@@ -75,6 +93,11 @@ fun AdminVoucherEditScreen(
             when {
                 state.isLoadingData -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
+                // Báo lỗi ngay giữa màn hình nếu API gọi ban đầu bị lỗi (Ví dụ: Mất mạng)
+                state.error != null && state.code.isEmpty() -> {
+                    Text(text = state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
+                }
+
                 else -> {
                     Column(
                         modifier = Modifier
@@ -83,19 +106,16 @@ fun AdminVoucherEditScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (state.error != null) {
-                            Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(8.dp)) {
-                                Text(text = state.error!!, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(12.dp))
-                            }
-                        }
-
                         // --- MÃ CODE & TRẠNG THÁI ---
                         OutlinedTextField(
                             value = state.code,
                             onValueChange = { viewModel.onEvent(VoucherEditEvent.CodeChanged(it)) },
                             label = { Text("Mã Voucher (CODE) (*)") },
                             modifier = Modifier.fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                            isError = state.codeError != null,
+                            supportingText = { state.codeError?.let { Text(it) } },
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                             singleLine = true
                         )
 
@@ -142,8 +162,11 @@ fun AdminVoucherEditScreen(
                             value = state.discountValueStr,
                             onValueChange = { viewModel.onEvent(VoucherEditEvent.ValueChanged(it)) },
                             label = { Text(if (state.discountType == "PERCENT") "Mức giảm (%) (*)" else "Mức giảm (VNĐ) (*)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                             modifier = Modifier.fillMaxWidth(),
+                            isError = state.discountValueError != null,
+                            supportingText = { state.discountValueError?.let { Text(it) } },
                             singleLine = true
                         )
 
@@ -153,7 +176,8 @@ fun AdminVoucherEditScreen(
                                 value = state.maxDiscountStr,
                                 onValueChange = { viewModel.onEvent(VoucherEditEvent.MaxDiscountChanged(it)) },
                                 label = { Text("Giảm tối đa (VNĐ) - Tùy chọn") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -167,33 +191,33 @@ fun AdminVoucherEditScreen(
                             value = state.minOrderValueStr,
                             onValueChange = { viewModel.onEvent(VoucherEditEvent.MinOrderChanged(it)) },
                             label = { Text("Đơn tối thiểu (VNĐ) - Tùy chọn") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Right) }),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
 
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
-                                value = state.usageLimitStr,
-                                onValueChange = { viewModel.onEvent(VoucherEditEvent.UsageLimitChanged(it)) },
-                                label = { Text("Giới hạn số lượt") },
-                                placeholder = { Text("Trống = Không giới hạn") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                        }
+                        OutlinedTextField(
+                            value = state.usageLimitStr,
+                            onValueChange = { viewModel.onEvent(VoucherEditEvent.UsageLimitChanged(it)) },
+                            label = { Text("Giới hạn số lượt") },
+                            placeholder = { Text("Trống = Không giới hạn") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
 
                         Text("Đã có ${state.usedCount} khách hàng sử dụng Voucher này.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
 
-                        OutlinedTextField(
+                        // --- LỊCH HẠN DÙNG (BẰNG LỊCH) ---
+                        DateTimePickerField(
                             value = state.expiryDateStr,
-                            onValueChange = { viewModel.onEvent(VoucherEditEvent.ExpiryDateChanged(it)) },
-                            label = { Text("Ngày hết hạn") },
-                            placeholder = { Text("VD: 2026-12-31 23:59") },
+                            label = "Ngày hết hạn (Tùy chọn)",
+                            onDateTimeSelected = { viewModel.onEvent(VoucherEditEvent.ExpiryDateChanged(it)) },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            supportingText = { Text("Định dạng: Năm-Tháng-Ngày Giờ:Phút") }
+                            isError = state.expiryDateError != null,
+                            errorText = state.expiryDateError
                         )
 
                         Spacer(modifier = Modifier.height(30.dp))
@@ -204,7 +228,7 @@ fun AdminVoucherEditScreen(
     }
 }
 
-// Custom Chip Component cho đẹp
+// Custom Chip Component (Giữ nguyên)
 @Composable
 fun SelectableChip(text: String, isSelected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(

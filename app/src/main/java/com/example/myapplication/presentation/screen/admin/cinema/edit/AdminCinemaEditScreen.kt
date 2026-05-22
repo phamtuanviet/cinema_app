@@ -1,23 +1,34 @@
 package com.example.myapplication.presentation.screen.admin.cinema.edit
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.*
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,27 +38,40 @@ import com.example.myapplication.presentation.component.SelectOrTypeDropdown
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminCinemaEditScreen(
-    cinemaId: String, // Lấy từ tham số Navigation
+    cinemaId: String,
     onNavigateBack: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: AdminCinemaEditViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
-    // Theo dõi trạng thái lưu thành công để thoát màn hình
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) onSaveSuccess()
+    // XỬ LÝ TOAST VÀ ĐIỀU HƯỚNG
+    LaunchedEffect(state.isSuccess, state.error) {
+        if (state.isSuccess) {
+            Toast.makeText(context, "Cập nhật Rạp thành công!", Toast.LENGTH_SHORT).show()
+            onSaveSuccess()
+        }
+        state.error?.let { errorMsg ->
+            // Chỉ hiện Toast nếu KHÔNG PHẢI đang load dữ liệu (tránh hiện Toast lúc mới mở màn hình nếu có lỗi mạng)
+            if (!state.isLoadingData) {
+                Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                viewModel.clearError()
+            }
+        }
     }
 
-    // Launcher mở thư viện ảnh
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> viewModel.onEvent(CinemaEditEvent.LogoPicked(uri)) }
     )
 
     Scaffold(
-        modifier = Modifier.imePadding(),
+        modifier = Modifier
+            .imePadding()
+            // Chạm ra ngoài để cất bàn phím
+            .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) },
         topBar = {
             TopAppBar(
                 title = { Text("Chỉnh sửa Rạp", fontWeight = FontWeight.Bold) },
@@ -59,14 +83,13 @@ fun AdminCinemaEditScreen(
             )
         },
         bottomBar = {
-            // Chỉ hiện nút Lưu khi đã load xong dữ liệu
-            if (!state.isLoadingData) {
+            if (!state.isLoadingData && state.error == null) {
                 Button(
-                    onClick = { viewModel.updateCinema(context) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(50.dp),
+                    onClick = {
+                        focusManager.clearFocus()
+                        viewModel.updateCinema(context)
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp),
                     enabled = !state.isSaving
                 ) {
                     if (state.isSaving) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
@@ -87,7 +110,7 @@ fun AdminCinemaEditScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
-                // 2. Lỗi khi tải dữ liệu
+                // 2. Lỗi khi lấy data (Đây là lỗi chặn đứng Form)
                 state.error != null && state.name.isEmpty() -> {
                     Text(
                         text = state.error!!,
@@ -96,7 +119,7 @@ fun AdminCinemaEditScreen(
                     )
                 }
 
-                // 3. Hiển thị Form chỉnh sửa
+                // 3. Hiển thị Form chỉnh sửa (Tương tự Form Create)
                 else -> {
                     Column(
                         modifier = Modifier
@@ -117,7 +140,6 @@ fun AdminCinemaEditScreen(
                                 },
                             contentAlignment = Alignment.Center
                         ) {
-                            // Ưu tiên hiện ảnh mới chọn, nếu không thì hiện ảnh cũ từ DB
                             val imageToShow = state.newLogoUri ?: state.currentLogoUrl
 
                             if (imageToShow != null) {
@@ -141,7 +163,11 @@ fun AdminCinemaEditScreen(
                             onValueChange = { viewModel.onEvent(CinemaEditEvent.NameChanged(it)) },
                             label = { Text("Tên Rạp (*)") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            isError = state.nameError != null,
+                            supportingText = { state.nameError?.let { Text(it) } },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                         )
 
                         OutlinedTextField(
@@ -149,10 +175,14 @@ fun AdminCinemaEditScreen(
                             onValueChange = { viewModel.onEvent(CinemaEditEvent.AddressChanged(it)) },
                             label = { Text("Địa chỉ chi tiết (*)") },
                             modifier = Modifier.fillMaxWidth(),
-                            maxLines = 2
+                            maxLines = 2,
+                            isError = state.addressError != null,
+                            supportingText = { state.addressError?.let { Text(it) } },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                         )
 
-                        // --- DROPDOWN GỢI Ý (Dùng chung Component SelectOrTypeDropdown) ---
+                        // --- DROPDOWN GỢI Ý ---
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             SelectOrTypeDropdown(
                                 value = state.cineplex,
@@ -179,6 +209,8 @@ fun AdminCinemaEditScreen(
                             placeholder = { Text("VD: http://googleusercontent.com/maps.google.com/...") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
@@ -190,17 +222,23 @@ fun AdminCinemaEditScreen(
                                 value = state.latitude,
                                 onValueChange = { viewModel.onEvent(CinemaEditEvent.LatitudeChanged(it)) },
                                 label = { Text("Vĩ độ (Lat)") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Right) }),
                                 modifier = Modifier.weight(1f),
-                                singleLine = true
+                                singleLine = true,
+                                isError = state.latError != null,
+                                supportingText = { state.latError?.let { Text(it) } }
                             )
                             OutlinedTextField(
                                 value = state.longitude,
                                 onValueChange = { viewModel.onEvent(CinemaEditEvent.LongitudeChanged(it)) },
                                 label = { Text("Kinh độ (Lng)") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                                 modifier = Modifier.weight(1f),
-                                singleLine = true
+                                singleLine = true,
+                                isError = state.lngError != null,
+                                supportingText = { state.lngError?.let { Text(it) } }
                             )
                         }
 
@@ -210,7 +248,9 @@ fun AdminCinemaEditScreen(
                             onValueChange = { viewModel.onEvent(CinemaEditEvent.DescriptionChanged(it)) },
                             label = { Text("Giới thiệu về Rạp") },
                             modifier = Modifier.fillMaxWidth().height(100.dp),
-                            maxLines = 4
+                            maxLines = 4,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                         )
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -220,11 +260,6 @@ fun AdminCinemaEditScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(if (state.isActive) "Đang hoạt động" else "Tạm đóng cửa")
-                        }
-
-                        // Hiển thị lỗi form (nếu có)
-                        if (state.error != null) {
-                            Text(text = state.error!!, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }

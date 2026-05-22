@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun VerifyEmailScreen(
@@ -35,15 +36,20 @@ fun VerifyEmailScreen(
         viewModel.setEmail(email)
     }
 
+
+
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
+            snackbarHostState.showSnackbar("Xác thực email thành công")
             onVerifySuccess()
+            viewModel.onEventConsumed() // Dọn dẹp trạng thái thành công
         }
     }
 
     LaunchedEffect(state.error) {
         state.error?.let {
             snackbarHostState.showSnackbar(it)
+            viewModel.onEventConsumed() // Dọn dẹp trạng thái lỗi
         }
     }
 

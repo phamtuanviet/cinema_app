@@ -7,10 +7,10 @@ import com.example.myapplication.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
+
 
 @HiltViewModel
 class ProfileAccountViewModel @Inject constructor(
@@ -25,7 +25,6 @@ class ProfileAccountViewModel @Inject constructor(
         observeUser()
     }
 
-    // ===== Observe user from SessionManager =====
     private fun observeUser() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
@@ -40,7 +39,6 @@ class ProfileAccountViewModel @Inject constructor(
         }
     }
 
-    // ===== UI actions =====
     fun onFullNameChange(value: String) {
         _state.value = _state.value.copy(fullName = value)
     }
@@ -49,13 +47,21 @@ class ProfileAccountViewModel @Inject constructor(
         _state.value = _state.value.copy(avatarFile = file)
     }
 
-    // ===== Update profile =====
+    // 🔥 LOGIC CẬP NHẬT CHUẨN CHUYÊN NGHIỆP
     fun updateProfile() {
         val current = _state.value
+        val trimmedName = current.fullName.trim()
 
-        // validate
-        if (current.fullName.isBlank() && current.avatarFile == null) {
-            _state.value = current.copy(error = "Nothing to update")
+        // 1. Chặn nhập tên rỗng hoặc toàn dấu cách
+        if (trimmedName.isBlank()) {
+            _state.value = current.copy(error = "Họ và tên không được để trống!")
+            return
+        }
+
+        // 2. Chặn gọi API nếu không có gì thay đổi (Tên y hệt cũ VÀ không có ảnh mới)
+        val isNameUnchanged = trimmedName == current.user?.fullName
+        if (isNameUnchanged && current.avatarFile == null) {
+            _state.value = current.copy(error = "Bạn chưa thay đổi thông tin nào.")
             return
         }
 
@@ -63,23 +69,23 @@ class ProfileAccountViewModel @Inject constructor(
             _state.value = current.copy(isUpdating = true, error = null)
 
             val result = userRepository.updateProfile(
-                fullName = current.fullName,
+                fullName = trimmedName, // Gửi tên đã xóa khoảng trắng thừa
                 avatarFile = current.avatarFile
             )
 
             result.onSuccess { userDto ->
-                // update session
                 sessionManager.saveUser(userDto)
 
                 _state.value = _state.value.copy(
                     user = userDto,
+                    avatarFile = null, // Giải phóng bộ nhớ ảnh sau khi up xong
                     isUpdating = false,
                     updateSuccess = true
                 )
             }.onFailure { error ->
                 _state.value = _state.value.copy(
                     isUpdating = false,
-                    error = error.message
+                    error = error.message ?: "Cập nhật thất bại. Vui lòng thử lại!"
                 )
             }
         }

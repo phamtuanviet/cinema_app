@@ -16,35 +16,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-// --- STATE ---
-data class ShowtimeCreateState(
-    val isSaving: Boolean = false,
-    val isSuccess: Boolean = false,
-    val error: String? = null,
-
-    // Phim
-    val movieSearchQuery: String = "",
-    val movieSuggestions: List<SimpleItemDto> = emptyList(),
-    val selectedMovie: SimpleItemDto? = null,
-
-    // Rạp
-    val cinemaSearchQuery: String = "",
-    val cinemaSuggestions: List<SimpleItemDto> = emptyList(),
-    val selectedCinema: SimpleItemDto? = null,
-
-    // Thời gian (Sử dụng String tạm thời định dạng yyyy-MM-dd HH:mm)
-    val startTimeStr: String = "",
-    val endTimeStr: String = "",
-
-    // Phòng (Tự động load khi có Rạp + StartTime + EndTime)
-    val isLoadingRooms: Boolean = false,
-    val availableRooms: List<SimpleItemDto> = emptyList(),
-    val selectedRoom: SimpleItemDto? = null,
-
-    // Giá
-    val basePrice: String = "50000",
-    val weekendModifier: String = "0"// VD: Tăng 20% vào cuối tuần
-)
 
 // --- EVENT ---
 sealed class ShowtimeCreateEvent {
@@ -63,6 +34,43 @@ sealed class ShowtimeCreateEvent {
     data class WeekendModifierChanged(val modifier: String) : ShowtimeCreateEvent()
 }
 
+data class ShowtimeCreateState(
+    val isSaving: Boolean = false,
+    val isSuccess: Boolean = false,
+    val error: String? = null, // Lỗi chung cho Toast
+
+    // Phim
+    val movieSearchQuery: String = "",
+    val movieError: String? = null,
+    val movieSuggestions: List<SimpleItemDto> = emptyList(),
+    val selectedMovie: SimpleItemDto? = null,
+
+    // Rạp
+    val cinemaSearchQuery: String = "",
+    val cinemaError: String? = null,
+    val cinemaSuggestions: List<SimpleItemDto> = emptyList(),
+    val selectedCinema: SimpleItemDto? = null,
+
+    // Thời gian
+    val startTimeStr: String = "",
+    val startTimeError: String? = null,
+    val endTimeStr: String = "",
+    val endTimeError: String? = null,
+
+    // Phòng
+    val isLoadingRooms: Boolean = false,
+    val availableRooms: List<SimpleItemDto> = emptyList(),
+    val selectedRoom: SimpleItemDto? = null,
+    val roomError: String? = null,
+
+    // Giá
+    val basePrice: String = "50000",
+    val priceError: String? = null,
+    val weekendModifier: String = "0"
+)
+
+
+
 // --- VIEWMODEL ---
 @HiltViewModel
 class AdminShowtimeCreateViewModel @Inject constructor(
@@ -78,35 +86,40 @@ class AdminShowtimeCreateViewModel @Inject constructor(
     fun onEvent(event: ShowtimeCreateEvent) {
         when (event) {
             is ShowtimeCreateEvent.MovieQueryChanged -> {
-                _state.update { it.copy(movieSearchQuery = event.query, selectedMovie = null) }
+                _state.update { it.copy(movieSearchQuery = event.query, selectedMovie = null, movieError = null) }
                 searchMovies(event.query)
             }
             is ShowtimeCreateEvent.MovieSelected -> {
-                _state.update { it.copy(selectedMovie = event.movie, movieSearchQuery = event.movie.name, movieSuggestions = emptyList()) }
+                _state.update { it.copy(selectedMovie = event.movie, movieSearchQuery = event.movie.name, movieSuggestions = emptyList(), movieError = null) }
             }
 
             is ShowtimeCreateEvent.CinemaQueryChanged -> {
-                _state.update { it.copy(cinemaSearchQuery = event.query, selectedCinema = null, selectedRoom = null, availableRooms = emptyList()) }
+                _state.update { it.copy(cinemaSearchQuery = event.query, selectedCinema = null, selectedRoom = null, availableRooms = emptyList(), cinemaError = null) }
                 searchCinemas(event.query)
             }
             is ShowtimeCreateEvent.CinemaSelected -> {
-                _state.update { it.copy(selectedCinema = event.cinema, cinemaSearchQuery = event.cinema.name, cinemaSuggestions = emptyList()) }
-                checkAndFetchRooms() // Chọn rạp xong, thử check xem fetch phòng được chưa
+                _state.update { it.copy(selectedCinema = event.cinema, cinemaSearchQuery = event.cinema.name, cinemaSuggestions = emptyList(), cinemaError = null) }
+                checkAndFetchRooms()
             }
 
             is ShowtimeCreateEvent.StartTimeChanged -> {
-                _state.update { it.copy(startTimeStr = event.time) }
+                _state.update { it.copy(startTimeStr = event.time, startTimeError = null) }
                 checkAndFetchRooms()
             }
             is ShowtimeCreateEvent.EndTimeChanged -> {
-                _state.update { it.copy(endTimeStr = event.time) }
+                _state.update { it.copy(endTimeStr = event.time, endTimeError = null) }
                 checkAndFetchRooms()
             }
 
-            is ShowtimeCreateEvent.RoomSelected -> _state.update { it.copy(selectedRoom = event.room) }
-            is ShowtimeCreateEvent.BasePriceChanged -> _state.update { it.copy(basePrice = event.price) }
+            is ShowtimeCreateEvent.RoomSelected -> _state.update { it.copy(selectedRoom = event.room, roomError = null) }
+
+            is ShowtimeCreateEvent.BasePriceChanged -> _state.update { it.copy(basePrice = event.price, priceError = null) }
             is ShowtimeCreateEvent.WeekendModifierChanged -> _state.update { it.copy(weekendModifier = event.modifier) }
         }
+    }
+
+    fun clearError() {
+        _state.update { it.copy(error = null) }
     }
 
     private fun searchMovies(query: String) {
@@ -183,37 +196,84 @@ class AdminShowtimeCreateViewModel @Inject constructor(
 
     fun createShowtime() {
         val st = _state.value
-        if (st.selectedMovie == null || st.selectedRoom == null) {
-            _state.update { it.copy(error = "Vui lòng chọn đủ Phim, Rạp và Phòng") }
-            return
+        var isValid = true
+
+        // 1. Validate Phim & Rạp
+        if (st.selectedMovie == null) {
+            _state.update { it.copy(movieError = "Vui lòng chọn phim từ danh sách gợi ý") }
+            isValid = false
+        }
+        if (st.selectedCinema == null) {
+            _state.update { it.copy(cinemaError = "Vui lòng chọn rạp từ danh sách gợi ý") }
+            isValid = false
         }
 
-        try {
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-            val isoStart = LocalDateTime.parse(st.startTimeStr, formatter).toString()
-            val isoEnd = LocalDateTime.parse(st.endTimeStr, formatter).toString()
+        // 2. Validate Thời gian
+        if (st.startTimeStr.isBlank()) {
+            _state.update { it.copy(startTimeError = "Vui lòng chọn giờ bắt đầu") }
+            isValid = false
+        }
+        if (st.endTimeStr.isBlank()) {
+            _state.update { it.copy(endTimeError = "Vui lòng chọn giờ kết thúc") }
+            isValid = false
+        }
 
-            viewModelScope.launch {
-                _state.update { it.copy(isSaving = true, error = null) }
+        // 3. Logic check: Thời gian kết thúc phải > Thời gian bắt đầu
+        var isoStart = ""
+        var isoEnd = ""
+        if (st.startTimeStr.isNotBlank() && st.endTimeStr.isNotBlank()) {
+            try {
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                val startDt = LocalDateTime.parse(st.startTimeStr, formatter)
+                val endDt = LocalDateTime.parse(st.endTimeStr, formatter)
 
-                val req = AdminShowtimeCreateRequest(
-                    movieId = st.selectedMovie.id,
-                    roomId = st.selectedRoom.id,
-                    startTime = isoStart,
-                    endTime = isoEnd,
-                    basePrice = st.basePrice.toDoubleOrNull() ?: 50000.0,
-                    weekendModifier = st.weekendModifier.toDoubleOrNull() ?: 1.0
-                )
-
-                val result = repository.createShowtime(req)
-                if (result.isSuccess) {
-                    _state.update { it.copy(isSaving = false, isSuccess = true) }
+                if (endDt.isBefore(startDt) || endDt.isEqual(startDt)) {
+                    _state.update { it.copy(endTimeError = "Giờ kết thúc phải sau giờ bắt đầu") }
+                    isValid = false
                 } else {
-                    _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+                    isoStart = startDt.toString()
+                    isoEnd = endDt.toString()
                 }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Định dạng thời gian bị lỗi. Vui lòng thử lại.") }
+                isValid = false
             }
-        } catch (e: Exception) {
-            _state.update { it.copy(error = "Định dạng thời gian không hợp lệ. Vui lòng nhập: yyyy-MM-dd HH:mm") }
+        }
+
+        // 4. Validate Phòng chiếu
+        if (st.selectedRoom == null) {
+            _state.update { it.copy(roomError = "Vui lòng chọn phòng chiếu") }
+            isValid = false
+        }
+
+        // 5. Validate Giá vé
+        val price = st.basePrice.toDoubleOrNull()
+        if (price == null || price < 0) {
+            _state.update { it.copy(priceError = "Giá vé không hợp lệ") }
+            isValid = false
+        }
+
+        // Nếu có lỗi thì DỪNG
+        if (!isValid) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isSaving = true, error = null) }
+
+            val req = AdminShowtimeCreateRequest(
+                movieId = st.selectedMovie!!.id,
+                roomId = st.selectedRoom!!.id,
+                startTime = isoStart,
+                endTime = isoEnd,
+                basePrice = price!!,
+                weekendModifier = st.weekendModifier.toDoubleOrNull() ?: 0.0
+            )
+
+            val result = repository.createShowtime(req)
+            if (result.isSuccess) {
+                _state.update { it.copy(isSaving = false, isSuccess = true) }
+            } else {
+                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Có lỗi xảy ra khi tạo lịch chiếu") }
+            }
         }
     }
 }

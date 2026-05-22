@@ -19,19 +19,23 @@ data class AdminComboEditState(
     val isLoadingData: Boolean = true,
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null,
+    val error: String? = null, // Lỗi chung cho Toast
 
+    // Form data & Validation
     val name: String = "",
+    val nameError: String? = null,
+
     val description: String = "",
+
     val priceStr: String = "",
+    val priceError: String? = null,
+
     val isActive: Boolean = true,
 
-    // Ảnh hiện tại từ server (URL)
+    // Ảnh
     val existingImageUrl: String? = null,
-    // Ảnh mới được chọn từ thư viện máy (URI)
     val selectedImageUri: Uri? = null
 )
-
 // --- EVENT ---
 sealed class ComboEditEvent {
     data class NameChanged(val name: String) : ComboEditEvent()
@@ -65,8 +69,6 @@ class AdminComboEditViewModel @Inject constructor(
 
             if (result.isSuccess) {
                 val combo = result.getOrNull()!!
-
-                // Format giá tiền hiển thị ra UI bỏ số thập phân nếu là số nguyên (vd: 50000.0 -> 50000)
                 val formattedPrice = if (combo.price % 1 == 0.0) combo.price.toLong().toString() else combo.price.toString()
 
                 _state.update {
@@ -80,52 +82,63 @@ class AdminComboEditViewModel @Inject constructor(
                     )
                 }
             } else {
-                _state.update { it.copy(isLoadingData = false, error = result.exceptionOrNull()?.message) }
+                _state.update { it.copy(isLoadingData = false, error = result.exceptionOrNull()?.message ?: "Lỗi tải dữ liệu") }
             }
         }
     }
 
     fun onEvent(event: ComboEditEvent) {
         when (event) {
-            is ComboEditEvent.NameChanged -> _state.update { it.copy(name = event.name) }
+            // 🔥 Tự động xóa lỗi đỏ khi bắt đầu gõ lại
+            is ComboEditEvent.NameChanged -> _state.update { it.copy(name = event.name, nameError = null) }
+            is ComboEditEvent.PriceChanged -> _state.update { it.copy(priceStr = event.price, priceError = null) }
+
             is ComboEditEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
-            is ComboEditEvent.PriceChanged -> _state.update { it.copy(priceStr = event.price) }
             is ComboEditEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
             is ComboEditEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri) }
-
             is ComboEditEvent.SaveClicked -> saveCombo(event.context)
         }
     }
 
+    // Hàm dọn dẹp lỗi sau khi hiện Toast
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun saveCombo(context: Context) {
-        val currentState = _state.value
-        if (currentState.name.isBlank() || currentState.priceStr.isBlank()) {
-            _state.update { it.copy(error = "Vui lòng nhập tên và giá bán") }
-            return
+        val st = _state.value
+        var isValid = true
+
+        if (st.name.isBlank()) {
+            _state.update { it.copy(nameError = "Tên Combo không được để trống") }
+            isValid = false
         }
 
-        val priceDouble = currentState.priceStr.toDoubleOrNull()
-        if (priceDouble == null || priceDouble < 0) {
-            _state.update { it.copy(error = "Giá bán không hợp lệ") }
-            return
+        val priceDouble = st.priceStr.toDoubleOrNull()
+        if (st.priceStr.isBlank() || priceDouble == null || priceDouble < 0) {
+            _state.update { it.copy(priceError = "Giá bán không hợp lệ") }
+            isValid = false
         }
+
+        // Nếu có lỗi ở các ô text thì dừng lại
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
 
             val request = AdminComboUpdateRequest(
-                name = currentState.name,
-                description = currentState.description.takeIf { it.isNotBlank() },
-                price = priceDouble,
-                isActive = currentState.isActive
+                name = st.name.trim(),
+                description = st.description.trim().takeIf { it.isNotBlank() },
+                price = priceDouble!!,
+                isActive = st.isActive
             )
 
-            val result = repository.updateCombo(comboId, request, currentState.selectedImageUri, context)
+            val result = repository.updateCombo(comboId, request, st.selectedImageUri, context)
 
             if (result.isSuccess) {
                 _state.update { it.copy(isSaving = false, isSuccess = true) }
             } else {
-                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Cập nhật thất bại") }
             }
         }
     }

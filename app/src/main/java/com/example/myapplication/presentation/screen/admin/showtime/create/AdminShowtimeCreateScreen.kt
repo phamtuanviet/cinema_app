@@ -1,6 +1,6 @@
 package com.example.myapplication.presentation.screen.admin.showtime.create
 
-import androidx.compose.foundation.background
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -38,11 +38,17 @@ fun AdminShowtimeCreateScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     // Tự động thoát khi lưu thành công
-    LaunchedEffect(state.isSuccess) {
+    LaunchedEffect(state.isSuccess, state.error) {
         if (state.isSuccess) {
+            Toast.makeText(context, "Tạo lịch chiếu thành công!", Toast.LENGTH_SHORT).show()
             onSaveSuccess()
+        }
+        state.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
         }
     }
 
@@ -59,11 +65,11 @@ fun AdminShowtimeCreateScreen(
         },
         bottomBar = {
             Button(
-                onClick = { viewModel.createShowtime() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(50.dp),
+                onClick = {
+                    focusManager.clearFocus()
+                    viewModel.createShowtime()
+                },
+                modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp),
                 enabled = !state.isSaving
             ) {
                 if (state.isSaving) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
@@ -80,13 +86,6 @@ fun AdminShowtimeCreateScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Hiển thị lỗi tổng (nếu có)
-            if (state.error != null) {
-                Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.small) {
-                    Text(text = state.error!!, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(12.dp))
-                }
-            }
-
             Text("1. Chọn Phim & Rạp", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 
             // --- TÌM KIẾM PHIM ---
@@ -95,7 +94,9 @@ fun AdminShowtimeCreateScreen(
                 onQueryChange = { viewModel.onEvent(ShowtimeCreateEvent.MovieQueryChanged(it)) },
                 label = "Tên Phim (*)",
                 suggestions = state.movieSuggestions,
-                onItemSelected = { viewModel.onEvent(ShowtimeCreateEvent.MovieSelected(it)) }
+                onItemSelected = { viewModel.onEvent(ShowtimeCreateEvent.MovieSelected(it)) },
+                isError = state.movieError != null,
+                errorText = state.movieError
             )
 
             // --- TÌM KIẾM RẠP ---
@@ -104,60 +105,72 @@ fun AdminShowtimeCreateScreen(
                 onQueryChange = { viewModel.onEvent(ShowtimeCreateEvent.CinemaQueryChanged(it)) },
                 label = "Tên Rạp (*)",
                 suggestions = state.cinemaSuggestions,
-                onItemSelected = { viewModel.onEvent(ShowtimeCreateEvent.CinemaSelected(it)) }
+                onItemSelected = { viewModel.onEvent(ShowtimeCreateEvent.CinemaSelected(it)) },
+                isError = state.cinemaError != null,
+                errorText = state.cinemaError
             )
 
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             Text("2. Thời gian chiếu", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 
-            // --- THỜI GIAN (ĐÃ DÙNG PICKER) ---
+            // --- THỜI GIAN ---
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 DateTimePickerField(
                     value = state.startTimeStr,
                     label = "Bắt đầu (*)",
                     onDateTimeSelected = { viewModel.onEvent(ShowtimeCreateEvent.StartTimeChanged(it)) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError = state.startTimeError != null,
+                    errorText = state.startTimeError
                 )
 
                 DateTimePickerField(
                     value = state.endTimeStr,
                     label = "Kết thúc (*)",
                     onDateTimeSelected = { viewModel.onEvent(ShowtimeCreateEvent.EndTimeChanged(it)) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError = state.endTimeError != null,
+                    errorText = state.endTimeError
                 )
             }
 
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             Text("3. Chọn Phòng (Tự động tải phòng trống)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 
-            // --- CHỌN PHÒNG (Chỉ hiện phòng trống) ---
+            // --- CHỌN PHÒNG ---
             ReadOnlySelectionDropdown(
                 selectedValue = state.selectedRoom?.name ?: "Vui lòng chọn Rạp và nhập giờ trước",
                 label = "Phòng chiếu (*)",
                 options = state.availableRooms,
                 onOptionSelected = { viewModel.onEvent(ShowtimeCreateEvent.RoomSelected(it)) },
                 isLoading = state.isLoadingRooms,
-                enabled = state.availableRooms.isNotEmpty()
+                enabled = state.availableRooms.isNotEmpty(),
+                isError = state.roomError != null,
+                errorText = state.roomError
             )
 
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             Text("4. Thiết lập Giá vé", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 
-            // --- GIÁ VÉ (Đã đổi label weekendModifier) ---
+            // --- GIÁ VÉ ---
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = state.basePrice,
                     onValueChange = { viewModel.onEvent(ShowtimeCreateEvent.BasePriceChanged(it)) },
                     label = { Text("Giá cơ bản (VNĐ)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    isError = state.priceError != null,
+                    supportingText = { state.priceError?.let { Text(it) } }
                 )
                 OutlinedTextField(
                     value = state.weekendModifier,
                     onValueChange = { viewModel.onEvent(ShowtimeCreateEvent.WeekendModifierChanged(it)) },
-                    label = { Text("Phụ thu cuối tuần (+ VNĐ)") }, // 🔥 Đổi nhãn ở đây
+                    label = { Text("Phụ thu cuối tuần (+ VNĐ)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
                 )
             }
         }
@@ -174,7 +187,9 @@ fun AutoCompleteSearchDropdown(
     onQueryChange: (String) -> Unit,
     label: String,
     suggestions: List<SimpleItemDto>,
-    onItemSelected: (SimpleItemDto) -> Unit
+    onItemSelected: (SimpleItemDto) -> Unit,
+    isError: Boolean = false,
+    errorText: String? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -192,9 +207,9 @@ fun AutoCompleteSearchDropdown(
             label = { Text(label) },
             modifier = Modifier.menuAnchor().fillMaxWidth(),
             singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary
-            )
+            isError = isError,
+            supportingText = { errorText?.let { Text(it) } },
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary)
         )
         ExposedDropdownMenu(
             expanded = expanded && suggestions.isNotEmpty(),
@@ -222,7 +237,9 @@ fun ReadOnlySelectionDropdown(
     options: List<SimpleItemDto>,
     onOptionSelected: (SimpleItemDto) -> Unit,
     isLoading: Boolean,
-    enabled: Boolean
+    enabled: Boolean,
+    isError: Boolean = false,
+    errorText: String? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -236,6 +253,8 @@ fun ReadOnlySelectionDropdown(
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
+            isError = isError,
+            supportingText = { errorText?.let { Text(it) } },
             trailingIcon = {
                 if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 else ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -266,7 +285,9 @@ fun DateTimePickerField(
     value: String,
     label: String,
     onDateTimeSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    errorText: String? = null
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
@@ -307,18 +328,18 @@ fun DateTimePickerField(
         OutlinedTextField(
             value = value,
             onValueChange = {},
-            readOnly = true, // Khóa không cho gõ tay
+            readOnly = true,
             label = { Text(label) },
             placeholder = { Text("Chọn ngày & giờ") },
-            trailingIcon = {
-                Icon(Icons.Default.CalendarToday, contentDescription = "Chọn thời gian", tint = MaterialTheme.colorScheme.primary)
-            },
+            trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             modifier = Modifier.fillMaxWidth(),
-            enabled = false, // Vô hiệu hóa để chặn bàn phím ảo bật lên
+            enabled = false,
+            isError = isError,
+            supportingText = { errorText?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
             colors = OutlinedTextFieldDefaults.colors(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledBorderColor = MaterialTheme.colorScheme.outline,
-                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledBorderColor = if(isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+                disabledLabelColor = if(isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 disabledTrailingIconColor = MaterialTheme.colorScheme.primary
             )
         )

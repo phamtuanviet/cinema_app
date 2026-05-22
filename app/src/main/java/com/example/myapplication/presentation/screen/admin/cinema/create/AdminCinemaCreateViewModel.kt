@@ -17,13 +17,23 @@ import javax.inject.Inject
 
 data class AdminCinemaCreateState(
     val name: String = "",
+    val nameError: String? = null,
+
     val address: String = "",
+    val addressError: String? = null,
+
     val description: String = "",
     val region: String = "",
     val cineplex: String = "",
-    val latitude: String = "", // Để String cho TextField, khi gửi sẽ convert sang Double
-    val longitude: String = "",
+
     val googleMapsLink: String = "",
+
+    val latitude: String = "",
+    val latError: String? = null,
+
+    val longitude: String = "",
+    val lngError: String? = null,
+
     val isActive: Boolean = true,
     val logoUri: Uri? = null,
 
@@ -32,7 +42,7 @@ data class AdminCinemaCreateState(
 
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null
+    val error: String? = null // Lỗi chung cho Toast (VD: Lỗi mạng, quên chọn ảnh)
 )
 
 sealed class CinemaCreateEvent {
@@ -45,9 +55,7 @@ sealed class CinemaCreateEvent {
     data class LongitudeChanged(val lng: String) : CinemaCreateEvent()
     data class IsActiveChanged(val isActive: Boolean) : CinemaCreateEvent()
     data class LogoPicked(val uri: Uri?) : CinemaCreateEvent()
-
     data class GoogleMapsLinkChanged(val link: String) : CinemaCreateEvent()
-
 }
 
 @HiltViewModel
@@ -81,15 +89,17 @@ class AdminCinemaCreateViewModel @Inject constructor(
 
     fun onEvent(event: CinemaCreateEvent) {
         when (event) {
-            is CinemaCreateEvent.NameChanged -> _state.update { it.copy(name = event.name, error = null) }
-            is CinemaCreateEvent.AddressChanged -> _state.update { it.copy(address = event.address) }
+            // 🔥 Cập nhật Text và XÓA LỖI ngay khi người dùng gõ lại
+            is CinemaCreateEvent.NameChanged -> _state.update { it.copy(name = event.name, nameError = null) }
+            is CinemaCreateEvent.AddressChanged -> _state.update { it.copy(address = event.address, addressError = null) }
+            is CinemaCreateEvent.LatitudeChanged -> _state.update { it.copy(latitude = event.lat, latError = null) }
+            is CinemaCreateEvent.LongitudeChanged -> _state.update { it.copy(longitude = event.lng, lngError = null) }
+
             is CinemaCreateEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
             is CinemaCreateEvent.RegionChanged -> _state.update { it.copy(region = event.region) }
             is CinemaCreateEvent.CineplexChanged -> _state.update { it.copy(cineplex = event.cineplex) }
-            is CinemaCreateEvent.LatitudeChanged -> _state.update { it.copy(latitude = event.lat) }
-            is CinemaCreateEvent.LongitudeChanged -> _state.update { it.copy(longitude = event.lng) }
             is CinemaCreateEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
-            is CinemaCreateEvent.LogoPicked -> _state.update { it.copy(logoUri = event.uri) }
+            is CinemaCreateEvent.LogoPicked -> _state.update { it.copy(logoUri = event.uri, error = null) }
             is CinemaCreateEvent.GoogleMapsLinkChanged -> {
                 _state.update { it.copy(googleMapsLink = event.link) }
                 extractCoordinatesFromLink(event.link)
@@ -97,53 +107,82 @@ class AdminCinemaCreateViewModel @Inject constructor(
         }
     }
 
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun extractCoordinatesFromLink(link: String) {
-        // Regex tìm đoạn bắt đầu bằng '@', theo sau là 2 số thập phân (có thể có dấu trừ) cách nhau bởi dấu phẩy
         val regex = """@(-?\d+\.\d+),(-?\d+\.\d+)""".toRegex()
         val matchResult = regex.find(link)
 
         if (matchResult != null) {
-            // Lấy ra đúng 2 giá trị đã match
             val (lat, lng) = matchResult.destructured
             _state.update {
                 it.copy(
                     latitude = lat,
                     longitude = lng,
-                    error = null // Xoá lỗi nếu có
+                    latError = null,
+                    lngError = null
                 )
             }
         }
     }
 
     fun createCinema(context: Context) {
-        val currentState = _state.value
+        val st = _state.value
+        var isValid = true
 
-        // Validate cơ bản
-        if (currentState.name.isBlank() || currentState.address.isBlank()) {
-            _state.update { it.copy(error = "Vui lòng nhập Tên Rạp và Địa chỉ") }
+        // 1. Kiểm tra Logo (Dùng error chung để hiện Toast)
+        if (st.logoUri == null) {
+            _state.update { it.copy(error = "Vui lòng chọn ảnh Logo cho rạp!") }
             return
         }
+
+        // 2. Kiểm tra Tên & Địa chỉ (Báo lỗi đỏ tại ô nhập)
+        if (st.name.isBlank()) {
+            _state.update { it.copy(nameError = "Tên rạp không được để trống") }
+            isValid = false
+        }
+        if (st.address.isBlank()) {
+            _state.update { it.copy(addressError = "Địa chỉ rạp không được để trống") }
+            isValid = false
+        }
+
+        // 3. Kiểm tra định dạng Toạ độ (nếu có nhập)
+        val latDouble = st.latitude.toDoubleOrNull()
+        if (st.latitude.isNotBlank() && latDouble == null) {
+            _state.update { it.copy(latError = "Vĩ độ không hợp lệ") }
+            isValid = false
+        }
+        val lngDouble = st.longitude.toDoubleOrNull()
+        if (st.longitude.isNotBlank() && lngDouble == null) {
+            _state.update { it.copy(lngError = "Kinh độ không hợp lệ") }
+            isValid = false
+        }
+
+        // Nếu có lỗi -> Ngừng gọi API
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
             val request = AdminCinemaCreateRequest(
-                name = currentState.name.trim(),
-                address = currentState.address.trim(),
-                description = currentState.description.trim().takeIf { it.isNotEmpty() },
-                region = currentState.region.trim().takeIf { it.isNotEmpty() },
-                cineplex = currentState.cineplex.trim().takeIf { it.isNotEmpty() },
-                latitude = currentState.latitude.toDoubleOrNull(),
-                longitude = currentState.longitude.toDoubleOrNull(),
-                isActive = currentState.isActive
+                name = st.name.trim(),
+                address = st.address.trim(),
+                description = st.description.trim().takeIf { it.isNotEmpty() },
+                region = st.region.trim().takeIf { it.isNotEmpty() },
+                cineplex = st.cineplex.trim().takeIf { it.isNotEmpty() },
+                latitude = latDouble,
+                longitude = lngDouble,
+                isActive = st.isActive
             )
 
-            val result = repository.createCinema(request, currentState.logoUri, context)
+            val result = repository.createCinema(request, st.logoUri, context)
 
             if (result.isSuccess) {
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
             } else {
-                _state.update { it.copy(isLoading = false, error = result.exceptionOrNull()?.message) }
+                _state.update { it.copy(isLoading = false, error = result.exceptionOrNull()?.message ?: "Có lỗi xảy ra, vui lòng thử lại!") }
             }
         }
     }

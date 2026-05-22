@@ -11,19 +11,30 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 
 data class AdminVoucherCreateState(
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null,
+    val error: String? = null, // Dùng cho Toast lỗi chung
 
     val code: String = "",
+    val codeError: String? = null,
+
     val discountType: String = "PERCENT", // PERCENT hoặc FIXED
+
     val discountValueStr: String = "",
+    val discountValueError: String? = null,
+
     val minOrderValueStr: String = "",
     val maxDiscountStr: String = "",
     val usageLimitStr: String = "",
-    val expiryDateStr: String = "", // Định dạng nhập: yyyy-MM-dd HH:mm
+
+    val expiryDateStr: String = "",
+    val expiryDateError: String? = null,
+
     val isActive: Boolean = true
 )
 
@@ -49,52 +60,67 @@ class AdminVoucherCreateViewModel @Inject constructor(
 
     fun onEvent(event: VoucherCreateEvent) {
         when (event) {
-            is VoucherCreateEvent.CodeChanged -> _state.update { it.copy(code = event.code.uppercase()) }
+            // 🔥 Tự xóa lỗi viền đỏ khi người dùng bắt đầu gõ sửa lại
+            is VoucherCreateEvent.CodeChanged -> _state.update { it.copy(code = event.code.uppercase().trim(), codeError = null) }
+            is VoucherCreateEvent.ValueChanged -> _state.update { it.copy(discountValueStr = event.value, discountValueError = null) }
+            is VoucherCreateEvent.ExpiryDateChanged -> _state.update { it.copy(expiryDateStr = event.date, expiryDateError = null) }
+
             is VoucherCreateEvent.TypeChanged -> _state.update {
-                it.copy(discountType = event.type, maxDiscountStr = if (event.type == "FIXED") "" else it.maxDiscountStr)
+                it.copy(discountType = event.type, maxDiscountStr = if (event.type == "FIXED") "" else it.maxDiscountStr, discountValueError = null)
             }
-            is VoucherCreateEvent.ValueChanged -> _state.update { it.copy(discountValueStr = event.value) }
             is VoucherCreateEvent.MinOrderChanged -> _state.update { it.copy(minOrderValueStr = event.minOrder) }
             is VoucherCreateEvent.MaxDiscountChanged -> _state.update { it.copy(maxDiscountStr = event.maxDiscount) }
             is VoucherCreateEvent.UsageLimitChanged -> _state.update { it.copy(usageLimitStr = event.limit) }
-            is VoucherCreateEvent.ExpiryDateChanged -> _state.update { it.copy(expiryDateStr = event.date) }
             is VoucherCreateEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
+
             is VoucherCreateEvent.SaveClicked -> saveVoucher()
         }
     }
 
+    // Dọn lỗi để Toast không hiện lại
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun saveVoucher() {
         val st = _state.value
+        var isValid = true
 
-        if (st.code.isBlank() || st.discountValueStr.isBlank()) {
-            _state.update { it.copy(error = "Mã Voucher và Mức giảm không được trống") }
-            return
+        // 1. Kiểm tra Mã Code
+        if (st.code.isBlank()) {
+            _state.update { it.copy(codeError = "Mã Voucher không được để trống") }
+            isValid = false
         }
 
+        // 2. Kiểm tra Mức giảm
         val discountValue = st.discountValueStr.toDoubleOrNull() ?: -1.0
-        if (discountValue <= 0 || (st.discountType == "PERCENT" && discountValue > 100)) {
-            _state.update { it.copy(error = "Mức giảm không hợp lệ (Phần trăm phải từ 1-100)") }
-            return
+        if (st.discountValueStr.isBlank() || discountValue <= 0 || (st.discountType == "PERCENT" && discountValue > 100)) {
+            val errorMsg = if (st.discountType == "PERCENT") "Phần trăm giảm phải từ 1 đến 100" else "Mức giảm tiền mặt không hợp lệ"
+            _state.update { it.copy(discountValueError = errorMsg) }
+            isValid = false
         }
 
+        // 3. Xử lý thời gian từ Picker (yyyy-MM-dd HH:mm) sang chuẩn ISO gửi Server (yyyy-MM-ddTHH:mm:ss)
         var formattedExpiryDate: String? = null
         if (st.expiryDateStr.isNotBlank()) {
             try {
-                val parts = st.expiryDateStr.trim().split(" ")
-                val datePart = parts[0] // yyyy-MM-dd
-                val timePart = if (parts.size > 1) parts[1] else "23:59"
-                formattedExpiryDate = "${datePart}T${timePart}:00"
+                val formatterIn = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                val parsedDate = LocalDateTime.parse(st.expiryDateStr, formatterIn)
+                formattedExpiryDate = parsedDate.toString()
             } catch (e: Exception) {
-                _state.update { it.copy(error = "Sai định dạng ngày (VD: 2026-12-31 23:59)") }
-                return
+                _state.update { it.copy(expiryDateError = "Định dạng ngày không hợp lệ") }
+                isValid = false
             }
         }
+
+        // Nếu có bất kì lỗi nào, dừng lại không gọi API
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
 
             val request = AdminVoucherCreateRequest(
-                code = st.code.trim(),
+                code = st.code,
                 discountType = st.discountType,
                 discountValue = discountValue,
                 minOrderValue = st.minOrderValueStr.toDoubleOrNull().takeIf { it != null && it > 0 },
@@ -108,7 +134,7 @@ class AdminVoucherCreateViewModel @Inject constructor(
             if (result.isSuccess) {
                 _state.update { it.copy(isSaving = false, isSuccess = true) }
             } else {
-                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Phát hành Voucher thất bại") }
             }
         }
     }

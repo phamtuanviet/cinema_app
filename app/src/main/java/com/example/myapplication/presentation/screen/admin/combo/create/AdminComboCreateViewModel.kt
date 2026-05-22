@@ -13,21 +13,23 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// --- STATE ---
 data class AdminComboCreateState(
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null,
+    val error: String? = null, // Dùng cho Toast chung (như quên chọn ảnh)
 
     val name: String = "",
-    val description: String = "",
-    val priceStr: String = "",
-    val isActive: Boolean = true, // Mặc định tạo mới là đang bán
+    val nameError: String? = null, // Lỗi riêng ô Tên
 
-    val selectedImageUri: Uri? = null // Chỉ có ảnh chọn từ máy, không có ảnh server
+    val description: String = "",
+
+    val priceStr: String = "",
+    val priceError: String? = null, // Lỗi riêng ô Giá
+
+    val isActive: Boolean = true,
+    val selectedImageUri: Uri? = null
 )
 
-// --- EVENT ---
 sealed class ComboCreateEvent {
     data class NameChanged(val name: String) : ComboCreateEvent()
     data class DescriptionChanged(val desc: String) : ComboCreateEvent()
@@ -37,7 +39,6 @@ sealed class ComboCreateEvent {
     data class SaveClicked(val context: Context) : ComboCreateEvent()
 }
 
-// --- VIEWMODEL ---
 @HiltViewModel
 class AdminComboCreateViewModel @Inject constructor(
     private val repository: AdminComboRepository
@@ -48,48 +49,64 @@ class AdminComboCreateViewModel @Inject constructor(
 
     fun onEvent(event: ComboCreateEvent) {
         when (event) {
-            is ComboCreateEvent.NameChanged -> _state.update { it.copy(name = event.name) }
-            is ComboCreateEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
-            is ComboCreateEvent.PriceChanged -> _state.update { it.copy(priceStr = event.price) }
-            is ComboCreateEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
-            is ComboCreateEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri) }
+            // 🔥 Tự động xóa lỗi khi người dùng gõ lại
+            is ComboCreateEvent.NameChanged -> _state.update { it.copy(name = event.name, nameError = null) }
+            is ComboCreateEvent.PriceChanged -> _state.update { it.copy(priceStr = event.price, priceError = null) }
 
+            is ComboCreateEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
+            is ComboCreateEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
+            is ComboCreateEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri, error = null) }
             is ComboCreateEvent.SaveClicked -> saveCombo(event.context)
         }
     }
 
+    // 🔥 Hàm dọn dẹp lỗi sau khi Toast hiện xong
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun saveCombo(context: Context) {
-        val currentState = _state.value
+        val st = _state.value
+        var isValid = true
 
-        // Validate dữ liệu
-        if (currentState.name.isBlank() || currentState.priceStr.isBlank()) {
-            _state.update { it.copy(error = "Vui lòng nhập tên và giá bán") }
+        // 1. Kiểm tra Ảnh (Bắt buộc chọn ảnh cho đẹp UI User)
+        if (st.selectedImageUri == null) {
+            _state.update { it.copy(error = "Vui lòng chọn ảnh minh họa cho Combo!") }
             return
         }
 
-        val priceDouble = currentState.priceStr.toDoubleOrNull()
-        if (priceDouble == null || priceDouble < 0) {
-            _state.update { it.copy(error = "Giá bán không hợp lệ") }
-            return
+        // 2. Kiểm tra Tên Combo
+        if (st.name.isBlank()) {
+            _state.update { it.copy(nameError = "Tên Combo không được để trống") }
+            isValid = false
         }
+
+        // 3. Kiểm tra Giá bán
+        val priceDouble = st.priceStr.toDoubleOrNull()
+        if (st.priceStr.isBlank() || priceDouble == null || priceDouble < 0) {
+            _state.update { it.copy(priceError = "Giá bán không hợp lệ") }
+            isValid = false
+        }
+
+        // Ngừng lại nếu form bị lỗi
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
 
             val request = AdminComboCreateRequest(
-                name = currentState.name,
-                description = currentState.description.takeIf { it.isNotBlank() },
-                price = priceDouble,
-                isActive = currentState.isActive
+                name = st.name.trim(),
+                description = st.description.trim().takeIf { it.isNotBlank() },
+                price = priceDouble!!,
+                isActive = st.isActive
             )
 
-            // Gọi Repository
-            val result = repository.createCombo(request, currentState.selectedImageUri, context)
+            val result = repository.createCombo(request, st.selectedImageUri, context)
 
             if (result.isSuccess) {
                 _state.update { it.copy(isSaving = false, isSuccess = true) }
             } else {
-                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Tạo Combo thất bại!") }
             }
         }
     }

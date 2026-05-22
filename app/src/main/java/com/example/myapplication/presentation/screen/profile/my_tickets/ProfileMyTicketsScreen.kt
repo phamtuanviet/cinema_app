@@ -33,6 +33,11 @@ fun ProfileMyTicketsScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.resetState() // Xóa dữ liệu cũ
+        viewModel.selectTab(BookingTab.UPCOMING) // Tự động load tab đầu
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

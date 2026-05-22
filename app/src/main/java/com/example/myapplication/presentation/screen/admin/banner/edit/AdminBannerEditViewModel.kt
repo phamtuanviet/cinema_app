@@ -18,11 +18,16 @@ data class AdminBannerEditState(
     val isLoadingData: Boolean = true,
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null,
+    val error: String? = null, // Dùng cho lỗi chung (Toast)
 
     val actionType: String = "MOVIE",
+
     val targetUrl: String = "",
+    val targetUrlError: String? = null, // Lỗi ô URL
+
     val selectedMovieId: String? = null,
+    val movieError: String? = null, // Lỗi ô chọn Phim
+
     val priorityStr: String = "0",
     val isActive: Boolean = true,
 
@@ -31,7 +36,6 @@ data class AdminBannerEditState(
 
     val availableMovies: List<AdminMovieSimpleDto> = emptyList()
 )
-
 sealed class BannerEditEvent {
     data class ActionTypeChanged(val type: String) : BannerEditEvent()
     data class TargetUrlChanged(val url: String) : BannerEditEvent()
@@ -56,7 +60,7 @@ class AdminBannerEditViewModel @Inject constructor(
 
     private fun loadAllData() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoadingData = true) }
+            _state.update { it.copy(isLoadingData = true, error = null) }
             val bannerResult = repository.getBannerById(bannerId)
             val movieResult = repository.getActiveMovies()
 
@@ -73,18 +77,25 @@ class AdminBannerEditViewModel @Inject constructor(
                     availableMovies = movieResult.getOrDefault(emptyList())
                 ) }
             } else {
-                _state.update { it.copy(isLoadingData = false, error = bannerResult.exceptionOrNull()?.message) }
+                _state.update { it.copy(isLoadingData = false, error = bannerResult.exceptionOrNull()?.message ?: "Lỗi tải dữ liệu") }
             }
         }
     }
 
     fun onEvent(event: BannerEditEvent) {
         when (event) {
+            // 🔥 Xóa lỗi viền đỏ khi người dùng thay đổi giá trị
             is BannerEditEvent.ActionTypeChanged -> _state.update {
-                it.copy(actionType = event.type, selectedMovieId = if(event.type == "URL") null else it.selectedMovieId, targetUrl = if(event.type == "MOVIE") "" else it.targetUrl)
+                it.copy(
+                    actionType = event.type,
+                    selectedMovieId = if(event.type == "URL") null else it.selectedMovieId,
+                    targetUrl = if(event.type == "MOVIE") "" else it.targetUrl,
+                    targetUrlError = null,
+                    movieError = null
+                )
             }
-            is BannerEditEvent.TargetUrlChanged -> _state.update { it.copy(targetUrl = event.url) }
-            is BannerEditEvent.MovieSelected -> _state.update { it.copy(selectedMovieId = event.id) }
+            is BannerEditEvent.TargetUrlChanged -> _state.update { it.copy(targetUrl = event.url, targetUrlError = null) }
+            is BannerEditEvent.MovieSelected -> _state.update { it.copy(selectedMovieId = event.id, movieError = null) }
             is BannerEditEvent.PriorityChanged -> _state.update { it.copy(priorityStr = event.priority) }
             is BannerEditEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
             is BannerEditEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri) }
@@ -92,15 +103,26 @@ class AdminBannerEditViewModel @Inject constructor(
         }
     }
 
+    // Hàm xóa lỗi Toast
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun saveBanner(context: Context) {
         val st = _state.value
+        var isValid = true
 
+        // Validate Inline
         if (st.actionType == "URL" && st.targetUrl.isBlank()) {
-            _state.update { it.copy(error = "Vui lòng nhập đường dẫn URL") }; return
+            _state.update { it.copy(targetUrlError = "Vui lòng nhập đường dẫn URL") }
+            isValid = false
         }
         if (st.actionType == "MOVIE" && st.selectedMovieId == null) {
-            _state.update { it.copy(error = "Vui lòng chọn Phim") }; return
+            _state.update { it.copy(movieError = "Vui lòng chọn Phim liên kết") }
+            isValid = false
         }
+
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
@@ -112,8 +134,11 @@ class AdminBannerEditViewModel @Inject constructor(
                 isActive = st.isActive
             )
             val result = repository.updateBanner(bannerId, request, st.selectedImageUri, context)
-            if (result.isSuccess) _state.update { it.copy(isSaving = false, isSuccess = true) }
-            else _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+            if (result.isSuccess) {
+                _state.update { it.copy(isSaving = false, isSuccess = true) }
+            } else {
+                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Cập nhật thất bại") }
+            }
         }
     }
 }

@@ -13,18 +13,24 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
 data class AdminBannerCreateState(
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null,
+    val error: String? = null, // Lỗi chung cho Toast (VD: Lỗi mạng, Quên chọn ảnh)
 
-    val actionType: String = "MOVIE",
+    val actionType: String = "MOVIE", // "MOVIE" hoặc "URL"
+
     val targetUrl: String = "",
+    val targetUrlError: String? = null,
+
     val selectedMovieId: String? = null,
+    val movieError: String? = null,
+
     val priorityStr: String = "0",
     val isActive: Boolean = true,
 
-    val selectedImageUri: Uri? = null, // Bắt buộc phải có khi Save
+    val selectedImageUri: Uri? = null,
 
     val availableMovies: List<AdminMovieSimpleDto> = emptyList()
 )
@@ -58,31 +64,52 @@ class AdminBannerCreateViewModel @Inject constructor(
 
     fun onEvent(event: BannerCreateEvent) {
         when (event) {
+            //  Tự động dọn lỗi khi người dùng thay đổi lựa chọn
             is BannerCreateEvent.ActionTypeChanged -> _state.update {
-                it.copy(actionType = event.type, selectedMovieId = null, targetUrl = "")
+                it.copy(
+                    actionType = event.type,
+                    selectedMovieId = null,
+                    targetUrl = "",
+                    targetUrlError = null,
+                    movieError = null
+                )
             }
-            is BannerCreateEvent.TargetUrlChanged -> _state.update { it.copy(targetUrl = event.url) }
-            is BannerCreateEvent.MovieSelected -> _state.update { it.copy(selectedMovieId = event.id) }
+            is BannerCreateEvent.TargetUrlChanged -> _state.update { it.copy(targetUrl = event.url, targetUrlError = null) }
+            is BannerCreateEvent.MovieSelected -> _state.update { it.copy(selectedMovieId = event.id, movieError = null) }
             is BannerCreateEvent.PriorityChanged -> _state.update { it.copy(priorityStr = event.priority) }
             is BannerCreateEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
-            is BannerCreateEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri) }
+            is BannerCreateEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri, error = null) }
             is BannerCreateEvent.SaveClicked -> saveBanner(event.context)
         }
     }
 
+    // Dọn dẹp lỗi Toast
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun saveBanner(context: Context) {
         val st = _state.value
+        var isValid = true
 
-        // Validate
+        // 1. Kiểm tra ảnh (Bắt buộc) - Hiển thị bằng Toast
         if (st.selectedImageUri == null) {
-            _state.update { it.copy(error = "Vui lòng chọn ảnh Banner") }; return
+            _state.update { it.copy(error = "Vui lòng chọn ảnh bìa cho Banner") }
+            return
         }
+
+        // 2. Kiểm tra dữ liệu theo ActionType - Hiển thị bằng Viền đỏ
         if (st.actionType == "URL" && st.targetUrl.isBlank()) {
-            _state.update { it.copy(error = "Vui lòng nhập đường dẫn URL") }; return
+            _state.update { it.copy(targetUrlError = "Vui lòng nhập đường dẫn URL") }
+            isValid = false
         }
         if (st.actionType == "MOVIE" && st.selectedMovieId == null) {
-            _state.update { it.copy(error = "Vui lòng chọn Phim liên kết") }; return
+            _state.update { it.copy(movieError = "Vui lòng chọn Phim liên kết") }
+            isValid = false
         }
+
+        // Nếu form lỗi, dừng ngay
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
@@ -95,7 +122,7 @@ class AdminBannerCreateViewModel @Inject constructor(
             )
             val result = repository.createBanner(request, st.selectedImageUri, context)
             if (result.isSuccess) _state.update { it.copy(isSaving = false, isSuccess = true) }
-            else _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+            else _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Có lỗi xảy ra") }
         }
     }
 }

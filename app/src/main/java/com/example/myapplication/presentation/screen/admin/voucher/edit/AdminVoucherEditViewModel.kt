@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 // --- STATE ---
@@ -19,20 +21,26 @@ data class AdminVoucherEditState(
     val isLoadingData: Boolean = true,
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null,
+    val error: String? = null, // Dùng cho Toast chung
 
     val code: String = "",
-    val discountType: String = "PERCENT", // PERCENT hoặc FIXED
+    val codeError: String? = null,
+
+    val discountType: String = "PERCENT",
+
     val discountValueStr: String = "",
+    val discountValueError: String? = null,
+
     val minOrderValueStr: String = "",
     val maxDiscountStr: String = "",
     val usageLimitStr: String = "",
-    val expiryDateStr: String = "", // Định dạng nhập: yyyy-MM-dd HH:mm
+
+    val expiryDateStr: String = "",
+    val expiryDateError: String? = null,
+
     val isActive: Boolean = true,
-
-    val usedCount: Int = 0 // Chỉ hiển thị, không được sửa
+    val usedCount: Int = 0
 )
-
 // --- EVENT ---
 sealed class VoucherEditEvent {
     data class CodeChanged(val code: String) : VoucherEditEvent()
@@ -68,19 +76,28 @@ class AdminVoucherEditViewModel @Inject constructor(
 
             if (result.isSuccess) {
                 val v = result.getOrNull()!!
-
-                // Helper format số thập phân .0
                 fun formatNum(num: Double?) = if (num == null) "" else if (num % 1 == 0.0) num.toLong().toString() else num.toString()
 
-                // Đổi ngày từ "HH:mm - dd/MM/yyyy" sang "yyyy-MM-dd HH:mm" để Admin dễ sửa
+                // Parse ngày về chuẩn yyyy-MM-dd HH:mm cho DatePicker hiển thị
                 var rawDate = ""
-                if (!v.expiryDate.isNullOrEmpty() && v.expiryDate.length == 18) {
-                    // Ví dụ: 15:30 - 20/12/2026 -> 2026-12-20 15:30
-                    val time = v.expiryDate.substring(0, 5)
-                    val day = v.expiryDate.substring(8, 10)
-                    val month = v.expiryDate.substring(11, 13)
-                    val year = v.expiryDate.substring(14, 18)
-                    rawDate = "$year-$month-$day $time"
+                if (!v.expiryDate.isNullOrEmpty()) {
+                    try {
+                        // Thử parse nếu backend trả về chuẩn ISO (yyyy-MM-dd'T'HH:mm:ss)
+                        val formatterIn = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+                        val formatterOut = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                        rawDate = LocalDateTime.parse(v.expiryDate.take(19), formatterIn).format(formatterOut)
+                    } catch (e: Exception) {
+                        // Fallback logic cũ nếu API trả về format custom "HH:mm - dd/MM/yyyy"
+                        if (v.expiryDate.length == 18) {
+                            val time = v.expiryDate.substring(0, 5)
+                            val day = v.expiryDate.substring(8, 10)
+                            val month = v.expiryDate.substring(11, 13)
+                            val year = v.expiryDate.substring(14, 18)
+                            rawDate = "$year-$month-$day $time"
+                        } else {
+                            rawDate = v.expiryDate
+                        }
+                    }
                 }
 
                 _state.update {
@@ -105,49 +122,56 @@ class AdminVoucherEditViewModel @Inject constructor(
 
     fun onEvent(event: VoucherEditEvent) {
         when (event) {
-            is VoucherEditEvent.CodeChanged -> _state.update { it.copy(code = event.code.uppercase()) }
+            // 🔥 Tự xóa viền đỏ khi người dùng gõ sửa lại
+            is VoucherEditEvent.CodeChanged -> _state.update { it.copy(code = event.code.uppercase().trim(), codeError = null) }
+            is VoucherEditEvent.ValueChanged -> _state.update { it.copy(discountValueStr = event.value, discountValueError = null) }
+            is VoucherEditEvent.ExpiryDateChanged -> _state.update { it.copy(expiryDateStr = event.date, expiryDateError = null) }
+
             is VoucherEditEvent.TypeChanged -> _state.update {
-                // Khi đổi loại, nếu đổi sang FIXED thì clear MaxDiscount đi
-                it.copy(discountType = event.type, maxDiscountStr = if (event.type == "FIXED") "" else it.maxDiscountStr)
+                it.copy(discountType = event.type, maxDiscountStr = if (event.type == "FIXED") "" else it.maxDiscountStr, discountValueError = null)
             }
-            is VoucherEditEvent.ValueChanged -> _state.update { it.copy(discountValueStr = event.value) }
             is VoucherEditEvent.MinOrderChanged -> _state.update { it.copy(minOrderValueStr = event.minOrder) }
             is VoucherEditEvent.MaxDiscountChanged -> _state.update { it.copy(maxDiscountStr = event.maxDiscount) }
             is VoucherEditEvent.UsageLimitChanged -> _state.update { it.copy(usageLimitStr = event.limit) }
-            is VoucherEditEvent.ExpiryDateChanged -> _state.update { it.copy(expiryDateStr = event.date) }
             is VoucherEditEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
             is VoucherEditEvent.SaveClicked -> saveVoucher()
         }
     }
 
+    // Dọn lỗi để Toast không lặp lại
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun saveVoucher() {
         val st = _state.value
+        var isValid = true
 
-        if (st.code.isBlank() || st.discountValueStr.isBlank()) {
-            _state.update { it.copy(error = "Mã Code và Giá trị giảm không được để trống") }
-            return
+        if (st.code.isBlank()) {
+            _state.update { it.copy(codeError = "Mã Code không được để trống") }
+            isValid = false
         }
 
         val discountValue = st.discountValueStr.toDoubleOrNull() ?: -1.0
-        if (discountValue <= 0 || (st.discountType == "PERCENT" && discountValue > 100)) {
-            _state.update { it.copy(error = "Giá trị giảm không hợp lệ (Phần trăm phải từ 1-100)") }
-            return
+        if (st.discountValueStr.isBlank() || discountValue <= 0 || (st.discountType == "PERCENT" && discountValue > 100)) {
+            val errorMsg = if (st.discountType == "PERCENT") "Phần trăm giảm phải từ 1 đến 100" else "Mức giảm tiền mặt không hợp lệ"
+            _state.update { it.copy(discountValueError = errorMsg) }
+            isValid = false
         }
 
-        // Format lại ngày tháng để gửi cho Spring Boot (ISO-8601)
         var formattedExpiryDate: String? = null
         if (st.expiryDateStr.isNotBlank()) {
             try {
-                // Giả sử user nhập "2026-12-20 15:30"
-                val parts = st.expiryDateStr.split(" ")
-                val datePart = parts[0] // 2026-12-20
-                val timePart = if (parts.size > 1) parts[1] else "23:59"
-                formattedExpiryDate = "${datePart}T${timePart}:00"
+                val formatterIn = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                val parsedDate = LocalDateTime.parse(st.expiryDateStr, formatterIn)
+                formattedExpiryDate = parsedDate.toString()
             } catch (e: Exception) {
-                _state.update { it.copy(error = "Sai định dạng ngày (VD: 2026-12-31 23:59)") }
-                return
+                _state.update { it.copy(expiryDateError = "Định dạng ngày không hợp lệ") }
+                isValid = false
             }
         }
+
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
@@ -167,7 +191,7 @@ class AdminVoucherEditViewModel @Inject constructor(
             if (result.isSuccess) {
                 _state.update { it.copy(isSaving = false, isSuccess = true) }
             } else {
-                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Cập nhật thất bại") }
             }
         }
     }

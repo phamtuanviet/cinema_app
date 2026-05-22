@@ -32,6 +32,10 @@ class RegisterViewModel @Inject constructor(
         _state.value = _state.value.copy(phone = value, error = null)
     }
 
+    fun onEventConsumed() {
+        _state.value = _state.value.copy(error = null, isSuccess = false)
+    }
+
     fun onPasswordChange(value: String) {
         _state.value = _state.value.copy(password = value, error = null)
     }
@@ -98,9 +102,11 @@ class RegisterViewModel @Inject constructor(
                 )
 
             } catch (e: Exception) {
+                // Ghi log để debug
+                Log.e("RegisterViewModel", "Error: ${e.message}")
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Đăng ký thất bại. Vui lòng thử lại!"
+                    error = "Đăng ký thất bại: ${e.localizedMessage ?: "Vui lòng kiểm tra lại kết nối"}"
                 )
             }
         }

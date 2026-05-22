@@ -33,6 +33,10 @@ class ResetPasswordViewModel @Inject constructor(
         _state.value = _state.value.copy(confirmPassword = confirm, error = null)
     }
 
+    fun onEventConsumed() {
+        _state.value = _state.value.copy(error = null, isSuccess = false)
+    }
+
     fun resetPassword() {
         val password = _state.value.password
         val confirm = _state.value.confirmPassword

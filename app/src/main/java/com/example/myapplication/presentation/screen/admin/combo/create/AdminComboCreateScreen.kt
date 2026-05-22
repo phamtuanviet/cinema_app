@@ -29,6 +29,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import android.widget.Toast
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.text.input.ImeAction
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,21 +46,28 @@ fun AdminComboCreateScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
-    // Launcher mở thư viện ảnh
+    // 🔥 XỬ LÝ TOAST VÀ ĐIỀU HƯỚNG
+    LaunchedEffect(state.isSuccess, state.error) {
+        if (state.isSuccess) {
+            Toast.makeText(context, "Thêm Combo thành công!", Toast.LENGTH_SHORT).show()
+            onSaveSuccess()
+        }
+        state.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError() // Tránh Toast bị kẹt khi xoay màn hình
+        }
+    }
+
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> viewModel.onEvent(ComboCreateEvent.ImageSelected(uri)) }
     )
 
-    // Tự động thoát khi lưu thành công
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) {
-            onSaveSuccess()
-        }
-    }
-
     Scaffold(
-        modifier = Modifier.imePadding(),
+        modifier = Modifier
+            .imePadding()
+            // Chạm ra vùng trống để cất bàn phím
+            .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) },
         topBar = {
             TopAppBar(
                 title = { Text("Thêm Combo Mới", fontWeight = FontWeight.Bold) },
@@ -67,7 +79,10 @@ fun AdminComboCreateScreen(
         },
         bottomBar = {
             Button(
-                onClick = { viewModel.onEvent(ComboCreateEvent.SaveClicked(context)) },
+                onClick = {
+                    focusManager.clearFocus() // Cất bàn phím trước khi lưu
+                    viewModel.onEvent(ComboCreateEvent.SaveClicked(context))
+                },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp),
                 enabled = !state.isSaving
             ) {
@@ -80,16 +95,11 @@ fun AdminComboCreateScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (state.error != null) {
-                Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(8.dp)) {
-                    Text(text = state.error!!, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(12.dp))
-                }
-            }
+            // Đã xóa phần báo lỗi to đùng đỏ chót (Thay bằng Toast rồi)
 
             // --- CHỌN ẢNH ---
             Box(
@@ -116,27 +126,34 @@ fun AdminComboCreateScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.ImageSearch, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Nhấn để tải ảnh lên", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Nhấn để tải ảnh lên (*)", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
 
-            // --- THÔNG TIN COMBO ---
+            // --- THÔNG TIN COMBO (CÓ VALIDATION & ĐIỀU HƯỚNG PHÍM) ---
             OutlinedTextField(
                 value = state.name,
                 onValueChange = { viewModel.onEvent(ComboCreateEvent.NameChanged(it)) },
                 label = { Text("Tên Combo (*)") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = state.nameError != null,
+                supportingText = { state.nameError?.let { Text(it) } },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next), // Nút Next
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
             )
 
             OutlinedTextField(
                 value = state.priceStr,
                 onValueChange = { viewModel.onEvent(ComboCreateEvent.PriceChanged(it)) },
                 label = { Text("Giá bán (VNĐ) (*)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = state.priceError != null,
+                supportingText = { state.priceError?.let { Text(it) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
             )
 
             OutlinedTextField(
@@ -145,7 +162,9 @@ fun AdminComboCreateScreen(
                 label = { Text("Mô tả thành phần") },
                 placeholder = { Text("VD: 1 Bắp phô mai + 2 Nước ngọt") },
                 modifier = Modifier.fillMaxWidth().height(100.dp),
-                maxLines = 3
+                maxLines = 3,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), // Nút Done
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
             )
 
             // --- TRẠNG THÁI BÁN ---

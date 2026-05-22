@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun RegisterScreen(
@@ -46,15 +47,17 @@ fun RegisterScreen(
     LaunchedEffect(state.error) {
         state.error?.let {
             snackbarHostState.showSnackbar(it)
+            // Reset lỗi sau khi đã hiện xong để không bị hiện lại khi xoay màn hình
+            viewModel.onEventConsumed()
         }
     }
 
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
             onNavigateVerify(state.email)
+            viewModel.onEventConsumed()
         }
     }
-
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->

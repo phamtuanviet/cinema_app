@@ -41,15 +41,19 @@ fun ResetPasswordScreen(
         viewModel.setResetToken(resetToken)
     }
 
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) {
-            onResetSuccess()
-        }
-    }
-
     LaunchedEffect(state.error) {
         state.error?.let {
             snackbarHostState.showSnackbar(it)
+            viewModel.onEventConsumed() // Dọn dẹp trạng thái lỗi
+        }
+    }
+
+    // Lắng nghe thành công
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            snackbarHostState.showSnackbar("Đổi mật khẩu thành công!")
+            onResetSuccess()
+            viewModel.onEventConsumed() // Dọn dẹp trạng thái thành công
         }
     }
 

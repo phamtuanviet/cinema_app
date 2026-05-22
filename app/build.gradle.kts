@@ -54,6 +54,10 @@ android {
         jvmTarget = "17"
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
 }
 val cameraxVersion = "1.3.0"
 
@@ -129,4 +133,10 @@ dependencies {
 
     implementation("com.google.maps.android:maps-compose:4.3.3")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+
+    testImplementation("io.mockk:mockk:1.13.10")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.x")
+    testImplementation("app.cash.turbine:turbine:1.0.0")
+// Để test StateFlow dễ dàng
+    testImplementation("junit:junit:4.13.2")
 }

@@ -1,11 +1,13 @@
 package com.example.myapplication.presentation.screen.voucher.voucher_list
 
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.ui.text.font.FontWeight
 
@@ -20,6 +22,14 @@ fun VoucherListScreen(
     viewModel: VoucherListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(state.error) {
+        state.error?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.clearError() // Quan trọng: Xóa trạng thái để không bị hiện lại Toast
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -28,7 +38,7 @@ fun VoucherListScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 ),
-                windowInsets = WindowInsets(0.dp) // Vẫn giữ dòng này để chữ không bị tụt xuống dưới nhé
+                windowInsets = WindowInsets(0.dp)
             )
         }
     ) { paddingValues ->

@@ -20,8 +20,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.example.myapplication.presentation.screen.admin.news.edit.NewsEditEvent
 import com.example.myapplication.presentation.screen.admin.voucher.edit.SelectableChip
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import com.example.myapplication.presentation.screen.admin.showtime.create.DateTimePickerField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,16 +47,30 @@ fun AdminNewsCreateScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     var showVoucherDropdown by remember { mutableStateOf(false) }
+
+    // 🔥 XỬ LÝ TOAST VÀ ĐIỀU HƯỚNG
+    LaunchedEffect(state.isSuccess, state.error) {
+        if (state.isSuccess) {
+            Toast.makeText(context, "Phát hành bài viết thành công!", Toast.LENGTH_SHORT).show()
+            onSaveSuccess()
+        }
+        state.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
+    }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
         viewModel.onEvent(NewsCreateEvent.ImageSelected(it))
     }
 
-    LaunchedEffect(state.isSuccess) { if (state.isSuccess) onSaveSuccess() }
-
     Scaffold(
-        modifier = Modifier.imePadding(),
+        modifier = Modifier
+            .imePadding()
+            // Chạm ra vùng trống để cất bàn phím
+            .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) },
         topBar = {
             TopAppBar(
                 windowInsets = WindowInsets(0.dp),
@@ -51,7 +80,10 @@ fun AdminNewsCreateScreen(
         },
         bottomBar = {
             Button(
-                onClick = { viewModel.onEvent(NewsCreateEvent.SaveClicked(context)) },
+                onClick = {
+                    focusManager.clearFocus()
+                    viewModel.onEvent(NewsCreateEvent.SaveClicked(context))
+                },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp),
                 enabled = !state.isSaving
             ) {
@@ -80,25 +112,47 @@ fun AdminNewsCreateScreen(
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.AddPhotoAlternate, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Nhấn để tải ảnh bìa", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Nhấn để tải ảnh bìa (*)", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
 
-            // --- FORM INPUTS ---
-            OutlinedTextField(value = state.title, onValueChange = { viewModel.onEvent(NewsCreateEvent.TitleChanged(it)) }, label = { Text("Tiêu đề bài viết (*)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            // --- FORM INPUTS CÓ VALIDATION ---
+            OutlinedTextField(
+                value = state.title,
+                onValueChange = { viewModel.onEvent(NewsCreateEvent.TitleChanged(it)) },
+                label = { Text("Tiêu đề bài viết (*)") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = state.titleError != null,
+                supportingText = { state.titleError?.let { Text(it) } },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                singleLine = true
+            )
 
+            // --- LOẠI BÀI VIẾT ---
+            Text("Phân loại bài viết", fontWeight = FontWeight.SemiBold)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SelectableChip(text = "Tin tức", isSelected = state.type == "NORMAL", modifier = Modifier.weight(1f), onClick = { viewModel.onEvent(NewsCreateEvent.TypeChanged("NORMAL")) })
-                SelectableChip(text = "Voucher", isSelected = state.type == "VOUCHER", modifier = Modifier.weight(1f), onClick = { viewModel.onEvent(NewsCreateEvent.TypeChanged("VOUCHER")) })
+                SelectableChip(text = "Tin tức chung", isSelected = state.type == "NORMAL", modifier = Modifier.weight(1f), onClick = { viewModel.onEvent(NewsCreateEvent.TypeChanged("NORMAL")) })
+                SelectableChip(text = "Kèm Voucher", isSelected = state.type == "VOUCHER", modifier = Modifier.weight(1f), onClick = { viewModel.onEvent(NewsCreateEvent.TypeChanged("VOUCHER")) })
             }
 
+            // --- CHỌN VOUCHER ---
             if (state.type == "VOUCHER") {
                 Box(Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = state.availableVouchers.find { it.id == state.selectedVoucherId }?.code ?: "Nhấn để chọn Voucher đính kèm...",
-                        onValueChange = {}, readOnly = true, label = { Text("Voucher áp dụng") }, modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = { IconButton(onClick = { showVoucherDropdown = true }) { Icon(Icons.Default.ArrowDropDown, null) } }
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Voucher áp dụng (*)") },
+                        modifier = Modifier.fillMaxWidth().clickable { showVoucherDropdown = true },
+                        enabled = false, // Disable để bắt click mượt hơn
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.primary) }
                     )
                     DropdownMenu(expanded = showVoucherDropdown, onDismissRequest = { showVoucherDropdown = false }) {
                         state.availableVouchers.forEach { v ->
@@ -108,13 +162,40 @@ fun AdminNewsCreateScreen(
                 }
             }
 
-            OutlinedTextField(value = state.content, onValueChange = { viewModel.onEvent(NewsCreateEvent.ContentChanged(it)) }, label = { Text("Nội dung bài viết") }, modifier = Modifier.fillMaxWidth().height(200.dp))
+            // --- NỘI DUNG ---
+            OutlinedTextField(
+                value = state.content,
+                onValueChange = { viewModel.onEvent(NewsCreateEvent.ContentChanged(it)) },
+                label = { Text("Nội dung bài viết") },
+                modifier = Modifier.fillMaxWidth().height(150.dp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+            )
+
+            // --- LỊCH TRÌNH (DÙNG DATE TIME PICKER) ---
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            Text("Lịch trình hiển thị (Tùy chọn)", fontWeight = FontWeight.SemiBold)
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = state.startDateStr, onValueChange = { viewModel.onEvent(NewsCreateEvent.StartDateChanged(it)) }, label = { Text("Ngày bắt đầu") }, modifier = Modifier.weight(1f), placeholder = { Text("yyyy-mm-dd hh:mm") })
-                OutlinedTextField(value = state.endDateStr, onValueChange = { viewModel.onEvent(NewsCreateEvent.EndDateChanged(it)) }, label = { Text("Ngày kết thúc") }, modifier = Modifier.weight(1f), placeholder = { Text("yyyy-mm-dd hh:mm") })
+                DateTimePickerField(
+                    value = state.startDateStr,
+                    label = "Ngày bắt đầu",
+                    onDateTimeSelected = { viewModel.onEvent(NewsCreateEvent.StartDateChanged(it)) },
+                    modifier = Modifier.weight(1f),
+                    isError = state.startDateError != null,
+                    errorText = state.startDateError
+                )
+                DateTimePickerField(
+                    value = state.endDateStr,
+                    label = "Ngày kết thúc",
+                    onDateTimeSelected = { viewModel.onEvent(NewsCreateEvent.EndDateChanged(it)) },
+                    modifier = Modifier.weight(1f),
+                    isError = state.endDateError != null,
+                    errorText = state.endDateError
+                )
             }
 
+            // --- CÀI ĐẶT BỔ SUNG ---
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -123,46 +204,28 @@ fun AdminNewsCreateScreen(
                     Text("Cài đặt bổ sung", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Switch 1: Xuất bản ngay
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(if (state.published) "Xuất bản ngay (Hiển thị ngay)" else "Lưu nháp (Chưa hiển thị)")
-                        Switch(
-                            checked = state.published,
-                            onCheckedChange = { viewModel.onEvent(NewsCreateEvent.PublishedChanged(it)) }
-                        )
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(if (state.published) "Xuất bản ngay (Hiển thị luôn)" else "Lưu nháp (Chưa hiển thị)")
+                        Switch(checked = state.published, onCheckedChange = { viewModel.onEvent(NewsCreateEvent.PublishedChanged(it)) })
                     }
 
                     Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    // 🔥 Switch 2: Gửi thông báo Push
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Gửi thông báo (Push Notification)", style = MaterialTheme.typography.bodyLarge)
+                            Text("Gửi thông báo (Push)", style = MaterialTheme.typography.bodyLarge)
                             Text(
                                 text = if (state.type == "VOUCHER") "Báo cho User biết có Voucher mới." else "Thông báo tin tức mới cho toàn bộ User.",
                                 style = MaterialTheme.typography.bodySmall, color = Color.Gray
                             )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        Switch(
-                            checked = state.sendNotification,
-                            onCheckedChange = { viewModel.onEvent(NewsCreateEvent.SendNotificationChanged(it)) }
-                        )
+                        Switch(checked = state.sendNotification, onCheckedChange = { viewModel.onEvent(NewsCreateEvent.SendNotificationChanged(it)) })
                     }
                 }
             }
 
             Spacer(Modifier.height(80.dp))
-
-
         }
     }
 }

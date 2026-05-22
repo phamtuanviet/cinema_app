@@ -17,14 +17,22 @@ import javax.inject.Inject
 data class AdminNewsCreateState(
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null,
+    val error: String? = null, // Dùng cho Toast chung
 
     val title: String = "",
+    val titleError: String? = null,
+
     val content: String = "",
+
     val published: Boolean = true,
     val type: String = "NORMAL",
+
     val startDateStr: String = "",
+    val startDateError: String? = null,
+
     val endDateStr: String = "",
+    val endDateError: String? = null,
+
     val selectedVoucherId: String? = null,
     val selectedImageUri: Uri? = null,
     val sendNotification: Boolean = false,
@@ -62,36 +70,71 @@ class AdminNewsCreateViewModel @Inject constructor(
 
     fun onEvent(event: NewsCreateEvent) {
         when (event) {
-            is NewsCreateEvent.SendNotificationChanged -> _state.update { it.copy(sendNotification = event.v) }
-            is NewsCreateEvent.TitleChanged -> _state.update { it.copy(title = event.v) }
+            // 🔥 Xóa lỗi viền đỏ khi Admin gõ lại
+            is NewsCreateEvent.TitleChanged -> _state.update { it.copy(title = event.v, titleError = null) }
+            is NewsCreateEvent.StartDateChanged -> _state.update { it.copy(startDateStr = event.v, startDateError = null) }
+            is NewsCreateEvent.EndDateChanged -> _state.update { it.copy(endDateStr = event.v, endDateError = null) }
+
             is NewsCreateEvent.ContentChanged -> _state.update { it.copy(content = event.v) }
             is NewsCreateEvent.TypeChanged -> _state.update { it.copy(type = event.v, selectedVoucherId = null) }
-            is NewsCreateEvent.StartDateChanged -> _state.update { it.copy(startDateStr = event.v) }
-            is NewsCreateEvent.EndDateChanged -> _state.update { it.copy(endDateStr = event.v) }
             is NewsCreateEvent.VoucherSelected -> _state.update { it.copy(selectedVoucherId = event.id) }
             is NewsCreateEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri) }
             is NewsCreateEvent.PublishedChanged -> _state.update { it.copy(published = event.v) }
+            is NewsCreateEvent.SendNotificationChanged -> _state.update { it.copy(sendNotification = event.v) }
             is NewsCreateEvent.SaveClicked -> savePost(event.context)
         }
     }
 
+    // Dọn dẹp lỗi Toast
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun savePost(context: Context) {
         val st = _state.value
-        if (st.title.isBlank()) { _state.update { it.copy(error = "Vui lòng nhập tiêu đề bài viết") }; return }
+        var isValid = true
 
+        // 1. Kiểm tra ảnh bìa
+        if (st.selectedImageUri == null) {
+            _state.update { it.copy(error = "Vui lòng chọn ảnh bìa cho bài viết") }
+            return
+        }
+
+        // 2. Kiểm tra tiêu đề
+        if (st.title.isBlank()) {
+            _state.update { it.copy(titleError = "Tiêu đề không được để trống") }
+            isValid = false
+        }
+
+        // 3. Nếu là loại Voucher thì bắt buộc phải chọn Voucher
+        if (st.type == "VOUCHER" && st.selectedVoucherId == null) {
+            _state.update { it.copy(error = "Vui lòng chọn Voucher đính kèm bài viết") }
+            isValid = false
+        }
+
+        // Dừng lại nếu form bị lỗi
+        if (!isValid) return
+
+        // Format thời gian từ Picker (yyyy-MM-dd HH:mm) sang ISO 8601 (yyyy-MM-ddTHH:mm:00)
         fun formatISO(s: String) = if(s.isNotBlank()) "${s.replace(" ", "T")}:00" else null
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
+
             val request = AdminPostCreateRequest(
-                title = st.title, content = st.content, published = st.published,
-                type = st.type, startDate = formatISO(st.startDateStr),
-                endDate = formatISO(st.endDateStr), voucherId = st.selectedVoucherId,
+                title = st.title.trim(),
+                content = st.content.trim(),
+                published = st.published,
+                type = st.type,
+                startDate = formatISO(st.startDateStr),
+                endDate = formatISO(st.endDateStr),
+                voucherId = st.selectedVoucherId,
                 sendNotification = st.sendNotification
             )
+
             val result = repository.createPost(request, st.selectedImageUri, context)
             if (result.isSuccess) _state.update { it.copy(isSaving = false, isSuccess = true) }
-            else _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+            else _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Phát hành thất bại") }
         }
     }
 }

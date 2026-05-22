@@ -17,29 +17,7 @@ import javax.inject.Inject
 
 
 // --- STATE ---
-data class AdminCinemaEditState(
-    val isLoadingData: Boolean = true,
-    val isSaving: Boolean = false,
-    val isSuccess: Boolean = false,
-    val error: String? = null,
 
-    // Form data
-    val name: String = "",
-    val address: String = "",
-    val description: String = "",
-    val region: String = "",
-    val cineplex: String = "",
-    val googleMapsLink: String = "", // Ô nhập link GG Maps
-    val latitude: String = "",
-    val longitude: String = "",
-    val isActive: Boolean = true,
-
-    val currentLogoUrl: String? = null, // Ảnh hiện tại trên server
-    val newLogoUri: Uri? = null,        // Ảnh mới người dùng vừa chọn
-
-    val availableRegions: List<String> = emptyList(),
-    val availableCineplexes: List<String> = emptyList()
-)
 
 // --- EVENT ---
 sealed class CinemaEditEvent {
@@ -56,6 +34,42 @@ sealed class CinemaEditEvent {
 }
 
 // --- VIEWMODEL ---
+data class AdminCinemaEditState(
+    val isLoadingData: Boolean = true,
+    val isSaving: Boolean = false,
+    val isSuccess: Boolean = false,
+    val error: String? = null, // Lỗi chung dùng cho Toast
+
+    // Form data & Validation Errors
+    val name: String = "",
+    val nameError: String? = null,
+
+    val address: String = "",
+    val addressError: String? = null,
+
+    val description: String = "",
+    val region: String = "",
+    val cineplex: String = "",
+
+    val googleMapsLink: String = "",
+
+    val latitude: String = "",
+    val latError: String? = null,
+
+    val longitude: String = "",
+    val lngError: String? = null,
+
+    val isActive: Boolean = true,
+
+    val currentLogoUrl: String? = null,
+    val newLogoUri: Uri? = null,
+
+    val availableRegions: List<String> = emptyList(),
+    val availableCineplexes: List<String> = emptyList()
+)
+
+// (Sealed class CinemaEditEvent giữ nguyên như cũ)
+
 @HiltViewModel
 class AdminCinemaEditViewModel @Inject constructor(
     private val repository: AdminCinemaRepository,
@@ -75,7 +89,6 @@ class AdminCinemaEditViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoadingData = true, error = null) }
 
-            // Gọi 3 API cùng lúc để tiết kiệm thời gian
             val cinemaDeferred = async { repository.getCinemaById(cinemaId) }
             val regionsDeferred = async { repository.getRegions() }
             val cineplexesDeferred = async { repository.getCineplexes() }
@@ -117,17 +130,18 @@ class AdminCinemaEditViewModel @Inject constructor(
 
     fun onEvent(event: CinemaEditEvent) {
         when (event) {
-            is CinemaEditEvent.NameChanged -> _state.update { it.copy(name = event.name, error = null) }
-            is CinemaEditEvent.AddressChanged -> _state.update { it.copy(address = event.address) }
+            // 🔥 Tự động XÓA LỖI ĐỎ khi người dùng gõ lại vào ô
+            is CinemaEditEvent.NameChanged -> _state.update { it.copy(name = event.name, nameError = null) }
+            is CinemaEditEvent.AddressChanged -> _state.update { it.copy(address = event.address, addressError = null) }
+            is CinemaEditEvent.LatitudeChanged -> _state.update { it.copy(latitude = event.lat, latError = null) }
+            is CinemaEditEvent.LongitudeChanged -> _state.update { it.copy(longitude = event.lng, lngError = null) }
+
             is CinemaEditEvent.DescriptionChanged -> _state.update { it.copy(description = event.desc) }
             is CinemaEditEvent.RegionChanged -> _state.update { it.copy(region = event.region) }
             is CinemaEditEvent.CineplexChanged -> _state.update { it.copy(cineplex = event.cineplex) }
-            is CinemaEditEvent.LatitudeChanged -> _state.update { it.copy(latitude = event.lat) }
-            is CinemaEditEvent.LongitudeChanged -> _state.update { it.copy(longitude = event.lng) }
             is CinemaEditEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
-            is CinemaEditEvent.LogoPicked -> _state.update { it.copy(newLogoUri = event.uri) } // Cập nhật ảnh mới
+            is CinemaEditEvent.LogoPicked -> _state.update { it.copy(newLogoUri = event.uri) }
 
-            // Xử lý dán link Google Maps -> Tự tách Vĩ độ, Kinh độ
             is CinemaEditEvent.GoogleMapsLinkChanged -> {
                 _state.update { it.copy(googleMapsLink = event.link) }
                 extractCoordinatesFromLink(event.link)
@@ -135,8 +149,12 @@ class AdminCinemaEditViewModel @Inject constructor(
         }
     }
 
+    // 🔥 Hàm dọn dẹp lỗi sau khi Toast đã hiển thị xong
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun extractCoordinatesFromLink(link: String) {
-        // Regex bóc tách 2 số thập phân sau chữ @
         val regex = """@(-?\d+\.\d+),(-?\d+\.\d+)""".toRegex()
         val matchResult = regex.find(link)
 
@@ -146,41 +164,68 @@ class AdminCinemaEditViewModel @Inject constructor(
                 it.copy(
                     latitude = lat,
                     longitude = lng,
-                    error = null
+                    latError = null,
+                    lngError = null
                 )
             }
         }
     }
 
     fun updateCinema(context: Context) {
-        val currentState = _state.value
+        val st = _state.value
+        var isValid = true
 
-        if (currentState.name.isBlank() || currentState.address.isBlank()) {
-            _state.update { it.copy(error = "Vui lòng nhập Tên Rạp và Địa chỉ") }
+        // 1. Kiểm tra Ảnh (Phải có ảnh cũ hoặc ảnh mới)
+        if (st.currentLogoUrl == null && st.newLogoUri == null) {
+            _state.update { it.copy(error = "Vui lòng cung cấp Logo cho rạp!") }
             return
         }
+
+        // 2. Kiểm tra các ô bắt buộc
+        if (st.name.isBlank()) {
+            _state.update { it.copy(nameError = "Tên rạp không được để trống") }
+            isValid = false
+        }
+        if (st.address.isBlank()) {
+            _state.update { it.copy(addressError = "Địa chỉ rạp không được để trống") }
+            isValid = false
+        }
+
+        // 3. Kiểm tra tính hợp lệ của Toạ độ (nếu có nhập)
+        val latDouble = st.latitude.toDoubleOrNull()
+        if (st.latitude.isNotBlank() && latDouble == null) {
+            _state.update { it.copy(latError = "Vĩ độ không hợp lệ") }
+            isValid = false
+        }
+        val lngDouble = st.longitude.toDoubleOrNull()
+        if (st.longitude.isNotBlank() && lngDouble == null) {
+            _state.update { it.copy(lngError = "Kinh độ không hợp lệ") }
+            isValid = false
+        }
+
+        // NẾU CÓ LỖI -> Dừng lại, không gửi API
+        if (!isValid) return
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
 
             val request = AdminCinemaUpdateRequest(
-                name = currentState.name.trim(),
-                address = currentState.address.trim(),
-                description = currentState.description.trim().takeIf { it.isNotEmpty() },
-                region = currentState.region.trim().takeIf { it.isNotEmpty() },
-                cineplex = currentState.cineplex.trim().takeIf { it.isNotEmpty() },
-                latitude = currentState.latitude.toDoubleOrNull(),
-                longitude = currentState.longitude.toDoubleOrNull(),
-                isActive = currentState.isActive
+                name = st.name.trim(),
+                address = st.address.trim(),
+                description = st.description.trim().takeIf { it.isNotEmpty() },
+                region = st.region.trim().takeIf { it.isNotEmpty() },
+                cineplex = st.cineplex.trim().takeIf { it.isNotEmpty() },
+                latitude = latDouble,
+                longitude = lngDouble,
+                isActive = st.isActive
             )
 
-            // Dùng newLogoUri (nếu user chọn ảnh mới), nếu không thì API Retrofit gửi part null, SpringBoot giữ ảnh cũ
-            val result = repository.updateCinema(cinemaId, request, currentState.newLogoUri, context)
+            val result = repository.updateCinema(cinemaId, request, st.newLogoUri, context)
 
             if (result.isSuccess) {
                 _state.update { it.copy(isSaving = false, isSuccess = true) }
             } else {
-                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message) }
+                _state.update { it.copy(isSaving = false, error = result.exceptionOrNull()?.message ?: "Cập nhật thất bại") }
             }
         }
     }

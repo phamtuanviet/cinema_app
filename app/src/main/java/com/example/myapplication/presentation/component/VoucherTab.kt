@@ -118,15 +118,6 @@ fun VoucherTab(
             }
         }
 
-        // Hiển thị lỗi nếu có
-        state.error?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
 
         // --- VOUCHER LIST ---
         if (state.isLoading) {
