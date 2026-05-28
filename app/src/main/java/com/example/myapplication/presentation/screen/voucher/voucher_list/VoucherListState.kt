@@ -8,18 +8,8 @@ data class VoucherListState(
     val isLoading: Boolean = false,
     val error: String? = null,
 
-    // tab chính
-    val selectedMainTab: Int = 0,
-
-    // tab voucher
+    // Chỉ giữ lại những gì liên quan đến Voucher
     val selectedVoucherTab: VoucherStatus = VoucherStatus.AVAILABLE,
-    // data voucher
     val vouchers: List<UserVoucherResponse> = emptyList(),
-
-    // data loyalty
-    val loyaltyPoint: Int = 0,
-    val transactions: List<LoyaltyTransactionResponse> = emptyList(),
-
-    // add voucher
     val isAddingVoucher: Boolean = false
 )

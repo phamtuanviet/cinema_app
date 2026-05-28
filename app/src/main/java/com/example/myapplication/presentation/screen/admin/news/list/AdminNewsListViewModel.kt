@@ -39,7 +39,17 @@ class AdminNewsListViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        loadFirstPage()
+//        loadFirstPage()
+    }
+
+    fun prepareForReturn() {
+        _state.update {
+            it.copy(
+                newsList = emptyList(),
+                isLoadingFirstPage = true,
+                error = null
+            )
+        }
     }
 
     fun onSearchQueryChange(query: String) {

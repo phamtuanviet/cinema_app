@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -26,6 +27,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.myapplication.data.remote.dto.AdminVoucherDto
 import com.example.myapplication.data.remote.dto.VoucherStatusTab
 import java.text.NumberFormat
@@ -42,6 +46,25 @@ fun AdminVoucherListScreen(
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            // Khi màn hình Resume (Bật lên lần đầu HOẶC Back từ màn khác về)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadFirstPage()
+            }
+        }
+
+        // Đăng ký lắng nghe
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // Dọn dẹp khi Composable bị hủy
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -60,17 +83,30 @@ fun AdminVoucherListScreen(
     Scaffold(
         modifier = Modifier.imePadding(),
         topBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+            // 1. Nền Background
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+
+                // 2. TopAppBar Chuẩn MD3
                 TopAppBar(
-                    windowInsets = WindowInsets(0.dp),
-                    title = { Text("Quản lý Voucher", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    title = {
+                        Text(
+                            text = "Quản lý Voucher",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Quay lại")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
 
-                // Thanh tìm kiếm (Tự động in hoa)
+                // 3. Thanh tìm kiếm bo tròn 100
                 OutlinedTextField(
                     value = state.searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
@@ -79,7 +115,7 @@ fun AdminVoucherListScreen(
                     trailingIcon = {
                         if (state.searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onSearchQueryChange(""); focusManager.clearFocus() }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                Icon(Icons.Default.Clear, contentDescription = "Xóa")
                             }
                         }
                     },
@@ -88,49 +124,67 @@ fun AdminVoucherListScreen(
                         capitalization = KeyboardCapitalization.Characters
                     ),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    shape = RoundedCornerShape(100),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
 
-                // TabRow: Còn hiệu lực / Hết hiệu lực
+                // 4. TabRow Chuẩn MD3
                 val tabs = VoucherStatusTab.values()
                 val selectedTabIndex = tabs.indexOf(state.currentTab)
 
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     indicator = { tabPositions ->
                         if (selectedTabIndex < tabPositions.size) {
-                            TabRowDefaults.Indicator(
+                            TabRowDefaults.SecondaryIndicator(
                                 modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                height = 3.dp
                             )
                         }
-                    }
+                    },
+                    divider = {}
                 ) {
                     tabs.forEach { tab ->
+                        val isSelected = state.currentTab == tab
                         Tab(
-                            selected = state.currentTab == tab,
+                            selected = isSelected,
                             onClick = {
                                 focusManager.clearFocus()
                                 viewModel.onTabSelected(tab)
                             },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             text = {
-                                Text(tab.title, fontWeight = if (state.currentTab == tab) FontWeight.Bold else FontWeight.Normal)
+                                Text(
+                                    text = tab.title,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
                             }
                         )
                     }
                 }
+
+                // 5. Đường kẻ đáy
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             }
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToCreate,
+                onClick = {
+                    viewModel.prepareForReturn()
+                    onNavigateToCreate()
+                },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Thêm Voucher", tint = Color.White)
@@ -165,7 +219,9 @@ fun AdminVoucherListScreen(
                             AdminVoucherItem(
                                 voucher = voucher,
                                 isInvalidTab = state.currentTab == VoucherStatusTab.INVALID,
-                                onEditClick = { onNavigateToEdit(voucher.id) }
+                                onEditClick = {
+                                    viewModel.prepareForReturn()
+                                    onNavigateToEdit(voucher.id) }
                             )
                         }
                         if (state.isPaginating) {

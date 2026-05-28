@@ -45,15 +45,24 @@ fun AdminRevenueScreen(
         modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
-                windowInsets = WindowInsets(0.dp),
-                title = { Text("Thống kê Doanh Thu", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        text = "Thống kê Doanh Thu",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }

@@ -17,4 +17,6 @@ sealed class ProfileRoute(val route: String) {
 
     object TicketDetail : ProfileRoute("ticket_detail")
 
+    object Loyalty : ProfileRoute("loyalty")
+
 }

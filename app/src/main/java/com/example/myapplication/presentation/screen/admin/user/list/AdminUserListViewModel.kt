@@ -49,8 +49,19 @@ class AdminUserListViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        loadFirstPage()
+//        loadFirstPage()
     }
+
+    fun prepareForReturn() {
+        _state.update {
+            it.copy(
+                users = emptyList(),
+                isLoadingFirstPage = true,
+                error = null
+            )
+        }
+    }
+
 
     fun onSearchQueryChange(query: String) {
         if (_state.value.searchQuery == query) return

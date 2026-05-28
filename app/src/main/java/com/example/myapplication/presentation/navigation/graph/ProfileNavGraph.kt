@@ -12,6 +12,7 @@ import com.example.myapplication.presentation.navigation.route.ProfileRoute
 import com.example.myapplication.presentation.navigation.route.RootRoute
 import com.example.myapplication.presentation.screen.profile.account.ProfileAccountScreen
 import com.example.myapplication.presentation.screen.profile.change_password.ProfileChangePasswordScreen
+import com.example.myapplication.presentation.screen.profile.loyalty.LoyaltyScreen
 import com.example.myapplication.presentation.screen.profile.profile.ProfileScreen
 import com.example.myapplication.presentation.screen.profile.settings.ProfileSettingsScreen
 import com.example.myapplication.presentation.screen.profile.ticket_detail.ProfileTicketDetailScreen
@@ -41,12 +42,21 @@ fun NavGraphBuilder.profileNavGraph(
                 },
                 onNavigateSettings = {
                     navController.navigate(ProfileRoute.Settings.route)
+                },
+                onNavigateLoyalty = {
+                    navController.navigate(ProfileRoute.Loyalty.route)
                 }
             )
         }
 
         composable(ProfileRoute.Settings.route) {
             ProfileSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(ProfileRoute.Loyalty.route) {
+            LoyaltyScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

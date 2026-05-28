@@ -30,7 +30,7 @@ fun ProfileSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Cài đặt", fontWeight = FontWeight.Bold) },
+                title = { Text("Cài đặt", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -40,9 +40,11 @@ fun ProfileSettingsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                windowInsets = WindowInsets(0.dp) // Tránh lỗi double padding hệ thống
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     ) { paddingValues ->

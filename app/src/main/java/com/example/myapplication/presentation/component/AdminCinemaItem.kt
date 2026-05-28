@@ -19,7 +19,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.AdminCinemaDto
-import com.example.myapplication.data.remote.dto.AdminMovieDto
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
+
 
 @Composable
 fun AdminCinemaItem(
@@ -70,7 +72,9 @@ fun AdminCinemaItem(
                     Icon(
                         Icons.Default.LocationOn,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp).padding(top = 2.dp),
+                        modifier = Modifier
+                            .size(14.dp)
+                            .padding(top = 2.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -86,30 +90,40 @@ fun AdminCinemaItem(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 // Cụm rạp & Khu vực
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     if (!cinema.cineplex.isNullOrEmpty()) {
                         Surface(
                             color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = RoundedCornerShape(4.dp)
+                            shape = RoundedCornerShape(4.dp),
+                            // 🔥 Cho phép tự co giãn nhưng không ép chiếm toàn bộ không gian
+                            modifier = Modifier.weight(1f, fill = false)
                         ) {
                             Text(
                                 text = cinema.cineplex,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                maxLines = 1, // 🔥 Ép 1 dòng
+                                overflow = TextOverflow.Ellipsis // 🔥 Cắt chữ dư bằng ...
                             )
                         }
                     }
                     if (!cinema.region.isNullOrEmpty()) {
                         Surface(
                             color = MaterialTheme.colorScheme.tertiaryContainer,
-                            shape = RoundedCornerShape(4.dp)
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.weight(1f, fill = false)
                         ) {
                             Text(
                                 text = cinema.region,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                maxLines = 1, // 🔥 Ép 1 dòng
+                                overflow = TextOverflow.Ellipsis // 🔥 Cắt chữ dư bằng ...
                             )
                         }
                     }

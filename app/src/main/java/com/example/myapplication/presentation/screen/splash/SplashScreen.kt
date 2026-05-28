@@ -43,7 +43,6 @@ fun SplashScreen(
             onNavigateToAuth()
         }
         else {
-            // 🔥 CÓ TOKEN -> KIỂM TRA SỐNG VỚI SERVER TRƯỚC KHI CHO VÀO
             Log.d("SplashScreen", "Đang xác thực trạng thái tài khoản với Server...")
 
             appViewModel.verifyUserStatusAndNavigate(

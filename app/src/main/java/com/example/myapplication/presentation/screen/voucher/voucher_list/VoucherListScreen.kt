@@ -27,60 +27,30 @@ fun VoucherListScreen(
     LaunchedEffect(state.error) {
         state.error?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            viewModel.clearError() // Quan trọng: Xóa trạng thái để không bị hiện lại Toast
+            viewModel.clearError()
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ưu đãi & Điểm thưởng", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text("Mã giảm giá", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                windowInsets = WindowInsets(0.dp)
+                    containerColor = MaterialTheme.colorScheme.primary, // Nền Primary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary // Chữ trắng
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // --- MAIN TAB ---
-            TabRow(
-                selectedTabIndex = state.selectedMainTab,
-                containerColor = MaterialTheme.colorScheme.background
-            ) {
-                Tab(
-                    selected = state.selectedMainTab == 0,
-                    onClick = { viewModel.onMainTabChange(0) },
-                    text = {
-                        Text(
-                            "Mã giảm giá",
-                            fontWeight = if(state.selectedMainTab == 0) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                )
-                Tab(
-                    selected = state.selectedMainTab == 1,
-                    onClick = { viewModel.onMainTabChange(1) },
-                    text = {
-                        Text(
-                            "Điểm thưởng",
-                            fontWeight = if(state.selectedMainTab == 1) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                )
-            }
-
-            // --- MAIN TAB CONTENT ---
-            Box(modifier = Modifier.fillMaxSize()) {
-                when (state.selectedMainTab) {
-                    0 -> VoucherTab(state, viewModel)
-                    1 -> LoyaltyTab(state)
-                }
-            }
+            VoucherTab(state, viewModel)
         }
     }
 }

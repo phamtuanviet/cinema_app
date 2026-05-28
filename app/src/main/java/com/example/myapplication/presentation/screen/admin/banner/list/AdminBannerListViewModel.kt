@@ -39,7 +39,17 @@ class AdminBannerListViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        loadFirstPage()
+//        loadFirstPage()
+    }
+
+    fun prepareForReturn() {
+        _state.update {
+            it.copy(
+                banners = emptyList(),
+                isLoadingFirstPage = true,
+                error = null
+            )
+        }
     }
 
     fun onSearchQueryChange(query: String) {
@@ -53,6 +63,10 @@ class AdminBannerListViewModel @Inject constructor(
             delay(500)
             loadFirstPage()
         }
+    }
+
+    fun resetBannerList() {
+        _state.update { it.copy(banners = emptyList()) }
     }
 
     fun onTabSelected(tab: BannerActionTab) {

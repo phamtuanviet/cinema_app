@@ -34,8 +34,18 @@ class AdminCinemaListViewModel @Inject constructor(
 
     private var searchJob: Job? = null
 
-    init {
-        loadFirstPage()
+//    init {
+//        loadFirstPage()
+//    }
+
+    fun prepareForReturn() {
+        _state.update {
+            it.copy(
+                cinemas = emptyList(),
+                isLoadingFirstPage = true, // Bật sẵn loading
+                error = null
+            )
+        }
     }
 
     fun onSearchQueryChange(query: String) {

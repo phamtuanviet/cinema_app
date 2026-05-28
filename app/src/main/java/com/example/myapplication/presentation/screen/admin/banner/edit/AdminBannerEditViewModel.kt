@@ -21,7 +21,7 @@ data class AdminBannerEditState(
     val error: String? = null, // Dùng cho lỗi chung (Toast)
 
     val actionType: String = "MOVIE",
-
+    val movieSearchQuery: String = "",
     val targetUrl: String = "",
     val targetUrlError: String? = null, // Lỗi ô URL
 
@@ -39,7 +39,8 @@ data class AdminBannerEditState(
 sealed class BannerEditEvent {
     data class ActionTypeChanged(val type: String) : BannerEditEvent()
     data class TargetUrlChanged(val url: String) : BannerEditEvent()
-    data class MovieSelected(val id: String?) : BannerEditEvent()
+    data class MovieSelected(val id: String?, val title: String) : BannerEditEvent()
+    data class MovieSearchQueryChanged(val query: String) : BannerEditEvent()
     data class PriorityChanged(val priority: String) : BannerEditEvent()
     data class IsActiveChanged(val isActive: Boolean) : BannerEditEvent()
     data class ImageSelected(val uri: Uri?) : BannerEditEvent()
@@ -66,11 +67,14 @@ class AdminBannerEditViewModel @Inject constructor(
 
             if (bannerResult.isSuccess) {
                 val b = bannerResult.getOrNull()!!
+                val movies = movieResult.getOrDefault(emptyList())
+                val initialMovieTitle = movies.find { it.id == b.movieId }?.title ?: ""
                 _state.update { it.copy(
                     isLoadingData = false,
                     actionType = b.actionType,
                     targetUrl = b.targetUrl ?: "",
                     selectedMovieId = b.movieId,
+                    movieSearchQuery = initialMovieTitle,
                     priorityStr = b.priority.toString(),
                     isActive = b.isActive,
                     existingImageUrl = b.imageUrl,
@@ -94,8 +98,13 @@ class AdminBannerEditViewModel @Inject constructor(
                     movieError = null
                 )
             }
+            is BannerEditEvent.MovieSearchQueryChanged -> _state.update {
+                it.copy(movieSearchQuery = event.query, selectedMovieId = null, movieError = null)
+            }
             is BannerEditEvent.TargetUrlChanged -> _state.update { it.copy(targetUrl = event.url, targetUrlError = null) }
-            is BannerEditEvent.MovieSelected -> _state.update { it.copy(selectedMovieId = event.id, movieError = null) }
+            is BannerEditEvent.MovieSelected -> _state.update {
+                it.copy(selectedMovieId = event.id, movieSearchQuery = event.title, movieError = null)
+            }
             is BannerEditEvent.PriorityChanged -> _state.update { it.copy(priorityStr = event.priority) }
             is BannerEditEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
             is BannerEditEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri) }

@@ -31,11 +31,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.window.PopupProperties
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,9 +79,26 @@ fun AdminBannerEditScreen(
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) },
         topBar = {
             TopAppBar(
-                windowInsets = WindowInsets(0.dp),
-                title = { Text("Chỉnh sửa Banner", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, null) } }
+                title = {
+                    Text(
+                        text = "Chỉnh sửa Banner",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary // Thêm nếu sau này bạn có nút Action bên phải
+                )
             )
         },
         bottomBar = {
@@ -147,26 +167,58 @@ fun AdminBannerEditScreen(
 
                         // --- 3. DROPDOWN HOẶC Ô NHẬP LINK ---
                         if (state.actionType == "MOVIE") {
-                            Box(Modifier.fillMaxWidth()) {
+                            val filteredMovies = state.availableMovies.filter {
+                                it.title.contains(state.movieSearchQuery, ignoreCase = true)
+                            }
+
+                            // 🔥 Chuyển sang dùng Box thường, bãi bỏ ExposedDropdownMenuBox
+                            Box(modifier = Modifier.fillMaxWidth()) {
                                 OutlinedTextField(
-                                    value = state.availableMovies.find { it.id == state.selectedMovieId }?.title ?: "Nhấn để chọn Phim...",
-                                    onValueChange = {},
-                                    readOnly = true,
+                                    value = state.movieSearchQuery,
+                                    onValueChange = {
+                                        // Cập nhật text đang gõ
+                                        viewModel.onEvent(BannerEditEvent.MovieSearchQueryChanged(it)) // Dùng BannerCreateEvent nếu ở màn Create
+                                        showMovieDropdown = true
+                                    },
                                     label = { Text("Phim liên kết (*)") },
-                                    modifier = Modifier.fillMaxWidth().clickable { showMovieDropdown = true },
-                                    enabled = false, // Vô hiệu hoá gõ để bắt sự kiện click mượt hơn
+                                    placeholder = { Text("Gõ tên phim để tìm...") },
+                                    modifier = Modifier.fillMaxWidth(),
                                     isError = state.movieError != null,
                                     supportingText = { state.movieError?.let { Text(it) } },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                                        disabledBorderColor = if (state.movieError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
-                                        disabledLabelColor = if (state.movieError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                                    ),
-                                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.primary) }
+                                    trailingIcon = {
+                                        IconButton(onClick = { showMovieDropdown = !showMovieDropdown }) {
+                                            Icon(
+                                                imageVector = if (showMovieDropdown) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                                contentDescription = "Toggle Dropdown"
+                                            )
+                                        }
+                                    },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                                 )
-                                DropdownMenu(expanded = showMovieDropdown, onDismissRequest = { showMovieDropdown = false }) {
-                                    state.availableMovies.forEach { m ->
-                                        DropdownMenuItem(text = { Text(m.title) }, onClick = { viewModel.onEvent(BannerEditEvent.MovieSelected(m.id)); showMovieDropdown = false })
+
+                                // 🔥 DropdownMenu thủ công
+                                DropdownMenu(
+                                    // Chỉ xổ xuống khi cờ show = true VÀ có dữ liệu khớp
+                                    expanded = showMovieDropdown && filteredMovies.isNotEmpty(),
+                                    onDismissRequest = { showMovieDropdown = false },
+
+                                    properties = PopupProperties(focusable = false),
+
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.9f) // Căn độ rộng tương đối cho Menu
+                                        .heightIn(max = 250.dp) // Tránh menu dài lấn hết màn hình
+                                ) {
+                                    filteredMovies.forEach { movie ->
+                                        DropdownMenuItem(
+                                            text = { Text(movie.title) },
+                                            onClick = {
+                                                viewModel.onEvent(BannerEditEvent.MovieSelected(movie.id, movie.title)) // Dùng BannerCreateEvent nếu ở màn Create
+                                                showMovieDropdown = false
+                                                focusManager.clearFocus()
+                                            }
+                                        )
                                     }
                                 }
                             }

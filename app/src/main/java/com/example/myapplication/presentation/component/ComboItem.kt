@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.ComboDto
+import com.example.myapplication.utils.formatPrice
 
 @Composable
 fun ComboItem(
@@ -59,7 +60,7 @@ fun ComboItem(
                 Text(it, fontSize = 12.sp)
             }
 
-            Text("${combo.price}đ", color = Color.Red)
+            Text("${formatPrice(combo.price)}đ", color = Color.Red)
         }
 
         Row(

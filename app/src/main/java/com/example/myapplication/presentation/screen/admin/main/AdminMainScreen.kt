@@ -17,6 +17,8 @@ import androidx.compose.runtime.getValue
 
 
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -63,7 +65,14 @@ fun AdminMainScreen(
         modifier = Modifier.imePadding(),
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.shadow(
+                        elevation = 16.dp,
+                        spotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                    )
+                ) {
                     bottomTabs.forEach { tab ->
                         val isSelected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
                         NavigationBarItem(
@@ -95,7 +104,7 @@ fun AdminMainScreen(
         NavHost(
             navController = adminNavController,
             startDestination = AdminRoute.Dashboard.route,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
         ) {
             // ---- MÀN HÌNH TAB CHÍNH ----
             composable(AdminRoute.Dashboard.route) {

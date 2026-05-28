@@ -23,6 +23,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.rounded.AccountCircle
+
+import androidx.compose.ui.graphics.Color
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onNavigateUserMain: () -> Unit,
@@ -37,7 +48,6 @@ fun LoginScreen(
 
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    // 🔥 XỬ LÝ CHUYỂN HƯỚNG DỰA VÀO ROLE
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
             if (state.role == "ADMIN") {
@@ -55,116 +65,195 @@ fun LoginScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Đăng Nhập",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary, // Nền màu chủ đạo
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary, // Chữ màu sáng
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState()) // 🔥 Tránh việc bàn phím che mất nút bấm
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = { focusManager.clearFocus() })
-                }
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.Center,
+                },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Đăng Nhập",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(
-                value = state.email,
-                onValueChange = { viewModel.onEmailChange(it) },
-                label = { Text("Email") },
-                leadingIcon = { Icon(imageVector = Icons.Default.Email, contentDescription = "Email Icon") },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                isError = state.error?.contains("Email") == true
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = state.password,
-                onValueChange = { viewModel.onPasswordChange(it) },
-                label = { Text("Mật khẩu") },
-                leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "Lock Icon") },
-                trailingIcon = {
-                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        val iconRes = if (isPasswordVisible) android.R.drawable.ic_menu_view else android.R.drawable.ic_secure
-                        Icon(painterResource(id = iconRes), contentDescription = "Toggle Password Visibility")
-                    }
-                },
-                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        viewModel.login()
-                    }
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                isError = state.error?.contains("Mật khẩu") == true
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                TextButton(onClick = onNavigateForgot) {
-                    Text("Quên mật khẩu?")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    focusManager.clearFocus()
-                    viewModel.login()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                enabled = !state.isLoading
+            // ==========================================
+            // 1. KHU VỰC HEADER (LOGO & LỜI CHÀO)
+            // ==========================================
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(100.dp)
             ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("Đăng Nhập", style = MaterialTheme.typography.titleMedium)
-                }
+                Icon(
+                    imageVector = Icons.Rounded.AccountCircle, // Thay bằng Logo App của bạn nếu có
+                    contentDescription = "Logo",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Chưa có tài khoản?")
-                TextButton(onClick = onNavigateRegister) {
-                    Text("Đăng ký ngay", fontWeight = FontWeight.Bold)
+            Text(
+                text = "Chào mừng trở lại!",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Vui lòng đăng nhập để tiếp tục",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // ==========================================
+            // 2. FORM ĐĂNG NHẬP (BỌC TRONG CARD)
+            // ==========================================
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    // --- Input Email ---
+                    OutlinedTextField(
+                        value = state.email,
+                        onValueChange = { viewModel.onEmailChange(it) },
+                        label = { Text("Email") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        isError = state.error?.contains("Email") == true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // --- Input Mật khẩu ---
+                    OutlinedTextField(
+                        value = state.password,
+                        onValueChange = { viewModel.onPasswordChange(it) },
+                        label = { Text("Mật khẩu") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        trailingIcon = {
+                            IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                                // 🔥 Dùng icon chuẩn của Material thay vì drawable cũ
+                                val icon = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                                Icon(imageVector = icon, contentDescription = "Toggle Password")
+                            }
+                        },
+                        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                viewModel.login()
+                            }
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        isError = state.error?.contains("Mật khẩu") == true
+                    )
+
+                    // --- Quên mật khẩu ---
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                        TextButton(onClick = onNavigateForgot, contentPadding = PaddingValues(0.dp)) {
+                            Text("Quên mật khẩu?", color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // --- Nút Đăng nhập ---
+                    Button(
+                        onClick = {
+                            focusManager.clearFocus()
+                            viewModel.login()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !state.isLoading
+                    ) {
+                        if (state.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Đăng Nhập", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // ==========================================
+            // 3. ĐIỀU HƯỚNG ĐĂNG KÝ
+            // ==========================================
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Chưa có tài khoản?",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(onClick = onNavigateRegister) {
+                    Text("Đăng ký ngay", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

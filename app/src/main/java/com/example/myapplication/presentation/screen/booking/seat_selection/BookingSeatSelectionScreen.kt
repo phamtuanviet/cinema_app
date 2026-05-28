@@ -98,8 +98,7 @@ fun BookingSeatSelectionScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Padding tự động để không lẹm BottomBar
-            // Đã xóa .background(Color(0xFFF4F4F4)) vì Scaffold đã lo việc này
+                .padding(bottom = paddingValues.calculateBottomPadding())
         ) {
             if (state.isLoading) {
                 // LOADING

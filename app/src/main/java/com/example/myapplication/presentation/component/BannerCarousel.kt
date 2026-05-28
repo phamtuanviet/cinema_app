@@ -2,6 +2,7 @@ package com.example.myapplication.presentation.component
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -35,22 +36,32 @@ fun BannerCarousel(
     val listSize = banners.size
     if (listSize == 0) return
 
-    // Khởi tạo state cho Pager
-    val pagerState = rememberPagerState(pageCount = { listSize })
+    val fakePageCount = listSize * 1000
+    val startIndex = fakePageCount / 2
+    val initialPage = startIndex - (startIndex % listSize)
 
-    // Auto-scroll logic: Tự động chuyển trang mỗi 3 giây
-    // Sẽ tạm dừng nếu người dùng đang vuốt tay (isScrollInProgress)
-    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
-        if (!pagerState.isScrollInProgress) {
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { fakePageCount }
+    )
+    LaunchedEffect(Unit) {
+        while (true) {
             delay(3000)
-            val nextPage = (pagerState.currentPage + 1) % listSize
-            pagerState.animateScrollToPage(nextPage)
+            if (!pagerState.isScrollInProgress) {
+                if (pagerState.currentPage < fakePageCount - 1) {
+                    // Bạn có thể giữ lại Log ở đây để test
+                    Log.d("Banner", "Đang cuộn tới trang: ${pagerState.currentPage + 1}")
+                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                }
+            }
         }
     }
 
-    Box(modifier = modifier.fillMaxWidth()
-        .padding(16.dp)) {
-        // HorizontalPager thay cho Box tĩnh
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -58,12 +69,13 @@ fun BannerCarousel(
                 .height(160.dp)
                 .clip(RoundedCornerShape(12.dp))
         ) { page ->
-            val banner = banners[page]
+            val actualIndex = page % listSize
+            val banner = banners[actualIndex]
 
             AsyncImage(
                 model = banner.imageUrl,
                 contentDescription = "Banner Image",
-                contentScale = ContentScale.Crop, // Giúp ảnh lấp đầy khung hình không bị méo
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable {
@@ -88,16 +100,15 @@ fun BannerCarousel(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(12.dp)
-                // Thêm nền mờ đen để indicator luôn nổi bật không bị lặn vào ảnh
                 .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(50))
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             repeat(listSize) { index ->
-                val isSelected = pagerState.currentPage == index
+                // 4. Cập nhật logic để Indicator sáng đúng chấm tương ứng
+                val isSelected = (pagerState.currentPage % listSize) == index
 
-                // Hiệu ứng animation chiều rộng cho indicator
                 val width by animateDpAsState(
                     targetValue = if (isSelected) 20.dp else 8.dp,
                     animationSpec = tween(durationMillis = 300),
@@ -110,9 +121,7 @@ fun BannerCarousel(
                         .width(width)
                         .clip(CircleShape)
                         .background(
-                            // Dùng màu primary của MaterialTheme khi được chọn
                             if (isSelected) MaterialTheme.colorScheme.primary
-                            // Dùng màu nền mờ khi không được chọn
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                         )
                 )

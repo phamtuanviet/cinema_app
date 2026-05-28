@@ -11,7 +11,9 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.presentation.component.ErrorView
@@ -34,17 +36,21 @@ fun PromotionListScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
                         text = "Ưu đãi & Sự kiện",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 8.dp),
+                        textAlign = TextAlign.Start,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold)
                     )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                windowInsets = WindowInsets(0.dp)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -54,30 +60,43 @@ fun PromotionListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTabIndex,
-                containerColor = MaterialTheme.colorScheme.surface,
-                indicator = {
-                    TabRowDefaults.PrimaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(selectedTabIndex),
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
-                    )
-                }
+            Surface(
+                shadowElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface
             ) {
-                tabs.forEachIndexed { index, (type, title) ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { viewModel.changeType(type) },
-                        text = {
-                            Text(
-                                text = title,
-                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    divider = {},
+                    indicator = { tabPositions ->
+                        if (selectedTabIndex < tabPositions.size) {
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier
+                                    .tabIndicatorOffset(tabPositions[selectedTabIndex])
+                                    .padding(horizontal = 32.dp)
+                                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)), // Bo tròn vạch kẻ
+                                color = MaterialTheme.colorScheme.primary,
+                                height = 4.dp
                             )
-                        },
-                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        selectedContentColor = MaterialTheme.colorScheme.primary
-                    )
+                        }
+                    }
+                ) {
+                    tabs.forEachIndexed { index, (type, title) ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { viewModel.changeType(type) },
+                            text = {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
                 }
             }
 
@@ -115,7 +134,9 @@ fun PromotionListScreen(
                             if (state.isLoadingMore) {
                                 item {
                                     Box(
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         CircularProgressIndicator(

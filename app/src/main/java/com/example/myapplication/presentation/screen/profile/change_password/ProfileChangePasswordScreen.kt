@@ -1,4 +1,5 @@
 package com.example.myapplication.presentation.screen.profile.change_password
+
 import android.widget.Toast
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -31,7 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun ProfileChangePasswordScreen(
     viewModel: ProfileChangePasswordViewModel = hiltViewModel(),
     onSuccess: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -55,18 +56,26 @@ fun ProfileChangePasswordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Đổi mật khẩu", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Đổi mật khẩu",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Quay lại")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                windowInsets = WindowInsets(0.dp)
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -90,7 +99,8 @@ fun ProfileChangePasswordScreen(
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
                 trailingIcon = {
-                    val image = if (oldPasswordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff
+                    val image =
+                        if (oldPasswordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff
                     IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
                         Icon(imageVector = image, contentDescription = "Ẩn/Hiện mật khẩu")
                     }
@@ -109,7 +119,8 @@ fun ProfileChangePasswordScreen(
 
             // ===== Ô nhập Mật khẩu mới =====
             val isNewPassTooShort = state.newPassword.isNotEmpty() && state.newPassword.length < 6
-            val isSameAsOld = state.newPassword.isNotEmpty() && state.newPassword == state.oldPassword
+            val isSameAsOld =
+                state.newPassword.isNotEmpty() && state.newPassword == state.oldPassword
 
             OutlinedTextField(
                 value = state.newPassword,
@@ -120,12 +131,19 @@ fun ProfileChangePasswordScreen(
                 singleLine = true,
                 isError = isNewPassTooShort || isSameAsOld, // Hiện viền đỏ nếu lỗi
                 supportingText = {
-                    if (isNewPassTooShort) Text("Mật khẩu phải có ít nhất 6 ký tự", color = MaterialTheme.colorScheme.error)
-                    else if (isSameAsOld) Text("Mật khẩu mới phải khác mật khẩu hiện tại", color = MaterialTheme.colorScheme.error)
+                    if (isNewPassTooShort) Text(
+                        "Mật khẩu phải có ít nhất 6 ký tự",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    else if (isSameAsOld) Text(
+                        "Mật khẩu mới phải khác mật khẩu hiện tại",
+                        color = MaterialTheme.colorScheme.error
+                    )
                 },
                 leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
                 trailingIcon = {
-                    val image = if (newPasswordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff
+                    val image =
+                        if (newPasswordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff
                     IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
                         Icon(imageVector = image, contentDescription = "Ẩn/Hiện mật khẩu")
                     }
@@ -154,7 +172,9 @@ fun ProfileChangePasswordScreen(
                     focusManager.clearFocus()
                     viewModel.changePassword()
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 enabled = isButtonEnabled,
                 shape = RoundedCornerShape(12.dp)
             ) {

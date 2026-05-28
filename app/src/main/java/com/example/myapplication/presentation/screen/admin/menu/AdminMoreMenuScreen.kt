@@ -108,15 +108,19 @@ fun AdminMoreMenuScreen(
         modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
-                title = { Text("Menu Quản Trị", fontWeight = FontWeight.Bold) },
-                windowInsets = WindowInsets(0.dp),
+                title = {
+                    Text(
+                        text = "Menu Quản trị",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
-        }
-    ) { paddingValues ->
+        },
+    )  { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier

@@ -8,7 +8,9 @@ import com.example.myapplication.data.remote.dto.MovieDto
 import com.example.myapplication.domain.repository.BannerRepository
 import com.example.myapplication.domain.repository.MovieRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -25,86 +27,91 @@ class MovieListViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(MovieListState())
     val state = _state.asStateFlow()
+    private var searchJob: Job? = null
 
     init {
-        loadInitialData()
+        loadBanners()
+        loadMovies(isRefresh = true) // Load trang đầu tiên
     }
 
-    private fun loadInitialData() = viewModelScope.launch {
+    private fun loadBanners() = viewModelScope.launch {
+        val result = bannerRepository.getBanners()
+        _state.update { it.copy(banners = result.getOrElse { emptyList() }) }
+    }
 
-        _state.update { it.copy(isLoading = true, error = null) }
+    // 🔥 HÀM CỐT LÕI ĐỂ LOAD PHIM
+    private fun loadMovies(isRefresh: Boolean = false) {
+        val currentState = _state.value
 
-        supervisorScope {
-            val bannersDeferred = async { bannerRepository.getBanners() }
-            val nowShowingDeferred = async { movieRepository.getNowShowingMovies() }
+        // 1. Chặn gọi API nếu đang load dở hoặc đã hết trang
+        if (currentState.isLastPage && !isRefresh) return
+        if (currentState.isFetchingMore || (currentState.isLoading && isRefresh)) return
 
-            val bannersResult = bannersDeferred.await()
-            val nowShowingResult = nowShowingDeferred.await()
+        // 2. 🔥 QUAN TRỌNG: Cập nhật trạng thái ĐANG LOAD ngay lập tức (Đồng bộ)
+        // Để chặn đứng hiện tượng gọi API nhiều lần do cuộn nhanh
+        _state.update {
+            it.copy(
+                isLoading = if (isRefresh) true else it.isLoading,
+                isFetchingMore = if (!isRefresh) true else it.isFetchingMore,
+                error = null,
+                currentPage = if (isRefresh) 0 else it.currentPage,
+                movies = if (isRefresh) emptyList() else it.movies
+            )
+        }
 
-            _state.update {
-                it.copy(
-                    banners = bannersResult.getOrElse { emptyList() },
-                    nowShowing = nowShowingResult.getOrElse { emptyList() },
-                    error = bannersResult.exceptionOrNull()?.message
-                        ?: nowShowingResult.exceptionOrNull()?.message,
-                    isLoading = false
-                )
+        viewModelScope.launch {
+            val pageToLoad = if (isRefresh) 0 else currentState.currentPage + 1
+            // Lấy search query mới nhất
+            val query = _state.value.searchQuery.takeIf { it.isNotBlank() }
+
+            val result = if (currentState.selectedTab == MovieTab.NOW_SHOWING) {
+                movieRepository.getNowShowingMovies(query, pageToLoad)
+            } else {
+                movieRepository.getComingSoonMovies(query, pageToLoad)
             }
+
+            result.fold(
+                onSuccess = { pageResponse ->
+                    _state.update {
+                        val newList =
+                            if (isRefresh) pageResponse.content else it.movies + pageResponse.content
+                        it.copy(
+                            isLoading = false,
+                            isFetchingMore = false,
+                            // 🔥 Bọc lót: Lọc bỏ các phim bị trùng lặp ID
+                            movies = newList.distinctBy { movie -> movie.id },
+                            currentPage = pageToLoad,
+                            isLastPage = pageResponse.last
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    _state.update {
+                        it.copy(isLoading = false, isFetchingMore = false, error = e.message)
+                    }
+                }
+            )
         }
     }
 
+    // Khi cuộn xuống cuối danh sách
+    fun loadNextPage() {
+        loadMovies(isRefresh = false)
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _state.update { it.copy(searchQuery = query) }
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(500L)
+            loadMovies(isRefresh = true)
+        }
+    }
+
+    // Khi đổi Tab -> Reset page = 0
     fun changeTab(tab: MovieTab) {
-        _state.update { it.copy(selectedTab = tab, isLoading = true, error = null) }
-
-        when (tab) {
-            MovieTab.NOW_SHOWING -> {
-                if (_state.value.nowShowing.isEmpty()) {
-                    loadNowShowing()
-                } else {
-                    _state.update { it.copy(isLoading = false) }
-                }
-            }
-
-            MovieTab.COMING_SOON -> {
-                if (_state.value.comingSoon.isEmpty()) {
-                    loadComingSoon()
-                } else {
-                    _state.update { it.copy(isLoading = false) }
-                }
-            }
-        }
-    }
-
-    /** Load nowShowing movies */
-    private fun loadNowShowing() = viewModelScope.launch {
-        _state.update { it.copy(isLoading = true, error = null) }
-
-        val result: Result<List<MovieDto>> = movieRepository.getNowShowingMovies()
-
-        _state.update {
-            it.copy(
-                nowShowing = result.getOrElse { emptyList() },
-                error = result.exceptionOrNull()?.message ?: it.error,
-                isLoading = false
-            )
-        }
-    }
-
-    /** Load comingSoon movies */
-    private fun loadComingSoon() = viewModelScope.launch {
-        _state.update { it.copy(isLoading = true, error = null) }
-
-        val result: Result<List<MovieDto>> = movieRepository.getComingSoonMovies()
-
-        Log.d("MovieListViewModel1", "Coming Soon Movies: ${result.getOrNull()}")
-
-
-        _state.update {
-            it.copy(
-                comingSoon = result.getOrElse { emptyList() },
-                error = result.exceptionOrNull()?.message ?: it.error,
-                isLoading = false
-            )
-        }
+        if (_state.value.selectedTab == tab) return
+        _state.update { it.copy(selectedTab = tab) }
+        loadMovies(isRefresh = true)
     }
 }

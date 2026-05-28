@@ -39,7 +39,17 @@ class AdminShowtimeListViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        loadFirstPage()
+//        loadFirstPage()
+    }
+
+    fun prepareForReturn() {
+        _state.update {
+            it.copy(
+                showtimes = emptyList(),
+                isLoadingFirstPage = true,
+                error = null
+            )
+        }
     }
 
     // Khi người dùng gõ tìm kiếm

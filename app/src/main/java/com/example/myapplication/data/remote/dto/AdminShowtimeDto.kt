@@ -14,7 +14,7 @@ data class AdminShowtimeDto(
 
 // 2. Enum định nghĩa 3 Tab
 enum class ShowtimeTab(val title: String, val filterValue: String) {
-    UPCOMING("Sắp chiếu", "UPCOMING"),
+    UPCOMING("Mới ra", "UPCOMING"),
     ONGOING("Đang chiếu", "ONGOING"),
     PAST("Đã chiếu", "PAST")
 }

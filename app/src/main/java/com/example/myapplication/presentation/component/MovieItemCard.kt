@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,12 +21,8 @@ import com.example.myapplication.data.remote.dto.MovieShowtimeDto
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.platform.LocalContext
 import com.example.myapplication.utils.openTab
+import androidx.compose.runtime.Composable
 
-val PrimaryRed = Color(0xFFE53935)
-val BackgroundGray = Color(0xFFF5F5F5)
-val TextGray = Color(0xFF757575)
-val PinkAgeRating = Color(0xFFFFCDD2)
-val PinkAgeRatingText = Color(0xFFD32F2F)
 
 @Composable
 fun MovieItemCard(
@@ -35,16 +30,20 @@ fun MovieItemCard(
     onShowtimeClick: (showtimeId: String, movieId: String) -> Unit,
 ) {
     val context = LocalContext.current
+
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        // 🔥 Nền Card tự động đổi Sáng (Trắng) / Tối (Xám đậm)
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth()) {
 
-                // Poster Phim
+                // --- 1. POSTER PHIM ---
                 Box(
                     modifier = Modifier
                         .width(100.dp)
@@ -58,13 +57,12 @@ fun MovieItemCard(
                         modifier = Modifier.fillMaxSize()
                     )
 
+                    // Nút Play Trailer (Giữ nguyên overlay đen mờ vì nó nằm trên ảnh)
                     Surface(
                         onClick = {
-                            // Kiểm tra an toàn: Chỉ mở tab nếu trailerUrl không null và không rỗng
                             if (!movie.trailerUrl.isNullOrEmpty()) {
-                                openTab(context, movie.trailerUrl) // Gắn đúng tên hàm của bạn
+                                openTab(context, movie.trailerUrl)
                             } else {
-                                // (Tùy chọn) Báo cho người dùng biết phim này chưa có trailer
                                 Toast.makeText(
                                     context,
                                     "Phim này hiện chưa có trailer",
@@ -86,15 +84,15 @@ fun MovieItemCard(
                         )
                     }
 
-                    // Tag HOT
+                    // Tag HOT: Dùng màu error (Đỏ/Cam) của MD3 để luôn nổi bật
                     Surface(
-                        color = Color(0xFFFF9800),
+                        color = MaterialTheme.colorScheme.error,
                         shape = RoundedCornerShape(bottomStart = 8.dp),
                         modifier = Modifier.align(Alignment.TopEnd)
                     ) {
                         Text(
                             text = "HOT",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onError,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -104,37 +102,44 @@ fun MovieItemCard(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Thông tin phim
+                // --- 2. THÔNG TIN PHIM ---
                 Column(modifier = Modifier.weight(1f)) {
+                    // Tên phim: Đổi Color.Black -> onSurface
                     Text(
                         text = movie.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+
+                    // Thể loại: Đổi TextGray -> onSurfaceVariant
                     Text(
                         text = movie.genres.joinToString(", "),
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+
+                    // Thời lượng
                     Text(
                         text = "${movie.duration} phút",
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Badge độ tuổi (VD: T18)
+                    // 🔥 Thay thế cụm màu Pink fix cứng bằng errorContainer / onErrorContainer của MD3
+                    // (Hoặc bạn có thể dùng hàm getAgeRatingColor() đã tạo ở bước trước nếu muốn)
                     Surface(
-                        color = PinkAgeRating,
+                        color = MaterialTheme.colorScheme.errorContainer,
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             text = movie.ageRating,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            color = PinkAgeRatingText,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -146,12 +151,12 @@ fun MovieItemCard(
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Dòng chữ 2D Phụ đề
+            // Dòng chữ định dạng (VD: 2D Phụ đề)
             Text(
                 text = "2D Phụ đề",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface // Đổi Color.Black -> onSurface
             )
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -160,6 +165,7 @@ fun MovieItemCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(movie.showtimes) { showtime ->
+                    // Lưu ý: Đảm bảo bên trong component ShowtimePill bạn cũng đang dùng MaterialTheme nhé!
                     ShowtimePill(showtime, onClick = {
                         onShowtimeClick(showtime.id, movie.movieId)
                     })

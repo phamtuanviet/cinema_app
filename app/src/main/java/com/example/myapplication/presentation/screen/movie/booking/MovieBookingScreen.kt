@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.lazy.items
 import android.Manifest
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,7 +34,7 @@ import com.example.myapplication.presentation.component.PermissionUI
 import com.example.myapplication.utils.getCurrentLocation
 import com.google.accompanist.permissions.*
 
-@OptIn(ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun MovieBookingScreen(
     movieId: String,
@@ -91,24 +92,30 @@ fun MovieBookingScreen(
             }
         }
 
-        // 📅 DATE
-        item {
+        stickyHeader {
             if (state.dates.isNotEmpty()) {
-                DateSelector(
-                    dates = state.dates,
-                    selected = state.selectedDate,
-                    isLoading = state.isLoading,
-                    onClick = viewModel::selectDate
-                )
+                // 🔥 Phải có Surface màu nền đục để che khuất danh sách rạp cuộn bên dưới
+                Surface(
+                    color = MaterialTheme.colorScheme.background,
+                    modifier = Modifier
+                        .fillMaxWidth()
+
+                ) {
+                    DateSelector(
+                        dates = state.dates,
+                        selected = state.selectedDate,
+                        isLoading = state.isLoading,
+                        onClick = viewModel::selectDate
+                    )
+                }
             }
         }
 
-        // 🔥 LOADING
+
         if (state.isLoading && state.cinemas.isEmpty()) {
             item { LoadingBox() }
         }
 
-        // 🎥 CINEMAS
         items(state.cinemas) { cinema ->
             CinemaItem(
                 cinema = cinema,

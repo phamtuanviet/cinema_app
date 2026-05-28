@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -27,6 +28,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.AdminBannerDto
 import com.example.myapplication.data.remote.dto.BannerActionTab
@@ -42,6 +46,25 @@ fun AdminBannerListScreen(
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            // Khi màn hình Resume (Bật lên lần đầu HOẶC Back từ màn khác về)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadFirstPage()
+            }
+        }
+
+        // Đăng ký lắng nghe
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // Dọn dẹp khi Composable bị hủy
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -60,17 +83,33 @@ fun AdminBannerListScreen(
     Scaffold(
         modifier = Modifier.imePadding(),
         topBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+            // Đổi nền Column thành Background để tách biệt với màu Primary của TopAppBar
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+
+                // 1. TOP APP BAR (Chuẩn màu Primary)
                 TopAppBar(
-                    windowInsets = WindowInsets(0.dp),
-                    title = { Text("Quản lý Banner", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    title = {
+                        Text(
+                            text = "Quản lý Banner",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack, // Dùng icon chuẩn
+                                contentDescription = "Quay lại"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
 
-                // Đổi hint text tùy theo Tab đang chọn
+                // 2. THANH TÌM KIẾM
                 val hintText = if (state.currentTab == BannerActionTab.MOVIE) "Tìm theo tên phim..." else "Tìm theo URL..."
 
                 OutlinedTextField(
@@ -81,55 +120,73 @@ fun AdminBannerListScreen(
                     trailingIcon = {
                         if (state.searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onSearchQueryChange(""); focusManager.clearFocus() }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                Icon(Icons.Default.Clear, contentDescription = "Xóa")
                             }
                         }
                     },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp), // Tăng vertical padding nhẹ cho thanh thoát
+                    shape = RoundedCornerShape(100), // Bo tròn dạng viên thuốc (Pill shape) nhìn hiện đại hơn 12.dp
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
 
-                // TabRow
+                // 3. THANH TAB (Tương tự cấu trúc của CinemaDetailScreen)
                 val tabs = BannerActionTab.values()
                 val selectedTabIndex = tabs.indexOf(state.currentTab)
 
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     indicator = { tabPositions ->
                         if (selectedTabIndex < tabPositions.size) {
-                            TabRowDefaults.Indicator(
+                            TabRowDefaults.SecondaryIndicator(
                                 modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                height = 3.dp // Đường line dưới Tab dày dặn
                             )
                         }
-                    }
+                    },
+                    divider = {} // Tắt divider mặc định
                 ) {
                     tabs.forEach { tab ->
+                        val isSelected = state.currentTab == tab
                         Tab(
-                            selected = state.currentTab == tab,
+                            selected = isSelected,
                             onClick = {
                                 focusManager.clearFocus()
                                 viewModel.onTabSelected(tab)
                             },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             text = {
-                                Text(tab.title, fontWeight = if (state.currentTab == tab) FontWeight.Bold else FontWeight.Normal)
+                                Text(
+                                    text = tab.title,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
                             }
                         )
                     }
                 }
+
+                // 4. Đường line mờ phân cách cụm TopBar và Danh sách phía dưới
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             }
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToCreate,
+                onClick = {
+                    viewModel.prepareForReturn()
+                    onNavigateToCreate()
+                },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Thêm Banner", tint = Color.White)
@@ -163,7 +220,9 @@ fun AdminBannerListScreen(
                         items(state.banners, key = { it.id }) { banner ->
                             AdminBannerItem(
                                 banner = banner,
-                                onEditClick = { onNavigateToEdit(banner.id) }
+                                onEditClick = {
+                                    viewModel.prepareForReturn()
+                                    onNavigateToEdit(banner.id) }
                             )
                         }
                         if (state.isPaginating) {

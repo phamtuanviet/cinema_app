@@ -13,8 +13,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -32,11 +36,12 @@ import com.example.myapplication.utils.getCurrentLocation
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-@OptIn(ExperimentalPermissionsApi::class)
+
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CinemaListScreen(
     viewModel: CinemaListViewModel = hiltViewModel(),
-    onCinemaClick: (String) -> Unit
+    onCinemaClick: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -73,66 +78,86 @@ fun CinemaListScreen(
         return
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // 🔥 Rạp gần bạn
-        if (state.nearbyCinemas.isNotEmpty()) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Hệ thống Rạp",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary, // Nền Primary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary // Chữ màu trắng
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { paddingValues ->
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            if (state.nearbyCinemas.isNotEmpty()) {
+                Text(
+                    text = "RẠP GẦN BẠN",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+                )
+
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp) // Tự tạo khoảng cách giữa các item
+                ) {
+                    items(state.nearbyCinemas) { cinema ->
+                        CinemaItemInList(
+                            cinema = cinema,
+                            modifier = Modifier.width(140.dp),
+                            onClick = { onCinemaClick(cinema.id) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 🔥 Chọn rạp theo khu vực
             Text(
-                text = "RẠP GẦN BẠN",
+                text = "CHỌN RẠP THEO KHU VỰC",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp) // Tự tạo khoảng cách giữa các item
+            LazyColumn(
+                modifier = Modifier.weight(1f), // Chiếm hết không gian còn lại
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp) // Khoảng cách giữa các khu vực
             ) {
-                items(state.nearbyCinemas) { cinema ->
-                    CinemaItemInList(
-                        cinema = cinema,
-                        modifier = Modifier.width(260.dp),
-                        onClick = { onCinemaClick(cinema.id) }
+                items(state.regions) { region ->
+                    RegionItem(
+                        region = region,
+                        isExpanded = state.expandedRegion == region.region,
+                        cinemas = state.cinemasByRegion[region.region] ?: emptyList(),
+                        onClick = {
+                            val lat = state.lat
+                            val lng = state.lng
+                            if (lat != null && lng != null) {
+                                viewModel.onRegionClick(region.region, lat, lng)
+                            }
+                        },
+                        onCinemaClick = onCinemaClick
                     )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 🔥 Chọn rạp theo khu vực
-        Text(
-            text = "CHỌN RẠP THEO KHU VỰC",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-
-        LazyColumn(
-            modifier = Modifier.weight(1f), // Chiếm hết không gian còn lại
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp) // Khoảng cách giữa các khu vực
-        ) {
-            items(state.regions) { region ->
-                RegionItem(
-                    region = region,
-                    isExpanded = state.expandedRegion == region.region,
-                    cinemas = state.cinemasByRegion[region.region] ?: emptyList(),
-                    onClick = {
-                        val lat = state.lat
-                        val lng = state.lng
-                        if (lat != null && lng != null) {
-                            viewModel.onRegionClick(region.region, lat, lng)
-                        }
-                    },
-                    onCinemaClick = onCinemaClick
-                )
-            }
         }
     }
 }

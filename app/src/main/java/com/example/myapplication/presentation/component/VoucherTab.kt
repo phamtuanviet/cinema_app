@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.ConfirmationNumber
 import androidx.compose.material.icons.rounded.Discount
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +39,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.myapplication.data.remote.dto.UserVoucherResponse
 import com.example.myapplication.data.remote.enums.VoucherStatus
-
+import com.example.myapplication.utils.formatExpiryDate
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,14 +61,30 @@ fun VoucherTab(
                 focusManager.clearFocus()
             }
     ) {
-        // --- SUB TAB ---
+        // --- SUB TAB ĐƯỢC LÀM MỚI ---
         val voucherTabIndex = when (state.selectedVoucherTab) {
             VoucherStatus.AVAILABLE -> 0
             VoucherStatus.USED -> 1
             else -> 2
         }
 
-        SecondaryTabRow(selectedTabIndex = voucherTabIndex) {
+        TabRow(
+            selectedTabIndex = voucherTabIndex,
+            containerColor = MaterialTheme.colorScheme.background,
+            divider = {
+                // Làm đường kẻ mờ đi cho thanh thoát
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            },
+            indicator = { tabPositions ->
+                if (voucherTabIndex < tabPositions.size) {
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[voucherTabIndex]),
+                        color = MaterialTheme.colorScheme.primary,
+                        height = 3.dp // Đường kẻ dưới tab dày dặn hơn một chút
+                    )
+                }
+            }
+        ) {
             val tabs = listOf(
                 VoucherStatus.AVAILABLE to "Khả dụng",
                 VoucherStatus.USED to "Đã dùng",
@@ -73,15 +92,24 @@ fun VoucherTab(
             )
 
             tabs.forEachIndexed { index, (status, title) ->
+                val isSelected = voucherTabIndex == index
                 Tab(
-                    selected = voucherTabIndex == index,
+                    selected = isSelected,
                     onClick = { viewModel.onVoucherTabChange(status) },
-                    text = { Text(title) }
+                    text = {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium, // 🔥 TĂNG CỠ CHỮ
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        )
+                    },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f) // Màu chữ khi không chọn
                 )
             }
         }
 
-        // --- ADD VOUCHER ---
+        // --- ADD VOUCHER (Giữ nguyên) ---
         var code by remember { mutableStateOf("") }
 
         Row(
@@ -92,7 +120,7 @@ fun VoucherTab(
         ) {
             OutlinedTextField(
                 value = code,
-                onValueChange = { code = it.uppercase() }, // Code thường viết hoa
+                onValueChange = { code = it.uppercase() },
                 placeholder = { Text("Nhập mã ưu đãi...") },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
@@ -108,7 +136,7 @@ fun VoucherTab(
                 },
                 enabled = !state.isAddingVoucher && code.isNotBlank(),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(56.dp) // Đồng bộ chiều cao với TextField
+                modifier = Modifier.height(56.dp)
             ) {
                 if (state.isAddingVoucher) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -148,35 +176,46 @@ fun VoucherTab(
 @Composable
 fun VoucherItemCard(voucher: UserVoucherResponse) {
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            // Phần bên trái (Discount Info)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            // --- Phần bên trái (Discount Info - Giữ nguyên) ---
             Box(
                 modifier = Modifier
                     .weight(0.35f)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
                     .fillMaxHeight()
-                    .padding(16.dp),
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Icon(
                         Icons.Rounded.ConfirmationNumber,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(32.dp)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${voucher.discountValue}${if (voucher.discountType == "PERCENT") "%" else "đ"}",
+                        text = formatDiscountText(voucher.discountValue, voucher.discountType),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        maxLines = 1,
+                        overflow = TextOverflow.Visible
                     )
                     Text(
                         text = "GIẢM",
@@ -186,38 +225,32 @@ fun VoucherItemCard(voucher: UserVoucherResponse) {
                 }
             }
 
-            // Đường nét đứt chia cắt (Mô phỏng)
             Box(
                 modifier = Modifier
                     .width(1.dp)
                     .fillMaxHeight()
-                    .background(Color.Gray.copy(alpha = 0.3f))
+                    .background(Color.Gray.copy(alpha = 0.2f))
             )
 
-            // Phần bên phải (Chi tiết)
+            // --- Phần bên phải (Chi tiết) ---
             Column(
                 modifier = Modifier
                     .weight(0.65f)
-                    .padding(16.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = voucher.code,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+                Text(
+                    text = voucher.code,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 voucher.minOrderValue?.let {
                     Text(
-                        text = "Đơn tối thiểu: $it đ",
+                        text = "Đơn tối thiểu: ${formatMoney(it)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -225,35 +258,62 @@ fun VoucherItemCard(voucher: UserVoucherResponse) {
 
                 voucher.maxDiscount?.let {
                     Text(
-                        text = "Giảm tối đa: $it đ",
+                        text = "Giảm tối đa: ${formatMoney(it)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 if (voucher.movieTitle != null || voucher.cinemaName != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     voucher.movieTitle?.let { Text("Phim: $it", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     voucher.cinemaName?.let { Text("Rạp: $it", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // 🔥 THAY ĐỔI MÀU SẮC VÀ FORMAT HSD Ở ĐÂY
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Rounded.Schedule,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.error
+                        modifier = Modifier.size(16.dp), // Tăng size nhẹ lên cho rõ
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant // Đổi sang xám nhạt tinh tế
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = voucher.expiryDate?.let { "HSD: $it" } ?: "Không thời hạn",
+                        text = voucher.expiryDate?.let { "HSD: ${formatExpiryDate(it)}" } ?: "Không thời hạn",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.onSurfaceVariant // Đổi sang xám nhạt tinh tế
                     )
                 }
             }
         }
     }
+}
+// --- HÀM HỖ TRỢ FORMAT SỐ ---
+
+// Format số tiền lớn thành chữ dễ nhìn (VD: 20000.0 -> 20K)
+fun formatDiscountText(value: Double, type: String): String {
+    return if (type == "PERCENT") {
+        // Bỏ đuôi .0 nếu là số nguyên (VD: 15.0 -> 15)
+        val formatted = if (value % 1 == 0.0) value.toInt().toString() else value.toString()
+        "$formatted%"
+    } else {
+        // Với tiền mặt, nếu từ 1000 trở lên thì chuyển thành K cho ngắn
+        if (value >= 1000) {
+            val kValue = value / 1000
+            val formatted = if (kValue % 1 == 0.0) kValue.toInt().toString() else kValue.toString()
+            "${formatted}K"
+        } else {
+            val format = NumberFormat.getNumberInstance(Locale("vi", "VN"))
+            "${format.format(value)}đ"
+        }
+    }
+}
+
+// Format số tiền bình thường có dấu chấm (VD: 100000.0 -> 100.000 đ)
+fun formatMoney(value: Double): String {
+    val format = NumberFormat.getNumberInstance(Locale("vi", "VN"))
+    return "${format.format(value)} đ"
 }

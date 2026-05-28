@@ -18,11 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.myapplication.presentation.component.ChatInputBar
 import com.example.myapplication.presentation.component.ChatMessageBubble
+import com.example.myapplication.presentation.component.TypingIndicator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,22 +76,26 @@ fun ChatScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Trợ lý rạp phim") },
+                title = {
+                    Text("Trợ lý rạp phim", fontWeight = FontWeight.Bold)
+                },
                 navigationIcon = {
                     IconButton(onClick = { internalNavController.popBackStack() }) {
-                        // Dùng AutoMirrored để hỗ trợ tốt cho ngôn ngữ RTL nếu có
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
                     }
                 },
+                // 🔥 ĐÃ XÓA windowInsets = WindowInsets(0.dp) để nó ăn lên thanh WiFi
                 actions = {
                     IconButton(onClick = { viewModel.clearSession() }) {
                         Icon(Icons.Default.Delete, contentDescription = "Xóa đoạn chat")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface, // Dùng surface/surfaceVariant cho chuẩn MD3
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    // 🔥 Đưa về màu Primary để đồng bộ với toàn bộ App
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
@@ -98,12 +104,9 @@ fun ChatScreen(
                 isSending = uiState.isSending,
                 onSendMessage = { text ->
                     viewModel.sendMessage(text)
-                    // Không cần clearFocus() nếu bạn muốn user nhắn liên tục (tùy UX bạn muốn)
-                    // focusManager.clearFocus()
                 }
             )
         },
-        // Đảm bảo background thay đổi theo Dark/Light mode
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
@@ -124,7 +127,10 @@ fun ChatScreen(
             ) {
                 if (uiState.isLoadingHistory) {
                     item {
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 color = MaterialTheme.colorScheme.primary
@@ -133,7 +139,7 @@ fun ChatScreen(
                     }
                 }
 
-                // 2. RENDER MESSAGES
+                // 2. RENDER MESSAGES (Tin nhắn người dùng bên phải, Bot bên trái do ChatMessageBubble quyết định)
                 items(uiState.messages, key = { it.id }) { message ->
                     ChatMessageBubble(
                         message = message,
@@ -149,14 +155,14 @@ fun ChatScreen(
                     )
                 }
 
-                // 3. UI BOT ĐANG TRẢ LỜI (Hiển thị như một Chat Bubble của Bot)
+                // 3. UI BOT ĐANG TRẢ LỜI (Hiển thị bên trái)
                 if (uiState.isSending) {
                     item {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(end = 64.dp), // Ép sang trái (giống bot)
-                            horizontalArrangement = Arrangement.Start
+                                .padding(end = 64.dp), // Ép sang trái (giữ nguyên khoảng trống bên phải)
+                            horizontalArrangement = Arrangement.Start // Căn lề trái
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(
@@ -165,25 +171,11 @@ fun ChatScreen(
                                     bottomStart = 4.dp,
                                     bottomEnd = 16.dp
                                 ),
+                                // Dùng surfaceVariant tạo nền màu xám nhạt nhẹ nhàng
                                 color = MaterialTheme.colorScheme.surfaceVariant,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        text = "Đang nghĩ...",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                TypingIndicator()
                             }
                         }
                     }

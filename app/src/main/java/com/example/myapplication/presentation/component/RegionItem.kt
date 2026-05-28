@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,15 +37,16 @@ fun RegionItem(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isExpanded) 4.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Bỏ bóng để nhìn phẳng và hiện đại
     ) {
         Column(
             modifier = Modifier
                 .animateContentSize()
                 .fillMaxWidth()
         ) {
+            // Thanh tiêu đề khu vực
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -56,47 +58,61 @@ fun RegionItem(
                 Text(
                     text = region.region,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Badge hiển thị số lượng rạp
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Text(
                             text = "${region.totalCinema} rạp",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
 
-                    // Icon mũi tên
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                         contentDescription = "Expand/Collapse",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
 
-            // 🔥 Danh sách rạp khi mở rộng
+            // 🔥 Danh sách rạp khi mở rộng (Hiển thị dạng lưới 2 cột bằng chunked)
             if (isExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    cinemas.forEach { cinema ->
-                        CinemaItemInList(
-                            cinema = cinema,
-                            modifier = Modifier.fillMaxWidth(), // Ép fill toàn bộ width trong chế độ dọc
-                            onClick = { onCinemaClick(cinema.id) }
-                        )
+                    // Cắt danh sách thành từng cụm, mỗi cụm 2 rạp
+                    val chunkedCinemas = cinemas.chunked(2)
+
+                    chunkedCinemas.forEach { rowCinemas ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            rowCinemas.forEach { cinema ->
+                                CinemaItemInList(
+                                    cinema = cinema,
+                                    modifier = Modifier.weight(1f), // Ép chia đều 50% không gian
+                                    onClick = { onCinemaClick(cinema.id) }
+                                )
+                            }
+
+                            // 🔥 Xử lý trường hợp bị lẻ rạp: Thêm Spacer để cột còn lại không bị phình to
+                            if (rowCinemas.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
                     }
                 }
             }

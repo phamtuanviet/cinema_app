@@ -48,7 +48,9 @@ fun NavGraphBuilder.cinemaNavGraph(
 
             CinemaDetailScreen(
                 cinemaId = cinemaId,
-
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
                 onShowtimeClick = { showtimeId, movieId ->
                     navController.navigate(
                         BookingRoute.SeatSelection.createRoute(

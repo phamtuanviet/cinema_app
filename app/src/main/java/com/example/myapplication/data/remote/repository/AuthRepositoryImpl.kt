@@ -147,6 +147,14 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun logout(refreshToken: String): Boolean {
+        val currentFcmToken = sessionManager.getFcmToken()
+
+        try {
+            val request = LogoutRequest(refreshToken = refreshToken, fcmToken = currentFcmToken)
+            authApi.logout(request)
+        } catch (e: Exception) {
+            Log.e("LOGOUT", "Không thể gọi API logout tới server: ${e.message}")
+        }
         // 1. Dọn dẹp dữ liệu cũ ngay lập tức
         sessionManager.clearTokens()
         sessionManager.clearUser()

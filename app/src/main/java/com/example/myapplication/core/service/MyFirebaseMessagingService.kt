@@ -62,41 +62,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "Sending token to server: $token")
     }
 
-//    private fun sendNotification(title: String, messageBody: String) {
-//        // Đổi MainActivity thành màn hình bạn muốn mở khi click vào thông báo
-//        val intent = Intent(this, MainActivity::class.java)
-//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-//        val pendingIntent = PendingIntent.getActivity(
-//            this, 0 /* Request code */, intent,
-//            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
-//        )
-//
-//        val channelId = "movie_ticket_channel" // ID của kênh thông báo (bắt buộc từ Android 8+)
-//        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-//
-//        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-//            .setSmallIcon(android.R.drawable.ic_dialog_info) // Đổi thành icon app của bạn (VD: R.drawable.ic_movie)
-//            .setContentTitle(title)
-//            .setContentText(messageBody)
-//            .setAutoCancel(true)
-//            .setSound(defaultSoundUri)
-//            .setContentIntent(pendingIntent)
-//
-//        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//
-//        // Kể từ Android 8.0 (Oreo), bạn BẮT BUỘC phải tạo Notification Channel
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            val channel = NotificationChannel(
-//                channelId,
-//                "Thông báo đặt vé phim",
-//                NotificationManager.IMPORTANCE_HIGH
-//            )
-//            notificationManager.createNotificationChannel(channel)
-//        }
-//
-//        // Hiện thông báo (dùng random ID để các thông báo không đè lên nhau)
-//        notificationManager.notify(Random.nextInt(), notificationBuilder.build())
-//    }
 
     private fun sendNotification(title: String, messageBody: String, data: Map<String, String>) {
 

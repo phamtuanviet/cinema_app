@@ -38,7 +38,6 @@ fun ComboSection(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // 🍿 Tiêu đề của Section
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 16.dp)

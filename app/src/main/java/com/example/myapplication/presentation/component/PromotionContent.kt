@@ -22,21 +22,20 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.PostDetailResponse
 import com.example.myapplication.data.remote.enums.PostType
-
 @Composable
 fun PromotionContent(
     post: PostDetailResponse,
-    onNavigateToVoucher: (String) -> Unit
+    onNavigateToVoucher: (String) -> Unit,
 ) {
     val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
+            .fillMaxSize() // 1. Lấp đầy không gian
+            .verticalScroll(scrollState) // 2. Bật chế độ cuộn
             .padding(bottom = 32.dp)
     ) {
-        // 1. Ảnh Cover full cạnh
+        // 1. Ảnh Cover full cạnh (Sẽ nằm ngay dưới thanh TopBar Primary)
         if (!post.thumbnailUrl.isNullOrEmpty()) {
             AsyncImage(
                 model = post.thumbnailUrl,
@@ -59,8 +58,11 @@ fun PromotionContent(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 3. Tag (Chip) hiển thị loại và thời gian (Chuẩn Material)
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // 3. Tag (Chip) hiển thị loại và thời gian
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp) // 🔥 Tự động tạo khoảng cách giữa các Chip
+            ) {
                 if (post.type == PostType.VOUCHER) {
                     AssistChip(
                         onClick = { },
@@ -72,7 +74,6 @@ fun PromotionContent(
                             leadingIconContentColor = MaterialTheme.colorScheme.primary
                         )
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
                 }
 
                 if (!post.endDate.isNullOrEmpty() && post.type == PostType.VOUCHER) {
@@ -88,7 +89,7 @@ fun PromotionContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 4. Component Voucher Card nâng cao
+            // 4. Component Voucher Card
             if (post.type == PostType.VOUCHER && post.voucher != null) {
                 VoucherCard(
                     voucher = post.voucher,

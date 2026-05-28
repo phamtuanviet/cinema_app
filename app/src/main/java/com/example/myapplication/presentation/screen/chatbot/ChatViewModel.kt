@@ -99,7 +99,7 @@ class ChatViewModel @Inject constructor(
         val tempUserMessage = ChatMessageUi(
             id = System.currentTimeMillis(), // ID tạm
             sessionId = "current_session",
-            role = "user", // Đảm bảo role này đúng với logic check "isFromUser" trong UI của bạn
+            role = "USER",// Đảm bảo role này đúng với logic check "isFromUser" trong UI của bạn
             content = text,
             timestamp = System.currentTimeMillis(),
             actions = emptyList()
@@ -178,7 +178,7 @@ class ChatViewModel @Inject constructor(
         val tempUserMessage = ChatMessageUi(
             id = System.currentTimeMillis(), // Sinh ID tạm bằng timestamp
             sessionId = "current_session",
-            role = "user", // Hoặc "me" tùy thuộc vào logic phân biệt role trong ChatMessageUi của bạn
+            role = "USER", // Hoặc "me" tùy thuộc vào logic phân biệt role trong ChatMessageUi của bạn
             content = text,
             timestamp = System.currentTimeMillis(),
             actions = emptyList()

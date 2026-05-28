@@ -25,8 +25,8 @@ fun BottomBar(
     val currentDestination = navBackStackEntry.value?.destination
 
     NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 8.dp,
+        containerColor = MaterialTheme.colorScheme.background,
+        tonalElevation = 0.dp,
         // Thêm một chút đổ bóng để thanh BottomBar tách biệt hẳn khỏi nội dung màn hình
         modifier = Modifier.shadow(
             elevation = 16.dp,

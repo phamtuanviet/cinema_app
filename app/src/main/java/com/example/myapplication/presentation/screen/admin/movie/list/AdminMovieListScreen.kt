@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.myapplication.presentation.component.AdminMovieItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +41,25 @@ fun AdminMovieListScreen(
     val focusManager = LocalFocusManager.current
 
     val listState = rememberLazyListState()
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            // Khi màn hình Resume (Bật lên lần đầu HOẶC Back từ màn khác về)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadFirstPage()
+            }
+        }
+
+        // Đăng ký lắng nghe
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // Dọn dẹp khi Composable bị hủy
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -59,20 +82,33 @@ fun AdminMovieListScreen(
     Scaffold(
         modifier = Modifier.imePadding(),
         topBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+            // 1. Nền Background để tách biệt với TopAppBar
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+
+                // 2. TOP APP BAR
                 TopAppBar(
-                    title = { Text("Quản lý Phim", fontWeight = FontWeight.Bold) },
+                    title = {
+                        Text(
+                            text = "Quản lý Phim",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Quay lại"
+                            )
                         }
                     },
-
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                    ,windowInsets = WindowInsets(0.dp)
-
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
 
+                // 3. THANH TÌM KIẾM
                 OutlinedTextField(
                     value = state.searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
@@ -82,42 +118,53 @@ fun AdminMovieListScreen(
                         if (state.searchQuery.isNotEmpty()) {
                             IconButton(onClick = {
                                 viewModel.onSearchQueryChange("")
-                                focusManager.clearFocus() // Xóa chữ xong cũng tắt bàn phím (Tùy chọn)
+                                focusManager.clearFocus()
                             }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                Icon(Icons.Default.Clear, contentDescription = "Xóa")
                             }
                         }
                     },
-                    // 🔥 2. Đổi phím Enter thành phím Search trên bàn phím ảo
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Search
                     ),
-                    // 🔥 3. Bấm phím Search trên bàn phím ảo thì cất bàn phím đi
                     keyboardActions = KeyboardActions(
                         onSearch = { focusManager.clearFocus() }
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    shape = RoundedCornerShape(100), // Bo tròn dạng viên thuốc
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
+
+                // 4. ĐƯỜNG KẺ ĐÁY (Vì không có TabRow nên chốt luôn ở đây)
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             }
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToCreate,
+                onClick = {
+                    viewModel.prepareForReturn()
+                    onNavigateToCreate()
+                },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Thêm phim mới", tint = Color.White)
+                // Sửa màu Icon thành onPrimary cho đồng bộ
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Thêm phim mới",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
-    ) { paddingValues ->
+    ){ paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -159,7 +206,9 @@ fun AdminMovieListScreen(
                         itemsIndexed(state.movies) { index, movie ->
                             AdminMovieItem(
                                 movie = movie,
-                                onEditClick = { onNavigateToEdit(movie.id) }
+                                onEditClick = {
+                                    viewModel.prepareForReturn()
+                                    onNavigateToEdit(movie.id) }
                             )
 
                             // 🔥 5. XÓA BỎ HOÀN TOÀN ĐOẠN IF (index == lastIndex) CŨ Ở ĐÂY

@@ -45,6 +45,9 @@ fun NavGraphBuilder.promotionNavGraph(
                 postId = postId,
                 onNavigateToVoucher = {
                     navController.navigate(VoucherRoute.VoucherList.route)
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

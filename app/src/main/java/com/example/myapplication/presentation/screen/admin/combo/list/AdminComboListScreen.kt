@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -28,6 +29,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.AdminComboDto
 import com.example.myapplication.data.remote.dto.ComboStatusTab
@@ -46,6 +50,25 @@ fun AdminComboListScreen(
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            // Khi màn hình Resume (Bật lên lần đầu HOẶC Back từ màn khác về)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadFirstPage()
+            }
+        }
+
+        // Đăng ký lắng nghe
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // Dọn dẹp khi Composable bị hủy
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val shouldLoadMore by remember {
         derivedStateOf {
             val totalItems = listState.layoutInfo.totalItemsCount
@@ -63,17 +86,33 @@ fun AdminComboListScreen(
     Scaffold(
         modifier = Modifier.imePadding(),
         topBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+            // 1. Đổi nền thành Background
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+
+                // 2. TOP APP BAR CHUẨN
                 TopAppBar(
-                    title = { Text("Quản lý Combo Bắp nước", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    title = {
+                        Text(
+                            text = "Quản lý Combo Bắp nước",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
                     },
-                    windowInsets = WindowInsets(0.dp),
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Quay lại"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
 
-                // Thanh tìm kiếm
+                // 3. THANH TÌM KIẾM
                 OutlinedTextField(
                     value = state.searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
@@ -82,58 +121,81 @@ fun AdminComboListScreen(
                     trailingIcon = {
                         if (state.searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onSearchQueryChange(""); focusManager.clearFocus() }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                Icon(Icons.Default.Clear, contentDescription = "Xóa")
                             }
                         }
                     },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    shape = RoundedCornerShape(100), // Bo tròn dạng viên thuốc
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
 
-                // TabRow: Đang bán / Ngừng bán
+                // 4. THANH TAB
                 val tabs = ComboStatusTab.values()
                 val selectedTabIndex = tabs.indexOf(state.currentTab)
 
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     indicator = { tabPositions ->
                         if (selectedTabIndex < tabPositions.size) {
-                            TabRowDefaults.Indicator(
+                            TabRowDefaults.SecondaryIndicator(
                                 modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                height = 3.dp // Thanh chỉ báo đậm hơn
                             )
                         }
-                    }
+                    },
+                    divider = {} // Ẩn divider mặc định
                 ) {
                     tabs.forEach { tab ->
+                        val isSelected = state.currentTab == tab
                         Tab(
-                            selected = state.currentTab == tab,
+                            selected = isSelected,
                             onClick = {
                                 focusManager.clearFocus()
                                 viewModel.onTabSelected(tab)
                             },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             text = {
-                                Text(tab.title, fontWeight = if (state.currentTab == tab) FontWeight.Bold else FontWeight.Normal)
+                                Text(
+                                    text = tab.title,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
                             }
                         )
                     }
                 }
+
+                // 5. ĐƯỜNG KẺ ĐÁY
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             }
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToCreate,
+                onClick = {
+                    viewModel.prepareForReturn()
+                    onNavigateToCreate()
+                },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Thêm Combo", tint = Color.White)
+                // Đổi tint thành chuẩn onPrimary
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Thêm Combo",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
     ) { paddingValues ->
@@ -164,7 +226,9 @@ fun AdminComboListScreen(
                         items(state.combos, key = { it.id }) { combo ->
                             AdminComboItem(
                                 combo = combo,
-                                onEditClick = { onNavigateToEdit(combo.id) }
+                                onEditClick = {
+                                    viewModel.prepareForReturn()
+                                    onNavigateToEdit(combo.id) }
                             )
                         }
                         if (state.isPaginating) {

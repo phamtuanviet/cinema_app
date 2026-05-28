@@ -35,7 +35,17 @@ class AdminMovieListViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        loadFirstPage()
+//        loadFirstPage()
+    }
+
+    fun prepareForReturn() {
+        _state.update {
+            it.copy(
+                movies = emptyList(),
+                isLoadingFirstPage = true,
+                error = null
+            )
+        }
     }
 
     fun onSearchQueryChange(query: String) {

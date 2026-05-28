@@ -27,7 +27,8 @@ fun ProfileScreen(
     onLogoutSuccess: () -> Unit,
     onNavigateAccount: () -> Unit,
     onNavigateBookings: () -> Unit,
-    onNavigateSettings: () -> Unit
+    onNavigateSettings: () -> Unit,
+    onNavigateLoyalty: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -40,13 +41,16 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Hồ sơ của tôi", fontWeight = FontWeight.Bold) },
+                title = { Text("Hồ sơ của tôi", fontWeight = FontWeight.Bold
+                    ,style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                windowInsets = WindowInsets(0.dp)
+                    containerColor = MaterialTheme.colorScheme.primary, // Nền Primary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary // Chữ màu trắng
+                )
             )
-        }
+
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         // Đưa nội dung vào giữa màn hình khi loading/error, đẩy lên đầu khi có data
         Box(
@@ -76,6 +80,7 @@ fun ProfileScreen(
                         onNavigateAccount = onNavigateAccount,
                         onNavigateBookings = onNavigateBookings,
                         onNavigateSettings = onNavigateSettings,
+                        onNavigateLoyalty = onNavigateLoyalty,
                         modifier = Modifier.align(Alignment.TopCenter)
                     )
                 }
@@ -92,6 +97,7 @@ fun ProfileContent(
     onNavigateAccount: () -> Unit,
     onNavigateBookings: () -> Unit,
     onNavigateSettings: () -> Unit,
+    onNavigateLoyalty: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -214,6 +220,12 @@ fun ProfileContent(
                     title = "Tài khoản",
                     icon = Icons.Rounded.AccountCircle,
                     onClick = onNavigateAccount
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                ProfileMenuItem(
+                    title = "Điểm thưởng",
+                    icon = Icons.Rounded.Star, // Import androidx.compose.material.icons.rounded.Star
+                    onClick = onNavigateLoyalty
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 ProfileMenuItem(

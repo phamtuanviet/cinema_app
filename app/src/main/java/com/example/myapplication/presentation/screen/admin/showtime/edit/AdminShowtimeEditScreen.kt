@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.presentation.screen.admin.showtime.create.DateTimePickerField
 import android.widget.Toast
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 
@@ -77,11 +78,26 @@ fun AdminShowtimeEditScreen(
         modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
-                windowInsets = WindowInsets(0.dp),
-                title = { Text("Chỉnh sửa Lịch chiếu", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        text = "Chỉnh sửa lịch chiếu",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
-                }
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary // Thêm nếu sau này bạn có nút Action bên phải
+                )
             )
         },
         bottomBar = {

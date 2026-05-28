@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +30,7 @@ import com.example.myapplication.presentation.screen.profile.my_tickets.ProfileM
 fun ProfileMyTicketsScreen(
     viewModel: ProfileMyTicketsViewModel = hiltViewModel(),
     onNavigateToDetail: (bookingId: String) -> Unit,
-    onNavigateBack: () -> Unit // Thêm prop này để back về
+    onNavigateBack: () -> Unit, // Thêm prop này để back về
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -41,7 +42,12 @@ fun ProfileMyTicketsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Lịch sử đặt vé", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Lịch sử đặt vé",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -51,9 +57,11 @@ fun ProfileMyTicketsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                windowInsets = WindowInsets(0.dp) // Sửa lỗi khoảng trống thừa ở top
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     ) { paddingValues ->
@@ -66,7 +74,18 @@ fun ProfileMyTicketsScreen(
             TabRow(
                 selectedTabIndex = state.selectedTab.ordinal,
                 containerColor = MaterialTheme.colorScheme.background,
-                contentColor = MaterialTheme.colorScheme.primary
+                // Ẩn đường kẻ mờ mặc định của TabRow để giao diện nhìn sạch và hiện đại hơn
+                divider = {},
+                // 🔥 Tùy chỉnh thanh gạch dưới (Indicator)
+                indicator = { tabPositions ->
+                    if (state.selectedTab.ordinal < tabPositions.size) {
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[state.selectedTab.ordinal]),
+                            color = MaterialTheme.colorScheme.primary,
+                            height = 4.dp // Tăng độ dày của thanh gạch dưới (Mặc định chỉ 2.dp)
+                        )
+                    }
+                }
             ) {
                 BookingTab.values().forEach { tab ->
                     val tabName = when (tab) {
@@ -75,14 +94,20 @@ fun ProfileMyTicketsScreen(
                         BookingTab.COMPLETED -> "Đã xem"
                     }
 
+                    val isSelected = state.selectedTab == tab
+
                     Tab(
-                        selected = state.selectedTab == tab,
+                        selected = isSelected,
                         onClick = { viewModel.selectTab(tab) },
+                        // Phân biệt rõ ràng màu sắc khi chọn và không chọn
+                        selectedContentColor = MaterialTheme.colorScheme.primary,
+                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         text = {
                             Text(
                                 text = tabName,
-                                fontWeight = if (state.selectedTab == tab) FontWeight.Bold else FontWeight.Medium,
-                                style = MaterialTheme.typography.titleSmall
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                // 🔥 Tăng cỡ chữ từ titleSmall lên titleMedium
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
                     )
@@ -99,10 +124,12 @@ fun ProfileMyTicketsScreen(
                         if (state.isLoadingUpcoming) CircularProgressIndicator()
                         else BookingList(state.upcoming, onNavigateToDetail)
                     }
+
                     BookingTab.ONGOING -> {
                         if (state.isLoadingOngoing) CircularProgressIndicator()
                         else BookingList(state.ongoing, onNavigateToDetail)
                     }
+
                     BookingTab.COMPLETED -> {
                         if (state.isLoadingCompleted) CircularProgressIndicator()
                         else CompletedList(

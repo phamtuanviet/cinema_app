@@ -32,17 +32,19 @@ data class AdminBannerCreateState(
 
     val selectedImageUri: Uri? = null,
 
-    val availableMovies: List<AdminMovieSimpleDto> = emptyList()
+    val availableMovies: List<AdminMovieSimpleDto> = emptyList(),
+    val movieSearchQuery: String = "",
 )
 
 sealed class BannerCreateEvent {
     data class ActionTypeChanged(val type: String) : BannerCreateEvent()
     data class TargetUrlChanged(val url: String) : BannerCreateEvent()
-    data class MovieSelected(val id: String?) : BannerCreateEvent()
     data class PriorityChanged(val priority: String) : BannerCreateEvent()
     data class IsActiveChanged(val isActive: Boolean) : BannerCreateEvent()
     data class ImageSelected(val uri: Uri?) : BannerCreateEvent()
     data class SaveClicked(val context: Context) : BannerCreateEvent()
+    data class MovieSearchQueryChanged(val query: String) : BannerCreateEvent()
+    data class MovieSelected(val id: String?, val title: String) : BannerCreateEvent()
 }
 
 @HiltViewModel
@@ -75,7 +77,12 @@ class AdminBannerCreateViewModel @Inject constructor(
                 )
             }
             is BannerCreateEvent.TargetUrlChanged -> _state.update { it.copy(targetUrl = event.url, targetUrlError = null) }
-            is BannerCreateEvent.MovieSelected -> _state.update { it.copy(selectedMovieId = event.id, movieError = null) }
+            is BannerCreateEvent.MovieSearchQueryChanged -> _state.update {
+                it.copy(movieSearchQuery = event.query, selectedMovieId = null, movieError = null)
+            }
+            is BannerCreateEvent.MovieSelected -> _state.update {
+                it.copy(selectedMovieId = event.id, movieSearchQuery = event.title, movieError = null)
+            }
             is BannerCreateEvent.PriorityChanged -> _state.update { it.copy(priorityStr = event.priority) }
             is BannerCreateEvent.IsActiveChanged -> _state.update { it.copy(isActive = event.isActive) }
             is BannerCreateEvent.ImageSelected -> _state.update { it.copy(selectedImageUri = event.uri, error = null) }

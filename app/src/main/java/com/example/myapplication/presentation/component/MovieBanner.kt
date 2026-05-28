@@ -18,20 +18,23 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.MovieDto
-
 @Composable
 fun MovieBanner(
     movie: MovieDto,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 🔥 1. Gọi hàm chuẩn hóa tên và lấy màu sắc tương ứng
+    val formattedAgeRating = movie.ageRating.mapToVNAgeRating()
+    val badgeColor = getAgeRatingColor(formattedAgeRating)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(320.dp) // Tăng chiều cao lên một chút để banner nhìn "đã" hơn
-            .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)) // Bo tròn 2 góc dưới nếu thích
+            .height(320.dp)
+            .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
     ) {
-        // 🖼 1. Ảnh Poster làm nền
+        // 🖼 Ảnh Poster làm nền
         AsyncImage(
             model = movie.posterUrl,
             contentDescription = movie.title,
@@ -41,7 +44,7 @@ fun MovieBanner(
             error = painterResource(id = com.example.myapplication.R.drawable.empty),
         )
 
-        // 🌫 2. Lớp phủ Gradient mờ dần từ giữa xuống đáy
+        // 🌫 Lớp phủ Gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -50,14 +53,14 @@ fun MovieBanner(
                         colors = listOf(
                             Color.Transparent,
                             Color.Black.copy(alpha = 0.3f),
-                            Color.Black.copy(alpha = 0.9f) // Đen đậm ở dưới đáy
+                            Color.Black.copy(alpha = 0.9f)
                         ),
-                        startY = 300f // Bắt đầu phủ gradient từ khoảng giữa ảnh
+                        startY = 300f
                     )
                 )
         )
 
-        // 📝 3. Nội dung phim (Dời xuống góc dưới cùng bên trái)
+        // 📝 Nội dung phim
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -75,19 +78,19 @@ fun MovieBanner(
 
             Spacer(Modifier.height(4.dp))
 
-            // Thêm một số thông tin phụ cho giống app rạp chiếu (Dùng data từ MovieDto cũ của bạn)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Badge giới hạn độ tuổi
+                // 🔥 2. Đổi màu nền của Badge theo biến badgeColor
                 Box(
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
+                        .background(badgeColor, RoundedCornerShape(4.dp))
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
+                    // 🔥 3. Hiển thị chữ đã được chuẩn hóa
                     Text(
-                        text = movie.ageRating,
+                        text = formattedAgeRating,
                         color = Color.White,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold
@@ -103,14 +106,14 @@ fun MovieBanner(
 
             Spacer(Modifier.height(16.dp))
 
-            // 🖱 4. Nút bấm sử dụng Material3
+            // 🖱 Nút bấm
             Button(
                 onClick = onClick,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary, // Đổi màu nhấn của app
+                    containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                shape = RoundedCornerShape(50), // Bo tròn thành hình viên thuốc
+                shape = RoundedCornerShape(50),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
             ) {
                 Text(

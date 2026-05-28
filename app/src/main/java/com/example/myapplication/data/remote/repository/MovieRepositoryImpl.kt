@@ -6,6 +6,7 @@ import com.example.myapplication.data.remote.api.MovieApi
 import com.example.myapplication.data.remote.dto.BookingDto
 
 import com.example.myapplication.data.remote.dto.MovieDto
+import com.example.myapplication.data.remote.dto.PageResponse
 import com.example.myapplication.data.remote.dto.PaymentDto
 
 import com.example.myapplication.data.remote.enums.PaymentMethod
@@ -22,21 +23,22 @@ class MovieRepositoryImpl @Inject constructor(
 
 
 
-    override suspend fun getNowShowingMovies(): Result<List<MovieDto>> {
+    override suspend fun getNowShowingMovies(search: String?, page: Int ): Result<PageResponse<MovieDto>> {
 
         return safeApiCall {
 
-            val resutlt = movieApi.getNowShowingMovies()
+            val resutlt = movieApi.getNowShowingMovies(search, page)
             Log.d("MovieRepositoryImpl", "getNowShowingMovies: $resutlt")
             resutlt
         }
     }
 
-    override suspend fun getComingSoonMovies(): Result<List<MovieDto>> {
+    override suspend fun getComingSoonMovies(search: String?, page: Int ): Result<PageResponse<MovieDto>> {
         return safeApiCall {
-            movieApi.getComingSoonMovies()
+            movieApi.getComingSoonMovies(search, page)
         }
     }
+
 
     override suspend fun getMovie(movieId: String): Result<MovieDto> {
         return safeApiCall {

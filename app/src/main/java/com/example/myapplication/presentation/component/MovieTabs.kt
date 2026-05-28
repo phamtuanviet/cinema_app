@@ -39,7 +39,7 @@ fun MovieTabs(
                 modifier = Modifier
                     .tabIndicatorOffset(tabPositions[tabIndex])
                     .height(4.dp)
-                    .padding(horizontal = 32.dp) // Thu ngắn gạch chân lại để nhìn thanh thoát hơn
+                    .padding(horizontal = 36.dp) // Thu ngắn gạch chân lại để nhìn thanh thoát hơn
                     .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)) // Bo tròn 2 góc trên
                     .background(MaterialTheme.colorScheme.primary)
             )
@@ -48,7 +48,7 @@ fun MovieTabs(
         // Gom data lại để lặp cho code gọn
         val tabs = listOf(
             MovieTab.NOW_SHOWING to "ĐANG CHIẾU",
-            MovieTab.COMING_SOON to "SẮP CHIẾU"
+            MovieTab.COMING_SOON to "MỚI RA"
         )
 
         tabs.forEachIndexed { _, (tab, title) ->

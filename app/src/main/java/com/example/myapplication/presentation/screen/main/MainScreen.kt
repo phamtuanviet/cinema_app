@@ -97,7 +97,7 @@ fun MainScreen(rootNavController: NavHostController,appViewModel: AppViewModel =
         NavHost(
             navController = navController,
             startDestination = MainRoute.MovieGraph.route,
-            modifier = Modifier.padding(padding) // Padding này tự động chừa chỗ cho BottomBar và FAB
+            modifier = Modifier.padding(bottom = padding.calculateBottomPadding())// Padding này tự động chừa chỗ cho BottomBar và FAB
         ) {
 
             composable(chatbotRoute) {

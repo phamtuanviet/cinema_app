@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.myapplication.data.remote.enums.PostType
 import com.example.myapplication.presentation.component.PromotionContent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,37 +35,51 @@ import com.example.myapplication.presentation.component.PromotionContent
 fun PromotionDetailScreen(
     postId: String,
     onNavigateToVoucher: (String) -> Unit,
+    onNavigateBack: () -> Unit,
     viewModel: PromotionDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
 
-    // Hiệu ứng cuộn cho TopAppBar chuẩn Material 3
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     LaunchedEffect(postId) {
         viewModel.loadPost(postId)
     }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+
         topBar = {
-            LargeTopAppBar(
-                title = { Text("Chi tiết ưu đãi") },
-                // BỎ GIAO DIỆN NÚT BACK Ở ĐÂY
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+            TopAppBar(
+                title = {
+                    val titleText = when (state.post?.type) {
+                        PostType.VOUCHER -> "Chi tiết Voucher"
+                        null -> "Đang tải..."
+                        else -> "Chi tiết bài viết"
+                    }
+                    Text(
+                        text = titleText,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        // Vẫn dùng AutoMirrored để hỗ trợ đa ngôn ngữ RTL tốt hơn
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Quay lại")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary, // Nền Primary chuẩn
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
         containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+    ){ paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentAlignment = Alignment.Center
         ) {
             when {
                 state.isLoading -> CircularProgressIndicator()
@@ -77,7 +92,7 @@ fun PromotionDetailScreen(
                 state.post != null -> {
                     PromotionContent(
                         post = state.post!!,
-                        onNavigateToVoucher = onNavigateToVoucher
+                        onNavigateToVoucher = onNavigateToVoucher,
                     )
                 }
             }

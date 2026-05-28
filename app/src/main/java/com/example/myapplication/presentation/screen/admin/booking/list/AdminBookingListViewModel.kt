@@ -37,6 +37,7 @@ class AdminBookingListViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     private var searchJob: Job? = null
+    private var isFirstLoaded = true;
 
     init {
         loadFirstPage()
@@ -61,20 +62,27 @@ class AdminBookingListViewModel @Inject constructor(
     }
 
     fun loadFirstPage() {
-        viewModelScope.launch {
-            _state.update {
-                it.copy(isLoadingFirstPage = true, error = null, currentPage = 0, isLastPage = false, bookings = emptyList())
+            viewModelScope.launch {
+                _state.update {
+                    it.copy(
+                        isLoadingFirstPage = true,
+                        error = null,
+                        currentPage = 0,
+                        isLastPage = false,
+                        bookings = emptyList()
+                    )
+                }
+
+                val currentState = _state.value
+                val result = repository.getBookings(
+                    search = currentState.searchQuery.takeIf { it.isNotBlank() },
+                    status = currentState.currentTab.statusValue,
+                    page = 0
+                )
+
+                handleResult(result, isFirstPage = true)
             }
 
-            val currentState = _state.value
-            val result = repository.getBookings(
-                search = currentState.searchQuery.takeIf { it.isNotBlank() },
-                status = currentState.currentTab.statusValue,
-                page = 0
-            )
-
-            handleResult(result, isFirstPage = true)
-        }
     }
 
     fun loadNextPage() {

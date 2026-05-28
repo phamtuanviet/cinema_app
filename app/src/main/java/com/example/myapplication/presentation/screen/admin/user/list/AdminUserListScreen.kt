@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -28,6 +29,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.AdminUserDto
 import com.example.myapplication.data.remote.dto.UserRoleTab
@@ -43,6 +47,25 @@ fun AdminUserListScreen(
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            // Khi màn hình Resume (Bật lên lần đầu HOẶC Back từ màn khác về)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadFirstPage()
+            }
+        }
+
+        // Đăng ký lắng nghe
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // Dọn dẹp khi Composable bị hủy
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -158,16 +181,32 @@ fun AdminUserListScreen(
     Scaffold(
         modifier = Modifier.imePadding(),
         topBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+
+                // 1. TOP APP BAR
                 TopAppBar(
-                    windowInsets = WindowInsets(0.dp),
-                    title = { Text("Quản lý Người dùng", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    title = {
+                        Text(
+                            text = "Quản lý Người dùng",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Quay lại"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
 
+                // 2. THANH TÌM KIẾM (Đã bo góc tròn, căn chỉnh padding và màu sắc)
                 OutlinedTextField(
                     value = state.searchQuery,
                     onValueChange = viewModel::onSearchQueryChange,
@@ -176,49 +215,65 @@ fun AdminUserListScreen(
                     trailingIcon = {
                         if (state.searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onSearchQueryChange(""); focusManager.clearFocus() }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                Icon(Icons.Default.Clear, contentDescription = "Xóa")
                             }
                         }
                     },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    shape = RoundedCornerShape(100), // Bo góc viên thuốc
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
 
+                // 3. THANH TAB
                 val tabs = UserRoleTab.values()
                 val selectedTabIndex = tabs.indexOf(state.currentTab)
 
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     indicator = { tabPositions ->
                         if (selectedTabIndex < tabPositions.size) {
-                            TabRowDefaults.Indicator(
+                            TabRowDefaults.SecondaryIndicator(
                                 modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                height = 3.dp // Thanh chỉ báo đậm hơn
                             )
                         }
-                    }
+                    },
+                    divider = {} // Ẩn divider mặc định của TabRow
                 ) {
                     tabs.forEach { tab ->
+                        val isSelected = state.currentTab == tab
                         Tab(
-                            selected = state.currentTab == tab,
+                            selected = isSelected,
                             onClick = {
                                 focusManager.clearFocus()
                                 viewModel.onTabSelected(tab)
                             },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             text = {
-                                Text(tab.title, fontWeight = if (state.currentTab == tab) FontWeight.Bold else FontWeight.Normal)
+                                Text(
+                                    text = tab.title,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
                             }
                         )
                     }
                 }
+
+                // 4. Đường kẻ đáy ngăn cách với LazyColumn bên dưới
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             }
         }
     ) { paddingValues ->
@@ -249,7 +304,9 @@ fun AdminUserListScreen(
                         items(state.users, key = { it.id }) { user ->
                             AdminUserItem(
                                 user = user,
-                                onCardClick = { onNavigateToDetail(user.id) },
+                                onCardClick = {
+                                    viewModel.prepareForReturn()
+                                    onNavigateToDetail(user.id) },
                                 onEditClick = { viewModel.openEditSheet(user) } // Đổi hành động: Mở BottomSheet
                             )
                         }

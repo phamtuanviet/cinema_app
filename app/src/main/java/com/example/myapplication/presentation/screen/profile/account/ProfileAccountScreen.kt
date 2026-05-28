@@ -92,7 +92,7 @@ fun ProfileAccountScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tài khoản", fontWeight = FontWeight.Bold) },
+                title = { Text("Tài khoản", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(
                         onClick = onNavigateBack,
@@ -104,9 +104,11 @@ fun ProfileAccountScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
-                ,windowInsets = WindowInsets(0.dp)
             )
         }
     ) { paddingValues ->

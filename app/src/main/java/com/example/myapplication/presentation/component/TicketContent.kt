@@ -14,12 +14,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.BookingMyBookingDto
+import com.example.myapplication.utils.formatPrice
+import com.example.myapplication.utils.formatTicketTime
 import kotlin.math.abs
-
 @Composable
 fun TicketContent(booking: BookingMyBookingDto) {
     Column(
@@ -54,18 +56,21 @@ fun TicketContent(booking: BookingMyBookingDto) {
                 Text(
                     text = booking.movie.title,
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${booking.cinema.name} - ${booking.room.name}",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
                 Text(
                     text = booking.cinema.address,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.outline,
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -76,18 +81,33 @@ fun TicketContent(booking: BookingMyBookingDto) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
+                    // 🔥 Cột trái: Giờ chiếu (Chiếm 50% không gian)
+                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                         Text("Giờ chiếu", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
-                        Text(booking.showtimeStart, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = formatTicketTime(booking.showtimeStart),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
-                    Column(horizontalAlignment = Alignment.End) {
+
+                    // 🔥 Cột phải: Ghế ngồi (Chiếm 50% không gian và tự động ép Text xuống dòng)
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.weight(1f).padding(start = 8.dp)
+                    ) {
                         Text("Ghế ngồi", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
                         val seatsString = booking.seats.joinToString(", ") { "${it.seatRow}${it.seatNumber}" }
-                        Text(seatsString, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = seatsString,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.End // Căn lề phải cho chữ
+                        )
                     }
                 }
 
-                // --- Phần 3: Combo ăn uống (Nếu có) ---
+                // --- Phần 3: Combo ăn uống ---
                 if (booking.combos.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -99,8 +119,17 @@ fun TicketContent(booking: BookingMyBookingDto) {
                     Spacer(modifier = Modifier.height(4.dp))
                     booking.combos.forEach { combo ->
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("${combo.quantity}x ${combo.comboName}", style = MaterialTheme.typography.bodyMedium)
-                            Text("${combo.price}đ", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "${combo.quantity}x ${combo.comboName}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f) // Ép tên combo dài tự xuống dòng
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "${formatPrice(combo.price)}đ", // 🔥 Format tiền Combo
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -108,7 +137,7 @@ fun TicketContent(booking: BookingMyBookingDto) {
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // --- Phần 4: Mã QR Code (Chỉ hiện khi có mã) ---
+                // --- Phần 4: Mã QR Code ---
                 if (!booking.qrCodeUrl.isNullOrEmpty()) {
                     Text(
                         text = "Đưa mã này cho nhân viên soát vé",
@@ -143,7 +172,9 @@ fun TicketContent(booking: BookingMyBookingDto) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // Đảm bảo ReceiptRow nhận kiểu Double để tính toán, sau đó dùng formatPrice() bên trong nó
                     ReceiptRow(label = "Tiền ghế", value = booking.seatAmount)
+
                     if (booking.comboAmount > 0) {
                         ReceiptRow(label = "Tiền Combo", value = booking.comboAmount)
                     }
@@ -157,11 +188,16 @@ fun TicketContent(booking: BookingMyBookingDto) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Tổng cộng", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
-                        Text("${booking.totalAmount}đ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            text = "${formatPrice(booking.totalAmount)}đ", // 🔥 Format Tổng tiền
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }
         }
-        Spacer(modifier = Modifier.height(24.dp)) // Tạo khoảng trống dưới cùng để cuộn không bị sát mép
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }

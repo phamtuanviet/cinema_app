@@ -27,6 +27,7 @@ import coil.compose.AsyncImage
 import com.example.myapplication.presentation.screen.admin.movie.create.AgeRatingDropdown
 import com.example.myapplication.presentation.screen.admin.movie.create.GenreSelectionDialog
 import android.app.DatePickerDialog
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import java.util.Calendar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,12 +80,26 @@ fun AdminMovieEditScreen(
         modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
-                title = { Text("Chỉnh sửa Phim", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                title = {
+                    Text(
+                        text = "Chỉnh sửa phim",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
                 },
-                windowInsets = WindowInsets(0.dp),
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary // Thêm nếu sau này bạn có nút Action bên phải
+                )
             )
         },
         bottomBar = {

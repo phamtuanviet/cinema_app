@@ -59,9 +59,7 @@ interface AuthApi {
     ): Response<ResetPasswordResponse>
 
     @POST("auth/logout")
-    suspend fun logout(
-        @Body request: LogoutRequest
-    ): Response<LogoutResponse>
+    suspend fun logout(@Body request: LogoutRequest): Response<LogoutResponse>
 
     @GET("auth/me")
     suspend fun getCurrentUser(): UserDto

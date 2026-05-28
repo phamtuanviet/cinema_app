@@ -23,6 +23,7 @@ import com.example.myapplication.data.remote.dto.SimpleItemDto
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -56,11 +57,26 @@ fun AdminShowtimeCreateScreen(
         modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
-                windowInsets = WindowInsets(0.dp),
-                title = { Text("Tạo Lịch chiếu", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        text = "Tạo lịch chiếu",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
-                }
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary // Thêm nếu sau này bạn có nút Action bên phải
+                )
             )
         },
         bottomBar = {

@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.myapplication.utils.formatPrice
 import kotlin.math.abs
 @Composable
 fun ReceiptRow(label: String, value: Double, isDiscount: Boolean = false) {
@@ -19,7 +20,7 @@ fun ReceiptRow(label: String, value: Double, isDiscount: Boolean = false) {
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyMedium)
         Text(
-            text = "${if (isDiscount) "-" else ""}${abs(value)}đ",
+            text = "${if (isDiscount) "-" else ""}${formatPrice(abs(value))}đ",
             style = MaterialTheme.typography.bodyMedium,
             color = if (isDiscount) Color.Red else MaterialTheme.colorScheme.onSurface,
             fontWeight = if (isDiscount) FontWeight.Bold else FontWeight.Normal

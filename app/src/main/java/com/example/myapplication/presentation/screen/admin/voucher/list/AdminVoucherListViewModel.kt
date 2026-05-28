@@ -40,7 +40,17 @@ class AdminVoucherListViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        loadFirstPage()
+//        loadFirstPage()
+    }
+
+    fun prepareForReturn() {
+        _state.update {
+            it.copy(
+                vouchers = emptyList(),
+                isLoadingFirstPage = true,
+                error = null,
+            )
+        }
     }
 
     fun onSearchQueryChange(query: String) {

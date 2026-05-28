@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import com.example.myapplication.data.remote.dto.CinemaShowtimeDto
+import com.example.myapplication.utils.formatShowtime
 
 @Composable
 fun CinemaItem(
@@ -86,7 +87,7 @@ fun CinemaItem(
                         color = Color.Transparent
                     ) {
                         Text(
-                            text = showtime.startTime,
+                            text = formatShowtime(showtime.startTime), // 🔥 GỌI HÀM FORMAT GIỜ
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary

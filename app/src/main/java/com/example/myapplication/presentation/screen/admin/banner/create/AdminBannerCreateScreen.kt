@@ -31,11 +31,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.window.PopupProperties
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,9 +74,26 @@ fun AdminBannerCreateScreen(
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) },
         topBar = {
             TopAppBar(
-                windowInsets = WindowInsets(0.dp),
-                title = { Text("Thêm Banner Mới", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, null) } }
+                title = {
+                    Text(
+                        text = "Tạo Banner",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary // Thêm nếu sau này bạn có nút Action bên phải
+                )
             )
         },
         bottomBar = {
@@ -127,26 +147,63 @@ fun AdminBannerCreateScreen(
 
             // --- 3. HIỂN THỊ DROPDOWN HOẶC Ô NHẬP LINK (CÓ VALIDATION) ---
             if (state.actionType == "MOVIE") {
-                Box(Modifier.fillMaxWidth()) {
+                // Lọc danh sách phim dựa trên text người dùng gõ (Không phân biệt hoa thường)
+                val filteredMovies = state.availableMovies.filter {
+                    it.title.contains(state.movieSearchQuery, ignoreCase = true)
+                }
+
+                // 🔥 Thay ExposedDropdownMenuBox bằng Box thường
+                Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
-                        value = state.availableMovies.find { it.id == state.selectedMovieId }?.title ?: "Nhấn để chọn Phim...",
-                        onValueChange = {},
-                        readOnly = true,
+                        value = state.movieSearchQuery,
+                        onValueChange = {
+                            viewModel.onEvent(BannerCreateEvent.MovieSearchQueryChanged(it))
+                            showMovieDropdown = true
+                        },
                         label = { Text("Phim liên kết (*)") },
-                        modifier = Modifier.fillMaxWidth().clickable { showMovieDropdown = true },
-                        enabled = false, // Vô hiệu hóa gõ để nhận tương tác Clickable tốt hơn
+                        placeholder = { Text("Gõ tên phim để tìm...") },
+                        modifier = Modifier.fillMaxWidth(),
                         isError = state.movieError != null,
                         supportingText = { state.movieError?.let { Text(it) } },
+                        trailingIcon = {
+                            // Tự custom Icon mũi tên
+                            IconButton(onClick = { showMovieDropdown = !showMovieDropdown }) {
+                                Icon(
+                                    imageVector = if (showMovieDropdown) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                    contentDescription = "Toggle Dropdown"
+                                )
+                            }
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledBorderColor = if (state.movieError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
-                            disabledLabelColor = if (state.movieError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            errorBorderColor = MaterialTheme.colorScheme.error,
+                            errorLabelColor = MaterialTheme.colorScheme.error
                         ),
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = MaterialTheme.colorScheme.primary) }
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
-                    DropdownMenu(expanded = showMovieDropdown, onDismissRequest = { showMovieDropdown = false }) {
-                        state.availableMovies.forEach { m ->
-                            DropdownMenuItem(text = { Text(m.title) }, onClick = { viewModel.onEvent(BannerCreateEvent.MovieSelected(m.id)); showMovieDropdown = false })
+
+                    // 🔥 Dùng DropdownMenu thủ công thay cho ExposedDropdownMenu
+                    DropdownMenu(
+                        expanded = showMovieDropdown && filteredMovies.isNotEmpty(),
+                        onDismissRequest = { showMovieDropdown = false },
+
+                        properties = PopupProperties(focusable = false),
+
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f) // Cho menu có độ rộng vừa phải
+                            .heightIn(max = 250.dp) // Tránh list dài quá che hết màn hình
+                    ) {
+                        filteredMovies.forEach { movie ->
+                            DropdownMenuItem(
+                                text = { Text(movie.title) },
+                                onClick = {
+                                    // Gắn ID và cập nhật text lên ô TextField
+                                    viewModel.onEvent(BannerCreateEvent.MovieSelected(movie.id, movie.title))
+                                    showMovieDropdown = false
+                                    focusManager.clearFocus() // Cất bàn phím
+                                }
+                            )
                         }
                     }
                 }

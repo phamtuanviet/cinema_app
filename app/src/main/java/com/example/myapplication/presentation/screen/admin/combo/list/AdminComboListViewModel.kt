@@ -39,8 +39,15 @@ class AdminComboListViewModel @Inject constructor(
 
     private var searchJob: Job? = null
 
-    init {
-        loadFirstPage()
+
+    fun prepareForReturn() {
+        _state.update {
+            it.copy(
+                combos = emptyList(),
+                isLoadingFirstPage = true,
+                error = null
+            )
+        }
     }
 
     fun onSearchQueryChange(query: String) {

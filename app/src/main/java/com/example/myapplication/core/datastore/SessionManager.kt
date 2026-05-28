@@ -2,7 +2,6 @@ package com.example.myapplication.core.datastore
 
 import com.example.myapplication.data.remote.dto.UserDto
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton

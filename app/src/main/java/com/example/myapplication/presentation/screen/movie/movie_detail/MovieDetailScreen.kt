@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.myapplication.presentation.component.YoutubePlayer
+import com.example.myapplication.presentation.component.mapToVNAgeRating
 
 
 @Composable
@@ -218,7 +219,7 @@ fun MovieDetailScreen(
                     InfoRow("THỂ LOẠI", movie.genres.joinToString(", "))
                     InfoRow("THỜI LƯỢNG", "${movie.durationMinutes} phút")
                     InfoRow("NGÔN NGỮ", movie.language)
-                    InfoRow("ĐỘ TUỔI", movie.ageRating)
+                    InfoRow("ĐỘ TUỔI", movie.ageRating.mapToVNAgeRating())
                     InfoRow("KHỞI CHIẾU", movie.releaseDate)
                 }
             }
