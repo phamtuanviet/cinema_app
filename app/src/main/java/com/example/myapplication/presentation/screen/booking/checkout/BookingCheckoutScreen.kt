@@ -5,11 +5,13 @@ package com.example.myapplication.presentation.screen.booking.checkout
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +34,7 @@ fun BookingCheckoutScreen(
     bookingId: String,
     onPaymentSuccess: () -> Unit,
     onPaymentFailed: () -> Unit,
+    onNavigateBack : () -> Unit,
     viewModel: BookingCheckoutViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -72,14 +75,35 @@ fun BookingCheckoutScreen(
     // UI
     // =========================
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
-            TopAppBar(
-                title = { Text("Thanh toán", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                windowInsets = WindowInsets(0.dp) // Tránh lỗi double padding
-            )
+            // Nền Background và bọc Column để đồng bộ với các màn trước
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Thanh toán",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
+                    navigationIcon = {
+                        // Gọi hàm onNavigateBack để quay lại
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Quay lại"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
+                // Đường kẻ mờ dưới TopBar
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            }
         },
         bottomBar = {
             // Đưa nút thanh toán ghim ở dưới cùng màn hình
@@ -97,8 +121,8 @@ fun BookingCheckoutScreen(
                         enabled = state.selectedPaymentMethod != null,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(12.dp)
+                            .height(54.dp), // Đồng bộ chiều cao nút
+                        shape = RoundedCornerShape(16.dp) // Đồng bộ độ bo góc nút
                     ) {
                         Text(
                             text = "Thanh toán ngay",

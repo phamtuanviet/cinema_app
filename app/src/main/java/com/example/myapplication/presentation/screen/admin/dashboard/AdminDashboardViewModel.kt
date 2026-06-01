@@ -1,5 +1,6 @@
 package com.example.myapplication.presentation.screen.admin.dashboard
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.repository.AdminDashboardRepository
@@ -34,6 +35,8 @@ class AdminDashboardViewModel @Inject constructor(
 
             val statsResult = statsDeferred.await()
             val revenueResult = revenueDeferred.await()
+
+            Log.d("AdminDashboardViewModel", revenueResult.toString())
 
             if (statsResult.isSuccess && revenueResult.isSuccess) {
                 _state.update {

@@ -179,8 +179,13 @@ fun AdminNewsEditScreen(
                         // --- CHỌN VOUCHER ---
                         if (state.type == "VOUCHER") {
                             Box(Modifier.fillMaxWidth()) {
+
+                                val displayVoucherCode = state.availableVouchers.find { it.id == state.selectedVoucherId }?.code
+                                    ?: (if (state.selectedVoucherId != null) state.initialVoucherCode else null)
+                                    ?: "Chọn Voucher đính kèm..."
+
                                 OutlinedTextField(
-                                    value = state.availableVouchers.find { it.id == state.selectedVoucherId }?.code ?: "Chọn Voucher đính kèm...",
+                                    value = displayVoucherCode,
                                     onValueChange = {},
                                     readOnly = true,
                                     label = { Text("Voucher áp dụng (*)") },

@@ -38,10 +38,8 @@ fun RootNavGraph(
                 onNavigateToMain = { navController.navigate(RootRoute.MainGraph.route) },
                 onNavigateToAdmin = { navController.navigate(RootRoute.AdminGraph.route) },
                 onUserBanned = {
-                    // Thông báo cho người dùng
                     Toast.makeText(context, "Phiên đăng nhập hết hạn hoặc tài khoản bị khóa!", Toast.LENGTH_LONG).show()
 
-                    // Đá về màn Auth, xóa sạch backstack để không ấn nút Back quay lại Splash được
                     navController.navigate(RootRoute.AuthGraph.route) {
                         popUpTo(0) { inclusive = true }
                     }

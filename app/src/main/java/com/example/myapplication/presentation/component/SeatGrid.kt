@@ -1,3 +1,4 @@
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,15 +28,16 @@ fun SeatGrid(
 ) {
 
     val verticalScrollState = rememberScrollState()
+    val horizontalScrollState = rememberScrollState()
     Column(
-        modifier = Modifier.padding(16.dp).verticalScroll(verticalScrollState),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-
+        modifier = Modifier.padding(16.dp).verticalScroll(verticalScrollState)
+            .horizontalScroll(horizontalScrollState),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         rows.forEach { row ->
             Row(
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
             ) {
                 var index = 0
                 while (index < row.seats.size) {

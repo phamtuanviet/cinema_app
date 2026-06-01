@@ -54,9 +54,7 @@ class AdminMoreMenuViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Lỗi mạng hoặc server không block việc thoát ở local
             } finally {
-                // Xóa sạch thông tin ở Local
-                sessionManager.clearTokens()
-                sessionManager.clearUser()
+
 
                 // Cập nhật State để UI điều hướng
                 _state.update {

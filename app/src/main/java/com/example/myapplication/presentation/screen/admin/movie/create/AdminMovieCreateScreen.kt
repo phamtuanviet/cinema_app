@@ -335,7 +335,7 @@ fun AdminMovieCreateScreen(
 @Composable
 fun AgeRatingDropdown(selectedRating: String, onRatingSelected: (String) -> Unit) {
     // List chuẩn cho chuẩn rạp Việt Nam hoặc Quốc tế (Theo yêu cầu của bạn)
-    val ratings = listOf("P", "PG-13", "R", "NC-17", "K", "T13", "T16", "T18", "C")
+    val ratings = listOf("P", "K", "T13", "T16", "T18")
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(

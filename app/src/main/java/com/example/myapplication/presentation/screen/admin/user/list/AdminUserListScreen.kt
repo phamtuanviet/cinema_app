@@ -346,7 +346,7 @@ fun AdminUserItem(
         ) {
             // Avatar
             AsyncImage(
-                model = user.avatarUrl ?: "https://via.placeholder.com/150",
+                model = user.avatarUrl ?: "https://picsum.photos/200/200",
                 contentDescription = "Avatar",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

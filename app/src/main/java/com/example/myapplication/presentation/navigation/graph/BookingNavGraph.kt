@@ -76,6 +76,9 @@ fun NavGraphBuilder.bookingNavGraph(
                     navController.navigate(
                         BookingRoute.Checkout.createRoute(bookingId)
                     )
+                },
+                onNavigateBack = {
+                    navController.popBackStack();
                 }
             )
         }
@@ -103,6 +106,9 @@ fun NavGraphBuilder.bookingNavGraph(
 
                 onPaymentFailed = {
                     navController.navigate(BookingRoute.PaymentFailed.route)
+                },
+                onNavigateBack = {
+                    navController.popBackStack();
                 }
             )
         }

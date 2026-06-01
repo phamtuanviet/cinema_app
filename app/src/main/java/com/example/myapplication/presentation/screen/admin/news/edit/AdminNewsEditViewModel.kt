@@ -25,6 +25,7 @@ data class AdminNewsEditState(
 
     val title: String = "",
     val titleError: String? = null,
+    val initialVoucherCode: String? = null,
 
     val content: String = "",
 
@@ -106,7 +107,8 @@ class AdminNewsEditViewModel @Inject constructor(
                     startDateStr = parseDate(p.startDate),
                     endDateStr = parseDate(p.endDate),
                     availableVouchers = voucherResult.getOrDefault(emptyList()),
-                    selectedVoucherId = p.id // Lấy ID voucher đã đính kèm nếu có
+                    selectedVoucherId = p.voucherId, // Lấy ID voucher đã đính kèm nếu có
+                    initialVoucherCode = p.voucherCode
                 ) }
             } else {
                 _state.update { it.copy(isLoadingData = false, error = postResult.exceptionOrNull()?.message) }

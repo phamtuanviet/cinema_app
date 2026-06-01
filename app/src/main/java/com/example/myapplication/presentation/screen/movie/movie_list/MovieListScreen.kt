@@ -146,7 +146,7 @@ fun MovieListScreen(
                             .fillMaxWidth()
                             // BẮT BUỘC phải có màu nền đục, nếu không phim bên dưới sẽ cuộn xuyên thấu qua
                             .background(MaterialTheme.colorScheme.background)
-                            .padding(top = 8.dp,bottom = 8.dp)
+                            .padding(top = 8.dp, bottom = 8.dp)
                     ) {
                         OutlinedTextField(
                             value = state.searchQuery,
@@ -174,7 +174,7 @@ fun MovieListScreen(
                             )
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         MovieTabs(
                             selectedTab = state.selectedTab,

@@ -171,12 +171,14 @@ class AuthRepositoryImpl @Inject constructor(
                 Log.d("FCM", "Đã xóa token cũ thành công do đăng xuất")
 
                 val newToken = firebaseMessaging.token.await()
-                sessionManager.saveFcmToken(newToken)
                 Log.d("FCM", "Token mới cho khách: $newToken")
 
                 // Vẫn giữ lại lệnh đăng ký Topic để khách vẫn nhận được thông báo Phim mới
                 firebaseMessaging.subscribeToTopic("ALL_USERS").await()
                 Log.d("FCM", "Đã đăng ký lại topic ALL_USERS cho khách")
+
+                sessionManager.saveFcmToken(newToken)
+
 
             } catch (e: Exception) {
                 Log.e("LOGOUT", "Lỗi trong quá trình xử lý Firebase: ${e.message}")

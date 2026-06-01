@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.myapplication.data.remote.dto.BookingMyBookingDto
+import com.example.myapplication.utils.formatTicketTime
 
 @Composable
 fun BookingItemCard(
@@ -49,7 +50,6 @@ fun BookingItemCard(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            // ===== Poster phim =====
             AsyncImage(
                 model = booking.movie.posterUrl,
                 contentDescription = "Poster phim",
@@ -62,7 +62,6 @@ fun BookingItemCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // ===== Thông tin chi tiết =====
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = booking.movie.title,
@@ -75,7 +74,6 @@ fun BookingItemCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Cụm thông tin rạp
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Rounded.LocationOn,
@@ -105,7 +103,7 @@ fun BookingItemCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = booking.showtimeStart,
+                        text = formatTicketTime(booking.showtimeStart),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary

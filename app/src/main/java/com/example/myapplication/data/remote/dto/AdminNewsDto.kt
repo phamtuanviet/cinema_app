@@ -12,7 +12,8 @@ data class AdminNewsDto(
     val endDate: String?,
 
     // Nếu là bài viết loại VOUCHER thì sẽ có thêm thông tin này
-    val voucherCode: String?
+    val voucherCode: String?,
+    val voucherId : String?
 )
 
 // 2. Enum định nghĩa 2 Tab
